@@ -670,8 +670,8 @@ async function startServer() {
 注意：只能使用這份筆記本裡的資訊，絕對不要引用任何筆記本以外的內容。
 
 === Nono 筆記本（唯一資料來源） ===
-【今日實際進度】：
-${progressText || '推進 3D 桌面夥伴與 Buffer 排程工具日常開發'}
+【今日實際進度（選填）】：
+${progressText || '（今日未特別填寫具體工程進度，請以日常創作陪伴、整理靈感與穩定推進節奏為主軸）'}
 
 ${styleInstruction}
 ===================================
@@ -711,7 +711,9 @@ ${styleInstruction}
         .map((l) => l.replace(/^[0-9.*•\-\s]+/, '').trim())
         .filter(Boolean)
         .join('，');
-      const fallbackCopy = `今天持續推進桌面小夥伴的開發進度：${cleanLines.slice(0, 72) || '調整 3D 軟糖互動與排程預覽'}。一步一步把細節調整到位，繼續往下推進。 #Nono培育觀察日記 #IndieDev`;
+      const fallbackCopy = cleanLines
+        ? `今天持續推進桌面小夥伴的開發進度：${cleanLines.slice(0, 78)}。一步一步把細節調整到位，繼續往下推進。 #Nono培育觀察日記 #IndieDev`
+        : `今天在桌面前跟軟糖 Nono 一起整理日常創作節奏，把接下來的靈感與排程順過一遍，一步一步穩定往前推進。 #Nono培育觀察日記 #IndieDev`;
       const platformCopies = buildPlatformTailoredCopies(fallbackCopy);
       const fallbackMurmur =
         '貼文已經嚴格照著 Nono 筆記本的紀錄寫好了，而且我也同步幫 X、IG、Threads 自動適配好專屬字數與標籤囉。\n\n現在幫妳切到 Buffer 排程視窗，確認時段沒問題就能直接送進排程佇列喔糖糖。';

@@ -29,6 +29,8 @@ export interface PanelThemePalette {
 interface NonoStage3DProps {
   furColor: string;
   customModelUrl: string | null;
+  modelScale?: number;
+  onModelScaleChange?: (scale: number) => void;
   isThinking: boolean;
   isAwake: boolean;
   idleAction: NonoIdleAction;
@@ -202,6 +204,8 @@ export const PastelAuraStar: React.FC<{
 export const NonoStage3D: React.FC<NonoStage3DProps> = ({
   furColor,
   customModelUrl,
+  modelScale = 1.0,
+  onModelScaleChange,
   isThinking,
   isAwake,
   idleAction,
@@ -227,6 +231,8 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
   onEnterDeepSleepRef.current = onEnterDeepSleep;
   const onDragEndRef = useRef(onDragEndNono);
   onDragEndRef.current = onDragEndNono;
+  const onModelScaleChangeRef = useRef(onModelScaleChange);
+  onModelScaleChangeRef.current = onModelScaleChange;
 
   const [isDraggingNono, setIsDraggingNono] = useState(false);
 
@@ -239,7 +245,12 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
     hopY: new Spring1D(0, 90, 15),
     eyeOpen: new Spring1D(1, 150, 19),
     peekZ: new Spring1D(0, 54, 13.5),
+    zoomScale: new Spring1D(modelScale, 95, 16),
   });
+
+  useEffect(() => {
+    springsRef.current.zoomScale.target = THREE.MathUtils.clamp(modelScale, 0.45, 2.2);
+  }, [modelScale]);
 
   // Continuous phase accumulators & crossfade weights
   const blendStateRef = useRef({
@@ -658,7 +669,23 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
       }
     };
 
+    // 滑鼠滾輪直接放大／縮小 3D Nono 模型（支援 0.45x ~ 2.2x 無段平滑縮放）
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      stateRef.current.lastInteractionTime = performance.now();
+      const step = e.deltaY < 0 ? 0.08 : -0.08;
+      const nextZoom = THREE.MathUtils.clamp(
+        Math.round((springsRef.current.zoomScale.target + step) * 100) / 100,
+        0.45,
+        2.2
+      );
+      springsRef.current.zoomScale.target = nextZoom;
+      springsRef.current.squishY.impulse(e.deltaY < 0 ? 0.16 : -0.14);
+      onModelScaleChangeRef.current?.(nextZoom);
+    };
+
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
+    renderer.domElement.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
 
@@ -977,13 +1004,15 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
 
         const curScaleY = sp.squishY.update(delta);
         const curScaleXZ = THREE.MathUtils.clamp(2.0 - curScaleY, 0.86, 1.16);
+        const curZoom = sp.zoomScale.update(delta);
+        const effectiveBaseScale = BASE_BODY_SCALE * curZoom;
 
         nonoBodyPivot.scale.set(
-          BASE_BODY_SCALE * curScaleXZ,
-          BASE_BODY_SCALE * curScaleY,
-          BASE_BODY_SCALE * curScaleXZ
+          effectiveBaseScale * curScaleXZ,
+          effectiveBaseScale * curScaleY,
+          effectiveBaseScale * curScaleXZ
         );
-        nonoBodyPivot.position.y = 0.56 + breathWave * 0.022 + smoothHopY;
+        nonoBodyPivot.position.y = 0.56 * curZoom + breathWave * 0.022 + smoothHopY;
         nonoBodyPivot.position.z = peekZ;
 
         nonoBodyPivot.rotation.y = yaw;
@@ -1112,8 +1141,8 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
         // Pass eyeClosure to GPU fur shaders so fur covers the closed eyelids!
         furUni.uEyeClosure.value = eyeClosure;
 
-        const sScale = 1.0 - smoothHopY * 0.5 + peekZ * 0.12;
-        shadowMesh.scale.setScalar(THREE.MathUtils.clamp(sScale, 0.65, 1.2));
+        const sScale = (1.0 - smoothHopY * 0.5 + peekZ * 0.12) * curZoom;
+        shadowMesh.scale.setScalar(THREE.MathUtils.clamp(sScale, 0.4, 2.4));
 
         // =====================================================================
         // ANCHOR SPEECH BUBBLE & ZZZ BUBBLE OUTSIDE NONO'S SILHOUETTE (NEVER OVERLAPS NONO!)
@@ -1125,7 +1154,7 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
           // 1. Project Nono's 3D body center
           _headWorldPos.set(
             nonoRoot.position.x,
-            nonoRoot.position.y + 0.56 + smoothHopY * 0.35,
+            nonoRoot.position.y + 0.56 * curZoom + smoothHopY * 0.35,
             peekZ * 0.5
           );
           _headWorldPos.project(camera);
@@ -1135,7 +1164,7 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
           // 2. Project Nono's top-outer hair crown (above all fur strands)
           _headWorldPos.set(
             nonoRoot.position.x,
-            nonoRoot.position.y + 1.68 + smoothHopY * 0.35,
+            nonoRoot.position.y + (0.56 + 1.12 * curZoom) + smoothHopY * 0.35,
             peekZ * 0.5
           );
           _headWorldPos.project(camera);
@@ -1143,8 +1172,8 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
 
           // 3. Project Nono's outer right fur edge to get exact 2D pixel radius
           _headWorldPos.set(
-            nonoRoot.position.x + 1.12,
-            nonoRoot.position.y + 0.56 + smoothHopY * 0.35,
+            nonoRoot.position.x + 1.12 * curZoom,
+            nonoRoot.position.y + 0.56 * curZoom + smoothHopY * 0.35,
             peekZ * 0.5
           );
           _headWorldPos.project(camera);
@@ -1201,6 +1230,7 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
     return () => {
       isDisposed = true;
       renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
+      renderer.domElement.removeEventListener('wheel', handleWheel);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('resize', handleResize);

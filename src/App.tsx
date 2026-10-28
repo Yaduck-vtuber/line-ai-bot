@@ -61,10 +61,58 @@ declare global {
   }
 }
 
+interface ProgressVersionEntry {
+  id: string;
+  versionTag: string;
+  title: string;
+  content: string;
+  updatedAt: string;
+}
+
+const MAX_PROGRESS_VERSIONS = 20;
+const PROGRESS_STORAGE_KEY = 'nono_progress_versions_v1';
+
+const DEFAULT_PROGRESS_VERSIONS: ProgressVersionEntry[] = [
+  {
+    id: 'ver-01',
+    versionTag: 'v0.1',
+    title: '3D 軟糖毛髮與立體眼皮',
+    content: '完成 Nono 3D Mochi-Puff 毛髮模擬、3D 立體上下眼皮與閉眼毛髮覆蓋',
+    updatedAt: '近期紀錄',
+  },
+  {
+    id: 'ver-02',
+    versionTag: 'v0.2',
+    title: '迷幻霓虹撞色主題與關心氣泡',
+    content: '完成高對比迷幻霓虹撞色主題，支援工作台面板、對話框與對話星星同步換色',
+    updatedAt: '近期紀錄',
+  },
+  {
+    id: 'ver-03',
+    versionTag: 'v0.3',
+    title: 'Buffer 真實排程與各平台字數適配',
+    content: '串接 Buffer 官方 GraphQL API 直通排程佇列，並完成 X 字數濃縮與 IG 標籤自動適配',
+    updatedAt: '近期紀錄',
+  },
+  {
+    id: 'ver-04',
+    versionTag: 'v0.4',
+    title: '桌面完全去背與自由視窗控制',
+    content: '完成桌面完全去背透明視窗、面板收窄單邊與右緣拉寬、按住標題列拖動視窗與右下角縮放',
+    updatedAt: '近期紀錄',
+  },
+  {
+    id: 'ver-05',
+    versionTag: 'v0.5',
+    title: '背景層級切換、Alt+N 喚出與滾輪縮放',
+    content: '支援視窗被其他程式壓在下方並用 Alt+N 隨時叫出來，新增模型滑鼠滾輪放大縮小與輕量版本進度庫',
+    updatedAt: '最新進度',
+  },
+];
+
 const INITIAL_NOTEBOOK: NonoNotebookData = {
-  actualProgressLog: `1. 完成 Nono 3D Mochi-Puff 毛髮模擬、3D 立體上下眼皮與閉眼毛髮覆蓋
-2. 完成高對比迷幻霓虹撞色主題，支援整個工作台面板、對話框與對話星星同步換色
-3. 串接 Buffer 推薦排程時段與各平台自動字數適配（含 X 字數濃縮與 IG 5 個 # 限制）`,
+  actualProgressLog: `1. 完成桌面完全去背透明視窗、面板收窄單邊與右緣拉寬、按住標題列拖動視窗與右下角縮放
+2. 支援視窗被其他程式壓在下方並用 Alt+N 隨時叫出來，新增模型滑鼠滾輪放大縮小與輕量版本進度庫`,
   styleGuidelines: `- 語氣自然平實，像獨立創作者 Ave 的真實開發紀錄
 - 不要過度誇張或太像行銷廣告，也不要太科技風
 - 結尾固定加上 #Nono培育觀察日記
@@ -487,13 +535,41 @@ export function App() {
   const [isTransparentDesktop, setIsTransparentDesktop] = useState<boolean>(true);
   const [customModelUrl, setCustomModelUrl] = useState<string | null>(null);
   const [customModelName, setCustomModelName] = useState<string | null>(null);
+  const [modelScale, setModelScale] = useState<number>(() => {
+    const saved = Number(localStorage.getItem('nono_model_scale'));
+    return Number.isFinite(saved) && saved >= 0.45 && saved <= 2.2 ? saved : 1.0;
+  });
 
   const activePanelTheme =
     PANEL_THEME_PRESETS.find((t) => t.id === panelThemeId) || PANEL_THEME_PRESETS[0];
 
-  // Nono Notebook
+  // Nono Notebook + 極輕量近期版本進度庫（純文字 JSON、自動限制最多 20 筆、佔用 < 2KB）
   const [notebook, setNotebook] = useState<NonoNotebookData>(INITIAL_NOTEBOOK);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [progressVersions, setProgressVersions] = useState<ProgressVersionEntry[]>(() => {
+    try {
+      const raw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // 確保預設的近期版本也都包含在內
+          const existingIds = new Set(parsed.map((item: ProgressVersionEntry) => item.id));
+          const merged = [
+            ...DEFAULT_PROGRESS_VERSIONS.filter((d) => !existingIds.has(d.id)),
+            ...parsed,
+          ].slice(-MAX_PROGRESS_VERSIONS);
+          return merged;
+        }
+      }
+    } catch {
+      // ignore parse error
+    }
+    return DEFAULT_PROGRESS_VERSIONS;
+  });
+  const [selectedVersionIds, setSelectedVersionIds] = useState<string[]>(['ver-04', 'ver-05']);
+  const [newVersionTag, setNewVersionTag] = useState<string>('');
+  const [newVersionTitle, setNewVersionTitle] = useState<string>('');
+  const [progressNotice, setProgressNotice] = useState<string | null>(null);
 
   // Recommended Time Slots
   const [slotRefreshCount, setSlotRefreshCount] = useState<number>(0);
@@ -588,6 +664,105 @@ export function App() {
   useEffect(() => {
     localStorage.setItem('nono_buffer_webhook_url', bufferWebhookUrl);
   }, [bufferWebhookUrl]);
+
+  useEffect(() => {
+    localStorage.setItem('nono_model_scale', String(modelScale));
+  }, [modelScale]);
+
+  useEffect(() => {
+    try {
+      const trimmed = progressVersions.slice(-MAX_PROGRESS_VERSIONS);
+      localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(trimmed));
+    } catch {
+      // ignore quota error
+    }
+  }, [progressVersions]);
+
+  const progressStorageKb = (
+    new Blob([JSON.stringify(progressVersions)]).size / 1024
+  ).toFixed(1);
+
+  const handleToggleVersionSelection = (id: string) => {
+    setProgressNotice(null);
+    setSelectedVersionIds((prev) => {
+      const exists = prev.includes(id);
+      const nextIds = exists ? prev.filter((item) => item !== id) : [...prev, id];
+      const selectedEntries = progressVersions.filter((v) => nextIds.includes(v.id));
+      const combinedLog = selectedEntries
+        .map((v, idx) => `${idx + 1}. [${v.versionTag}] ${v.content}`)
+        .join('\n');
+      setNotebook((nb) => ({ ...nb, actualProgressLog: combinedLog }));
+      return nextIds;
+    });
+  };
+
+  const handleApplySingleVersion = (entry: ProgressVersionEntry) => {
+    setSelectedVersionIds([entry.id]);
+    setNotebook((nb) => ({
+      ...nb,
+      actualProgressLog: `1. [${entry.versionTag} ${entry.title}] ${entry.content}`,
+    }));
+    setProgressNotice(`✓ 已選用「${entry.versionTag} ${entry.title}」的進度內容`);
+  };
+
+  const handleUpdateVersionWithCurrentText = (id: string) => {
+    const cleanText = notebook.actualProgressLog
+      .replace(/^[0-9]+\.\s*(\[[^\]]+\]\s*)?/, '')
+      .trim();
+    if (!cleanText) {
+      setProgressNotice('⚠️ 請先在下方進度框輸入內容，再點更新版本喔！');
+      return;
+    }
+    const nowTag = new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
+    setProgressVersions((prev) =>
+      prev.map((v) =>
+        v.id === id
+          ? {
+              ...v,
+              content: cleanText,
+              updatedAt: `更新於 ${nowTag}`,
+            }
+          : v
+      )
+    );
+    const target = progressVersions.find((v) => v.id === id);
+    setProgressNotice(`✓ 已將目前進度內容更新至「${target?.versionTag || ''} ${target?.title || ''}」！`);
+  };
+
+  const handleSaveNewProgressVersion = () => {
+    const rawContent = notebook.actualProgressLog.trim();
+    if (!rawContent) {
+      setProgressNotice('⚠️ 請先在下方進度框寫下這次的進度，再點儲存新版本喔！');
+      return;
+    }
+    const nextNum = progressVersions.length + 1;
+    const tag = newVersionTag.trim() || `v0.${nextNum}`;
+    const cleanFirstLine = rawContent
+      .split('\n')[0]
+      .replace(/^[0-9]+\.\s*(\[[^\]]+\]\s*)?/, '')
+      .trim();
+    const title = newVersionTitle.trim() || cleanFirstLine.slice(0, 14) || '開發進度更新';
+    const nowTag = new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
+
+    const newEntry: ProgressVersionEntry = {
+      id: `ver-${Date.now()}`,
+      versionTag: tag,
+      title,
+      content: rawContent,
+      updatedAt: nowTag,
+    };
+
+    setProgressVersions((prev) => [...prev, newEntry].slice(-MAX_PROGRESS_VERSIONS));
+    setSelectedVersionIds([newEntry.id]);
+    setNewVersionTag('');
+    setNewVersionTitle('');
+    setProgressNotice(`✓ 已新增並選用「${tag} · ${title}」（自動控管容量，極輕量不佔空間）`);
+  };
+
+  const handleDeleteProgressVersion = (id: string) => {
+    setProgressVersions((prev) => prev.filter((v) => v.id !== id));
+    setSelectedVersionIds((prev) => prev.filter((item) => item !== id));
+  };
 
   // 自然待機動作銜接流轉
   useEffect(() => {
@@ -1507,6 +1682,8 @@ export function App() {
       <NonoStage3D
         furColor={furColor}
         customModelUrl={customModelUrl}
+        modelScale={modelScale}
+        onModelScaleChange={setModelScale}
         isThinking={isGeneratingDraft || isRefiningPost}
         isAwake={isNonoAwake}
         idleAction={idleAction}
@@ -1733,16 +1910,118 @@ export function App() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold mb-1 flex items-center justify-between">
-                    <span>01. Ave 實際完成的進度紀錄</span>
-                    <span
-                      style={{ color: activePanelTheme.accentSecondary }}
-                      className="text-[10px] font-mono"
-                    >
-                      PROGRESS.LOG
+                <div
+                  style={{
+                    backgroundColor: activePanelTheme.panelCard,
+                    borderColor: `${activePanelTheme.border}55`,
+                  }}
+                  className="p-3 rounded-xl border space-y-2.5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <label className="text-xs font-semibold flex items-center gap-1.5">
+                      <span>01. Ave 實際完成的進度紀錄</span>
+                      <span
+                        style={{
+                          backgroundColor: `${activePanelTheme.accentSecondary}24`,
+                          color: activePanelTheme.accentSecondary,
+                          borderColor: `${activePanelTheme.accentSecondary}55`,
+                        }}
+                        className="px-1.5 py-0.5 rounded text-[10px] font-mono border"
+                      >
+                        選填 · 可勾選近期版本
+                      </span>
+                    </label>
+                    <span className="text-[10px] font-mono text-zinc-400">
+                      極輕量純文字 · 僅 {progressStorageKb} KB ({progressVersions.length}/
+                      {MAX_PROGRESS_VERSIONS}筆)
                     </span>
-                  </label>
+                  </div>
+
+                  {/* 近期各版本進度快速勾選 / 選用 / 更新清單 */}
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    {progressVersions.map((ver) => {
+                      const isChecked = selectedVersionIds.includes(ver.id);
+                      return (
+                        <div
+                          key={ver.id}
+                          style={{
+                            borderColor: isChecked
+                              ? activePanelTheme.accentSecondary
+                              : 'rgba(255,255,255,0.12)',
+                            backgroundColor: isChecked
+                              ? `${activePanelTheme.accentSecondary}16`
+                              : 'rgba(0,0,0,0.4)',
+                          }}
+                          className="p-2 rounded-lg border flex items-start justify-between gap-2 text-[11px] transition-colors"
+                        >
+                          <div
+                            onClick={() => handleToggleVersionSelection(ver.id)}
+                            className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer"
+                            title="點擊勾選／取消勾選此版本進度（可多選組合）"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}}
+                              className="mt-0.5 accent-pink-500 cursor-pointer shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span
+                                  style={{
+                                    backgroundColor: activePanelTheme.highlightTagBg,
+                                    color: activePanelTheme.highlightTagText,
+                                  }}
+                                  className="px-1.5 py-0.2 rounded text-[9px] font-mono font-black"
+                                >
+                                  {ver.versionTag}
+                                </span>
+                                <span className="font-bold text-white truncate">{ver.title}</span>
+                                <span className="text-[9px] text-zinc-400 font-mono">
+                                  ({ver.updatedAt})
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-zinc-300 line-clamp-1 mt-0.5">
+                                {ver.content}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleApplySingleVersion(ver)}
+                              className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-zinc-200 cursor-pointer"
+                              title="只單獨選用這個版本的進度"
+                            >
+                              單選
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateVersionWithCurrentText(ver.id)}
+                              style={{ color: activePanelTheme.accentSecondary }}
+                              className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] cursor-pointer"
+                              title="用下方輸入框目前寫的文字，更新覆蓋這個版本的進度紀錄"
+                            >
+                              更新此版
+                            </button>
+                            {progressVersions.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteProgressVersion(ver.id)}
+                                className="p-0.5 rounded text-zinc-400 hover:text-rose-400 cursor-pointer"
+                                title="刪除此筆版本紀錄"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 實際進度輸入框（可自由手寫修改，或留空不填） */}
                   <textarea
                     rows={3}
                     value={notebook.actualProgressLog}
@@ -1750,9 +2029,59 @@ export function App() {
                       setNotebook((prev) => ({ ...prev, actualProgressLog: e.target.value }));
                     }}
                     style={{ borderColor: `${activePanelTheme.border}55` }}
-                    placeholder="寫下今天 Ave 實際做完的事..."
+                    placeholder="（選填）可從上方勾選近期版本進度、直接手寫修改，或留空改發日常創作陪伴貼文..."
                     className="w-full bg-black/50 border rounded-xl p-2.5 text-xs text-zinc-100 leading-relaxed focus:outline-none resize-none"
                   />
+
+                  {/* 新增／儲存新版本進度 + 清空選填列 */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <input
+                      type="text"
+                      value={newVersionTag}
+                      onChange={(e) => setNewVersionTag(e.target.value)}
+                      placeholder={`版本號(如 v0.${progressVersions.length + 1})`}
+                      className="w-24 bg-black/45 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 font-mono"
+                    />
+                    <input
+                      type="text"
+                      value={newVersionTitle}
+                      onChange={(e) => setNewVersionTitle(e.target.value)}
+                      placeholder="新版本簡短標題 (選填)"
+                      className="flex-1 min-w-[120px] bg-black/45 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-zinc-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveNewProgressVersion}
+                      style={{
+                        backgroundColor: `${activePanelTheme.accent}33`,
+                        borderColor: activePanelTheme.accent,
+                      }}
+                      className="px-2.5 py-1 rounded-lg border text-[11px] font-bold text-white hover:brightness-110 cursor-pointer shrink-0"
+                      title="把目前進度框裡的文字存成一筆新的版本紀錄"
+                    >
+                      ＋ 存為新版本
+                    </button>
+                    {notebook.actualProgressLog.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedVersionIds([]);
+                          setNotebook((prev) => ({ ...prev, actualProgressLog: '' }));
+                          setProgressNotice('✓ 已清空進度（選填模式：將自動生成日常創作陪伴貼文）');
+                        }}
+                        className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] text-zinc-300 cursor-pointer shrink-0"
+                        title="不填具體進度，讓 Nono 產生日常創作陪伴貼文"
+                      >
+                        清空(選填不填)
+                      </button>
+                    )}
+                  </div>
+
+                  {progressNotice && (
+                    <div className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 rounded-lg px-2.5 py-1">
+                      {progressNotice}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -3049,11 +3378,67 @@ export function App() {
                 </div>
 
                 <div
+                  style={{
+                    backgroundColor: activePanelTheme.panelCard,
+                    borderColor: `${activePanelTheme.border}44`,
+                  }}
+                  className="p-3 rounded-xl border space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">
+                      04. 3D 模型大小縮放（滑鼠移到 Nono 上滾動滾輪即可直接放大縮小！）
+                    </span>
+                    <span
+                      style={{ color: activePanelTheme.highlightTagBg }}
+                      className="text-[11px] font-mono font-bold"
+                    >
+                      {Math.round(modelScale * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setModelScale((s) => Math.max(0.45, Math.round((s - 0.1) * 100) / 100))
+                      }
+                      className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white cursor-pointer"
+                    >
+                      － 縮小
+                    </button>
+                    <input
+                      type="range"
+                      min={0.45}
+                      max={2.2}
+                      step={0.05}
+                      value={modelScale}
+                      onChange={(e) => setModelScale(Number(e.target.value))}
+                      className="flex-1 accent-pink-500 cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setModelScale((s) => Math.min(2.2, Math.round((s + 0.1) * 100) / 100))
+                      }
+                      className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white cursor-pointer"
+                    >
+                      ＋ 放大
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModelScale(1.0)}
+                      className="px-2 py-1 rounded-lg bg-black/50 hover:bg-white/15 border border-white/15 text-[10px] font-mono text-zinc-300 cursor-pointer"
+                    >
+                      重置 100%
+                    </button>
+                  </div>
+                </div>
+
+                <div
                   style={{ borderColor: `${activePanelTheme.border}33` }}
                   className="pt-2 border-t space-y-2"
                 >
                   <label className="block text-xs font-bold">
-                    04. 替換為 Ave 自製的 3D 模型 (.glb / .gltf)
+                    05. 替換為 Ave 自製的 3D 模型 (.glb / .gltf)
                   </label>
                   <input
                     ref={fileInputRef}

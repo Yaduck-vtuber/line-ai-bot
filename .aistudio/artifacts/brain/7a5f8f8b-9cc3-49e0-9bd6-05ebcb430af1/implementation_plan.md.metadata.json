@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for upgrading Nono into a pure zero-clutter 3D Desktop Companion that hides all panels until clicked, disables 360-degree camera rotation in favor of cursor-grab desktop dragging and gaze tracking, cycles idle actions and warm caring dialogue on click, supports local image/video upload and cloud URL media import, and enforces Buffer Free Plan constraints with optional API/Webhook testing.",
+  "updatedAt":  "2026-10-27T16:59:34.608455051Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Nono — Ave 專屬 3D 數位秘書與社群小編",
+  "description": "獨立創作者 Ave 親手孵化的 3D 專屬數位秘書與外掛小精靈 Nono，結合 3D 互動對話框【Nono的碎碎念】與 Buffer 純淨貼文生成【發送文案】的多輪對話工作台。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

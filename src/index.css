@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --font-display: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;
+  --font-sans: 'Inter', 'Noto Sans TC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Noto Sans TC', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  color: #f3f4f6;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Cozy Creator Desktop Wallpaper Gradient */
+.desktop-wallpaper {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(168, 85, 247, 0.16) 0%, rgba(30, 27, 75, 0.18) 38%, rgba(17, 16, 24, 1) 78%),
+    linear-gradient(180deg, #151320 0%, #0e0d14 100%);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(24, 22, 34, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.6);
+}

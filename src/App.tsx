@@ -28,6 +28,8 @@ import {
   CheckCircle2,
   Maximize2,
   Minimize2,
+  Move,
+  Minus,
 } from 'lucide-react';
 import { NonoStage3D, PastelAuraStar, PanelThemePalette } from './components/NonoStage3D';
 import {
@@ -40,6 +42,20 @@ import {
   RecommendedTimeSlot,
   UserBehaviorContext,
 } from './types';
+
+declare global {
+  interface Window {
+    nonoDesktop?: {
+      isElectron?: boolean;
+      moveBy: (dx: number, dy: number) => void;
+      resizeBy: (dw: number, dh: number) => void;
+      setWindowSize: (width: number, height: number) => void;
+      minimize: () => void;
+      toggleAlwaysOnTop: () => Promise<boolean>;
+      close: () => void;
+    };
+  }
+}
 
 const INITIAL_NOTEBOOK: NonoNotebookData = {
   actualProgressLog: `1. 完成 Nono 3D Mochi-Puff 毛髮模擬、3D 立體上下眼皮與閉眼毛髮覆蓋
@@ -106,7 +122,6 @@ function toLocalIsoString(date: Date): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
 
-// 根據當下真實時間動態計算未來推薦排程時段，支援一鍵刷新切換不同推薦組合
 function generateDynamicRecommendedSlots(refreshBatch = 0): RecommendedTimeSlot[] {
   const now = new Date();
   const futureSlots: RecommendedTimeSlot[] = [];
@@ -142,7 +157,6 @@ function generateDynamicRecommendedSlots(refreshBatch = 0): RecommendedTimeSlot[
   return picked;
 }
 
-// 計算 X (Twitter) 官方加權字數：中文字／全形符號算 2 字元，半形英數算 1 字元（上限 280）
 function getXWeightedLength(text: string): number {
   let weight = 0;
   for (const ch of text) {
@@ -157,18 +171,6 @@ function countHashtags(text: string): number {
   return matches ? matches.length : 0;
 }
 
-function trimHashtagsToMax(text: string, maxCount: number): string {
-  let seen = 0;
-  return text
-    .replace(/#[\p{L}\p{N}_]+/gu, (match) => {
-      seen += 1;
-      return seen <= maxCount ? match : '';
-    })
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-}
-
-// 前端即時各平台字數與規則自動適配引擎（確保 X 不超字數、IG 不超過 5 個 #）
 function buildClientPlatformCopies(baseText: string): Record<BufferPlatform, string> {
   const raw = baseText.trim();
   const hashtags = raw.match(/#[\p{L}\p{N}_]+/gu) || ['#Nono培育觀察日記'];
@@ -177,21 +179,18 @@ function buildClientPlatformCopies(baseText: string): Record<BufferPlatform, str
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  // Instagram: 最多 5 個 #，段落清楚
   const igTags = hashtags.slice(0, 5);
   if (!igTags.includes('#Nono培育觀察日記') && igTags.length < 5) {
     igTags.unshift('#Nono培育觀察日記');
   }
   const instagram = `${bodyOnly.slice(0, 2000)}\n\n${igTags.slice(0, 5).join(' ')}`.trim();
 
-  // Threads: 500 字內自然語氣
   const threadsTags = hashtags.slice(0, 3);
   const maxThreadsLen = Math.max(50, 480 - threadsTags.join(' ').length);
   const threadsBody =
     bodyOnly.length > maxThreadsLen ? `${bodyOnly.slice(0, maxThreadsLen - 1)}…` : bodyOnly;
   const threads = `${threadsBody} ${threadsTags.join(' ')}`.trim();
 
-  // X (Twitter): 嚴格限制加權 280 字元（約 140 中文字），精簡語句＋最多 2 個標籤
   const xTags = hashtags.slice(0, 2);
   if (!xTags.includes('#Nono培育觀察日記')) {
     xTags[0] = '#Nono培育觀察日記';
@@ -221,14 +220,12 @@ function buildClientPlatformCopies(baseText: string): Record<BufferPlatform, str
   }
   const x = `${xBody} ${xTagStr}`.trim();
 
-  // Facebook: 2000 字內完整段落
   const fbTags = hashtags.slice(0, 4);
   const facebook = `${bodyOnly.slice(0, 1900)}\n\n${fbTags.join(' ')}`.trim();
 
   return { threads, x, instagram, facebook };
 }
 
-// 自動轉換 Google Drive 分享連結或補齊網址協定
 function normalizeCloudMediaUrl(rawUrl: string): string {
   let url = rawUrl.trim();
   if (!url) return '';
@@ -461,6 +458,9 @@ export function App() {
   const [isBubbleOpen, setIsBubbleOpen] = useState<boolean>(true);
   const [activeWindow, setActiveWindow] = useState<ActiveWindowId>('notebook');
   const [isCompactPanel, setIsCompactPanel] = useState<boolean>(false);
+  // 面板自訂寬度（支援點擊「窄版單欄 / 展開雙欄」或直接拖拉面板右邊界自由縮放！）
+  const [customPanelWidth, setCustomPanelWidth] = useState<number | null>(null);
+  const [isMouseNearTop, setIsMouseNearTop] = useState<boolean>(false);
   const lastOpenWindowRef = useRef<ActiveWindowId>('notebook');
 
   const [selectedModel] = useState<AIModelId>('gemini-3-flash-preview');
@@ -475,7 +475,7 @@ export function App() {
   );
   const [careBadgeText, setCareBadgeText] = useState<string>('CARE · 貼心陪伴中');
 
-  // Nono 3D Appearance, Unified Panel Theme & Transparent Desktop Mode (Default true for complete background removal!)
+  // Nono 3D Appearance, Unified Panel Theme & Transparent Desktop Mode
   const [furColor, setFurColor] = useState<string>('#ff1e7a');
   const [panelThemeId, setPanelThemeId] = useState<string>('neon_berry_cyan');
   const [syncPanelWithFur, setSyncPanelWithFur] = useState<boolean>(true);
@@ -490,7 +490,7 @@ export function App() {
   const [notebook, setNotebook] = useState<NonoNotebookData>(INITIAL_NOTEBOOK);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
 
-  // Recommended Time Slots (Dynamic & Refreshable!)
+  // Recommended Time Slots
   const [slotRefreshCount, setSlotRefreshCount] = useState<number>(0);
   const [recommendedSlots, setRecommendedSlots] = useState<RecommendedTimeSlot[]>(() =>
     generateDynamicRecommendedSlots(0)
@@ -529,7 +529,7 @@ export function App() {
   >([]);
 
   const [cloudMediaUrlInput, setCloudMediaUrlInput] = useState('');
-  const [cloudMediaType, setCloudMediaType] = useState<'image' | 'video'>('image');
+  const [cloudMediaType] = useState<'image' | 'video'>('image');
   const [bufferApiToken, setBufferApiToken] = useState<string>(
     () => localStorage.getItem('nono_buffer_api_token') || ''
   );
@@ -551,6 +551,15 @@ export function App() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
+
+  // 偵測滑鼠是否移到視窗頂部（<= 52px），用來觸發頂部無邊框控制列浮現
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      setIsMouseNearTop(e.clientY <= 52);
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('nono_buffer_api_token', bufferApiToken);
@@ -597,6 +606,111 @@ export function App() {
 
     return () => window.clearInterval(gentleTimer);
   }, [idleAction]);
+
+  // ==================== 視窗拖曳、視窗縮放與面板寬度拖曳控制 ====================
+  const handleStartWindowDrag = (e: React.PointerEvent) => {
+    // 若點擊到的是按鈕則不觸發拖曳
+    if ((e.target as HTMLElement).closest('button')) return;
+    e.preventDefault();
+    let lastX = e.screenX;
+    let lastY = e.screenY;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const dx = moveEvent.screenX - lastX;
+      const dy = moveEvent.screenY - lastY;
+      lastX = moveEvent.screenX;
+      lastY = moveEvent.screenY;
+      if (window.nonoDesktop?.moveBy) {
+        window.nonoDesktop.moveBy(dx, dy);
+      } else {
+        window.moveBy(dx, dy);
+      }
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  const handleStartWindowResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    let lastX = e.screenX;
+    let lastY = e.screenY;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const dw = moveEvent.screenX - lastX;
+      const dh = moveEvent.screenY - lastY;
+      lastX = moveEvent.screenX;
+      lastY = moveEvent.screenY;
+      if (window.nonoDesktop?.resizeBy) {
+        window.nonoDesktop.resizeBy(dw, dh);
+      } else {
+        window.resizeBy(dw, dh);
+      }
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  const handleStartPanelWidthDrag = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const baseW =
+      customPanelWidth ?? (activeWindow === 'buffer' && !isCompactPanel ? 740 : 410);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const nextW = Math.max(
+        340,
+        Math.min(window.innerWidth - 32, baseW + (moveEvent.clientX - startX))
+      );
+      setCustomPanelWidth(nextW);
+      setIsCompactPanel(nextW < 580);
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  const handleToggleCompactSingleColumn = () => {
+    setIsCompactPanel((prev) => {
+      const next = !prev;
+      setCustomPanelWidth(next ? 390 : 740);
+      return next;
+    });
+  };
+
+  const handleCloseWindow = () => {
+    if (window.nonoDesktop?.close) {
+      window.nonoDesktop.close();
+    } else {
+      window.close();
+    }
+  };
+
+  const handleMinimizeWindow = () => {
+    if (window.nonoDesktop?.minimize) {
+      window.nonoDesktop.minimize();
+    } else {
+      handleMinimizeAll();
+    }
+  };
 
   const openSideWindow = (win: ActiveWindowId) => {
     setActiveWindow(win);
@@ -687,7 +801,6 @@ export function App() {
     setIsNonoAwake(false);
   };
 
-  // 一鍵刷新推薦時段
   const handleRefreshRecommendedSlots = () => {
     const nextBatch = slotRefreshCount + 1;
     setSlotRefreshCount(nextBatch);
@@ -906,7 +1019,6 @@ export function App() {
     );
   };
 
-  // 將電腦上傳的圖片轉為 Base64 DataURL，讓後端能自動上傳至公開圖床給 Instagram / Buffer 使用！
   const handleLocalMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -939,9 +1051,9 @@ export function App() {
     setIsBubbleOpen(true);
     setIdleAction('happy_bounce');
     setActionLabel('開心軟糖彈跳中');
-    setCareBadgeText('MEDIA · 素材已載入（支援 IG 直發）');
+    setCareBadgeText('MEDIA · 素材已載入');
     setNonoSpeech(
-      `Ave！剛剛選擇的「${firstFileName}」已經載入預覽囉，發送時我也會自動幫它產生公開網址讓 Instagram 順利排程。\n\n確認右邊的預覽版面跟時段沒問題，就可以按確認上傳排程喔糖糖。`
+      `Ave！剛剛選擇的「${firstFileName}」已經載入預覽囉。\n\n確認右邊的預覽版面跟時段沒問題，就可以按確認上傳排程喔糖糖。`
     );
     e.target.value = '';
   };
@@ -1175,9 +1287,6 @@ export function App() {
       setDispatchSuccessBanner(
         data.message || `已成功將貼文直接送進 Buffer 排程佇列（${timeDisplay}）！`
       );
-      if (Array.isArray(data.partialWarnings) && data.partialWarnings.length > 0) {
-        setFreePlanWarning(`部分頻道提醒：${data.partialWarnings.join(' ｜ ')}`);
-      }
       setIsNonoAwake(true);
       setIsBubbleOpen(true);
       setIdleAction('happy_bounce');
@@ -1226,6 +1335,12 @@ export function App() {
   const previewCharCount = currentPreviewText.length;
   const previewHashtagCount = countHashtags(currentPreviewText);
 
+  // 計算面板明確像素寬度（保證點「窄版單欄 / 展開雙欄」或拖拉面板右邊界時 100% 立即生效！）
+  const targetPanelWidthPx =
+    customPanelWidth ??
+    (isCompactPanel ? 390 : activeWindow === 'buffer' ? 740 : 430);
+  const isSingleColumnLayout = isCompactPanel || targetPanelWidthPx < 580;
+
   return (
     <div
       style={{
@@ -1234,44 +1349,90 @@ export function App() {
       }}
       className="relative w-screen h-screen overflow-hidden select-none font-sans transition-colors duration-300"
     >
-      {/* 滑鼠移到最上方才會浮現的無邊框視窗控制列（平時完全透明隱藏，無頂部框框！） */}
-      <div className="fixed top-0 left-0 right-0 h-11 z-50 group flex items-start justify-end px-4 pt-2 pointer-events-auto">
+      {/* 滑鼠移到視窗最上方（clientY <= 52px）才會浮現的無邊框視窗控制列（支援按住拖動視窗、切換視窗大小、縮小、關閉） */}
+      <div
+        onMouseEnter={() => setIsMouseNearTop(true)}
+        className={`fixed top-1.5 right-3 z-50 transition-all duration-200 ${
+          isMouseNearTop || !isNonoAwake
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 -translate-y-2 pointer-events-none'
+        }`}
+      >
         <div
+          onPointerDown={handleStartWindowDrag}
           style={{
             backgroundColor: activePanelTheme.panelBg,
             borderColor: activePanelTheme.border,
-            boxShadow: `0 4px 20px ${activePanelTheme.glowRgba}`,
+            boxShadow: `0 6px 24px rgba(0,0,0,0.85), 0 0 18px ${activePanelTheme.glowRgba}`,
           }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 px-3 py-1 rounded-full border-2 backdrop-blur-md"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 backdrop-blur-xl cursor-move"
+          title="按住此膠囊任意處即可直接拖動整個桌面視窗"
         >
-          <div
-            style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-            className="text-[11px] font-mono text-zinc-200 px-2 py-0.5 cursor-move flex items-center gap-1"
-            title="按住此處可拖曳整個桌面視窗位置"
-          >
-            <span>✥ 按住拖曳視窗</span>
+          <span className="flex items-center gap-1 text-[11px] font-mono font-bold text-zinc-100 pr-1">
+            <Move className="w-3.5 h-3.5" style={{ color: activePanelTheme.accentSecondary }} />
+            <span>按住拖動視窗</span>
+          </span>
+
+          {/* 一鍵調整桌面視窗大小 */}
+          <div className="flex items-center gap-1 border-l border-r border-white/15 px-1.5">
+            {[
+              { label: '小視窗', w: 540, h: 680 },
+              { label: '標準', w: 1020, h: 760 },
+              { label: '大視窗', w: 1280, h: 860 },
+            ].map((sz) => (
+              <button
+                key={sz.label}
+                type="button"
+                onClick={() => window.nonoDesktop?.setWindowSize(sz.w, sz.h)}
+                className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[10px] text-zinc-200 cursor-pointer"
+                title={`將桌面視窗調整為 ${sz.w}×${sz.h}`}
+              >
+                {sz.label}
+              </button>
+            ))}
           </div>
 
           <button
             type="button"
             onClick={() => setIsNonoAwake((prev) => !prev)}
-            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[11px] text-zinc-200 cursor-pointer"
           >
-            {isNonoAwake ? '隱藏工作台' : '展開工作台'}
+            {isNonoAwake ? '只留Nono' : '展開面板'}
           </button>
 
           <button
             type="button"
-            onClick={() => window.close()}
-            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/85 hover:bg-rose-500 text-white text-[11px] font-bold cursor-pointer transition-colors"
+            onClick={handleMinimizeWindow}
+            className="p-1 rounded-full bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer"
+            title="縮小視窗至工作列"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCloseWindow}
+            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold cursor-pointer transition-colors"
             title="關閉 Nono 桌面視窗"
           >
             <X className="w-3.5 h-3.5" />
-            <span>關閉視窗</span>
+            <span>關閉</span>
           </button>
         </div>
+      </div>
+
+      {/* 右下角視窗自由縮放拖曳把手（滑鼠移到右下角時浮現，按住即可自由拉大拉小整個桌面視窗！） */}
+      <div
+        onPointerDown={handleStartWindowResize}
+        style={{
+          backgroundColor: activePanelTheme.panelBg,
+          borderColor: activePanelTheme.border,
+          color: activePanelTheme.accentSecondary,
+        }}
+        className="fixed bottom-2 right-2 z-50 px-2.5 py-1 rounded-lg border opacity-35 hover:opacity-100 transition-opacity cursor-nwse-resize text-[10px] font-mono font-bold flex items-center gap-1"
+        title="按住右下角拖曳即可自由調整整個桌面視窗大小"
+      >
+        <span>↘ 拉動調整視窗大小</span>
       </div>
 
       {/* Optional Dark Ambient Wallpaper */}
@@ -1313,14 +1474,13 @@ export function App() {
         onDragEndNono={handleDragEndNono}
       />
 
-      {/* ==================== RESPONSIVE WORKBENCH DOCK ==================== */}
+      {/* ==================== RESPONSIVE & DRAGGABLE WORKBENCH DOCK ==================== */}
       {isNonoAwake && (
         <div
-          className={`fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 z-30 flex flex-col max-h-[calc(100vh-1.25rem)] transition-all duration-200 ${
-            activeWindow === 'buffer' && !isCompactPanel
-              ? 'sm:w-[min(94vw,760px)] lg:w-[min(58vw,780px)]'
-              : 'sm:w-[min(90vw,440px)]'
-          }`}
+          style={{
+            width: `min(calc(100vw - 1.5rem), ${targetPanelWidthPx}px)`,
+          }}
+          className="fixed top-3 left-3 z-30 flex flex-col max-h-[calc(100vh-1.5rem)] transition-[width] duration-150"
         >
           <div
             style={{
@@ -1328,35 +1488,49 @@ export function App() {
               borderColor: activePanelTheme.border,
               boxShadow: `0 22px 64px rgba(4, 2, 10, 0.92), 0 0 36px ${activePanelTheme.glowRgba}`,
             }}
-            className="backdrop-blur-xl border-2 rounded-2xl flex flex-col max-h-full overflow-hidden transition-colors duration-300"
+            className="relative backdrop-blur-xl border-2 rounded-2xl flex flex-col max-h-full overflow-hidden transition-colors duration-300"
           >
+            {/* 面板右側邊緣自由拉寬／收窄拖曳條 */}
+            <div
+              onPointerDown={handleStartPanelWidthDrag}
+              className="absolute top-0 right-0 bottom-0 w-2.5 z-40 cursor-ew-resize hover:bg-white/20 transition-colors"
+              title="按住面板右邊緣左右拖拉，可自由收窄或拉寬工作台面板"
+            />
+
             {/* Diagonal Neon Hazard Stripe Top Bar */}
             <div
-              className="h-1.5 w-full shrink-0 opacity-95"
+              onPointerDown={handleStartWindowDrag}
+              className="h-2 w-full shrink-0 opacity-95 cursor-move"
               style={{
                 backgroundImage: `repeating-linear-gradient(-45deg, ${activePanelTheme.accent}, ${activePanelTheme.accent} 10px, ${activePanelTheme.accentSecondary} 10px, ${activePanelTheme.accentSecondary} 20px)`,
               }}
+              title="按住頂部條紋可拖動整個桌面視窗"
             />
 
-            {/* STREAMLINED WORKBENCH HEADER (Removed duplicate buttons!) */}
+            {/* STREAMLINED WORKBENCH HEADER (本身也是視窗拖曳列，按住空白處即可直接拖動整個視窗！) */}
             <div
+              onPointerDown={handleStartWindowDrag}
               style={{
                 borderColor: `${activePanelTheme.border}45`,
                 background: `linear-gradient(90deg, ${activePanelTheme.accent}24, ${activePanelTheme.accentSecondary}1c)`,
               }}
-              className="px-3 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-1.5"
+              className="px-3 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-1.5 cursor-move"
+              title="按住此標題列可直接拖動整個桌面視窗"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <PastelAuraStar
-                  size={22}
+                  size={20}
                   idSuffix="header-star"
                   accentColor={activePanelTheme.accent}
                   secondaryColor={activePanelTheme.accentSecondary}
                   coreColor={activePanelTheme.highlightTagBg}
                   className="-my-1"
                 />
-                <span className="text-[11px] font-mono font-black tracking-wider">
-                  NONO WORKBENCH
+                <span className="text-[11px] font-mono font-black tracking-wider flex items-center gap-1">
+                  <span>NONO WORKBENCH</span>
+                  <span className="text-[9px] font-normal text-zinc-400 hidden sm:inline">
+                    (按住可拖動視窗)
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -1370,33 +1544,39 @@ export function App() {
                       : activePanelTheme.textMuted,
                   }}
                   className="px-2 py-0.5 rounded-md bg-black/40 border text-[10px] font-mono cursor-pointer hover:brightness-110"
-                  title="切換透明背景與深色底圖"
                 >
-                  {isTransparentDesktop ? '✦ 透明底' : '深色底'}
+                  {isTransparentDesktop ? '✦ 去背透明' : '深色底圖'}
                 </button>
               </div>
 
               <div className="flex items-center gap-1">
-                {activeWindow === 'buffer' && (
-                  <button
-                    type="button"
-                    onClick={() => setIsCompactPanel((prev) => !prev)}
-                    className="hidden sm:flex items-center gap-1 text-[11px] text-zinc-300 hover:text-white px-2 py-0.5 rounded-md bg-black/40 border border-white/15 cursor-pointer"
-                    title="切換單欄窄版或雙欄寬版面板"
-                  >
-                    {isCompactPanel ? (
-                      <>
-                        <Maximize2 className="w-3 h-3" />
-                        <span>展開雙欄</span>
-                      </>
-                    ) : (
-                      <>
-                        <Minimize2 className="w-3 h-3" />
-                        <span>窄版單欄</span>
-                      </>
-                    )}
-                  </button>
-                )}
+                {/* 窄版單邊 / 展開雙欄 切換按鈕（所有分頁皆可使用，立即改變面板實際像素寬度！） */}
+                <button
+                  type="button"
+                  onClick={handleToggleCompactSingleColumn}
+                  style={{
+                    borderColor: isSingleColumnLayout
+                      ? activePanelTheme.highlightTagBg
+                      : 'rgba(255,255,255,0.2)',
+                    color: isSingleColumnLayout
+                      ? activePanelTheme.highlightTagBg
+                      : activePanelTheme.textMain,
+                  }}
+                  className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border cursor-pointer"
+                  title="一鍵收窄為單邊窄版（390px）或展開為雙欄寬版（740px），也可直接拉動面板右邊緣調整"
+                >
+                  {isSingleColumnLayout ? (
+                    <>
+                      <Maximize2 className="w-3 h-3" />
+                      <span>展開雙欄</span>
+                    </>
+                  ) : (
+                    <>
+                      <Minimize2 className="w-3 h-3" />
+                      <span>收窄單邊</span>
+                    </>
+                  )}
+                </button>
 
                 <button
                   type="button"
@@ -1428,10 +1608,10 @@ export function App() {
                   type="button"
                   onClick={handleMinimizeAll}
                   className="flex items-center gap-1 text-[11px] text-zinc-300 hover:text-white px-2 py-0.5 rounded-md bg-black/40 hover:bg-black/60 border border-white/15 transition-colors cursor-pointer"
-                  title="收起工作台（點一下 3D Nono 即可再次喚醒）"
+                  title="收起工作台（點一下 3D Nono 或上方控制列即可再次展開）"
                 >
                   <EyeOff className="w-3 h-3" />
-                  <span>收起面板</span>
+                  <span>收起</span>
                 </button>
               </div>
             </div>
@@ -1445,9 +1625,9 @@ export function App() {
               className="px-3 py-2 border-b shrink-0 grid grid-cols-3 gap-1.5"
             >
               {[
-                { id: 'notebook' as const, label: '1. Nono 筆記本', icon: BookOpen },
-                { id: 'buffer' as const, label: '2. Buffer 排程發佈', icon: Calendar },
-                { id: 'appearance' as const, label: '3. 外觀與待機動作', icon: Sparkles },
+                { id: 'notebook' as const, label: '1. 筆記本', icon: BookOpen },
+                { id: 'buffer' as const, label: '2. Buffer 排程', icon: Calendar },
+                { id: 'appearance' as const, label: '3. 外觀與動作', icon: Sparkles },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeWindow === tab.id;
@@ -1470,7 +1650,7 @@ export function App() {
                             color: activePanelTheme.textMain,
                           }
                     }
-                    className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold border transition-all cursor-pointer truncate"
+                    className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer truncate"
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">{tab.label}</span>
@@ -1613,7 +1793,7 @@ export function App() {
                   <Sparkles className="w-4 h-4" />
                   {isGeneratingDraft
                     ? '正在依筆記本生成各平台專屬貼文...'
-                    : '依筆記本生成各平台貼文（自動適配 X / IG 字數並前往排程）'}
+                    : '依筆記本生成各平台貼文（自動適配字數並前往排程）'}
                 </button>
               </div>
             )}
@@ -1669,10 +1849,10 @@ export function App() {
 
                 <div
                   className={`flex-1 min-h-0 overflow-y-auto p-3.5 grid gap-3.5 ${
-                    isCompactPanel ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'
+                    isSingleColumnLayout ? 'grid-cols-1' : 'grid-cols-12'
                   }`}
                 >
-                  <div className={`${isCompactPanel ? '' : 'lg:col-span-7'} space-y-3`}>
+                  <div className={`${isSingleColumnLayout ? '' : 'col-span-7'} space-y-3`}>
                     {showBufferConnectionModal && (
                       <div
                         style={{
@@ -1718,7 +1898,7 @@ export function App() {
 
                         <div className="flex items-center justify-between gap-2 pt-1">
                           <span className="text-[10px] text-zinc-400">
-                            支援 X、Threads、IG（含自動圖片網址轉換與 IG Metadata）
+                            自動記憶金鑰並直通 Buffer 排程佇列
                           </span>
                           <button
                             type="button"
@@ -1987,7 +2167,7 @@ export function App() {
                       </div>
                     </div>
 
-                    {/* 請 Nono 微調貼文細項（移除重複無用按鈕，只保留直覺輸入與自然精簡） */}
+                    {/* 請 Nono 微調貼文細項 */}
                     <div
                       style={{
                         backgroundColor: activePanelTheme.panelCard,
@@ -2183,7 +2363,7 @@ export function App() {
                       </div>
                     </div>
 
-                    {/* 圖片 / 影片素材（簡化整合，支援電腦圖片自動轉公開網址直發 IG） */}
+                    {/* 圖片 / 影片素材 */}
                     <div
                       style={{
                         backgroundColor: activePanelTheme.panelCard,
@@ -2197,7 +2377,7 @@ export function App() {
                             style={{ color: activePanelTheme.accent }}
                             className="w-3.5 h-3.5"
                           />
-                          貼文配圖 / 影片（IG 自動轉公開網址直發）
+                          貼文配圖 / 影片
                         </span>
                         <input
                           ref={mediaInputRef}
@@ -2277,7 +2457,7 @@ export function App() {
                                   {media.name}
                                 </div>
                                 <div className="text-[9px] text-emerald-300 font-mono">
-                                  ✓ 支援 IG / 全平台發送
+                                  ✓ 已掛載至預覽
                                 </div>
                               </div>
                               <button
@@ -2297,14 +2477,14 @@ export function App() {
                   {/* Right Column inside Buffer Tab: Live Platform Preview */}
                   <div
                     className={`${
-                      isCompactPanel ? '' : 'lg:col-span-5'
+                      isSingleColumnLayout ? '' : 'col-span-5'
                     } flex flex-col justify-between space-y-3`}
                   >
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold">各平台排版即時預覽</span>
                         <div className="flex items-center gap-1 bg-black/45 p-0.5 rounded-lg border border-white/15">
-                          {(['instagram', 'x', 'threads', 'facebook'] as BufferPlatform[]).map(
+                          {(['threads', 'x', 'instagram', 'facebook'] as BufferPlatform[]).map(
                             (p) => (
                               <button
                                 key={p}
@@ -2359,7 +2539,9 @@ export function App() {
                         {bufferConfig.mediaAttachments.length > 0 ? (
                           <div
                             className={`relative rounded-lg overflow-hidden bg-black border border-white/10 ${
-                              previewPlatform === 'instagram' ? 'aspect-square max-h-48 mx-auto' : 'aspect-[16/9]'
+                              previewPlatform === 'instagram'
+                                ? 'aspect-square max-h-48 mx-auto'
+                                : 'aspect-[16/9]'
                             }`}
                           >
                             {bufferConfig.mediaAttachments[0].type === 'video' ? (
@@ -2408,7 +2590,9 @@ export function App() {
                               <span className="text-xs font-semibold text-white">ave.studio</span>
                               <span
                                 className={`text-[10px] font-mono ${
-                                  previewHashtagCount > 5 ? 'text-rose-400 font-bold' : 'text-emerald-300'
+                                  previewHashtagCount > 5
+                                    ? 'text-rose-400 font-bold'
+                                    : 'text-emerald-300'
                                 }`}
                               >
                                 #標籤 {previewHashtagCount}/5 · {previewCharCount}/2200字
@@ -2427,7 +2611,9 @@ export function App() {
                               <span className="text-xs font-semibold text-white">ave_dev</span>
                               <span
                                 className={`text-[10px] font-mono ${
-                                  previewCharCount > 500 ? 'text-rose-400 font-bold' : 'text-emerald-300'
+                                  previewCharCount > 500
+                                    ? 'text-rose-400 font-bold'
+                                    : 'text-emerald-300'
                                 }`}
                               >
                                 {previewCharCount}/500 字

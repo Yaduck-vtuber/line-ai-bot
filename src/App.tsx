@@ -51,7 +51,11 @@ declare global {
       resizeBy: (dw: number, dh: number) => void;
       setWindowSize: (width: number, height: number) => void;
       minimize: () => void;
+      sendBehind?: () => void;
+      summonToFront?: () => void;
+      getAlwaysOnTop?: () => Promise<boolean>;
       toggleAlwaysOnTop: () => Promise<boolean>;
+      onAlwaysOnTopChanged?: (callback: (val: boolean) => void) => () => void;
       close: () => void;
     };
   }
@@ -461,6 +465,7 @@ export function App() {
   // 面板自訂寬度（支援點擊「窄版單欄 / 展開雙欄」或直接拖拉面板右邊界自由縮放！）
   const [customPanelWidth, setCustomPanelWidth] = useState<number | null>(null);
   const [isMouseNearTop, setIsMouseNearTop] = useState<boolean>(false);
+  const [isAlwaysOnTop, setIsAlwaysOnTop] = useState<boolean>(false);
   const lastOpenWindowRef = useRef<ActiveWindowId>('notebook');
 
   const [selectedModel] = useState<AIModelId>('gemini-3-flash-preview');
@@ -552,13 +557,24 @@ export function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
 
-  // 偵測滑鼠是否移到視窗頂部（<= 52px），用來觸發頂部無邊框控制列浮現
+  // 偵測滑鼠是否移到視窗頂部（<= 52px），用來觸發頂部無邊框控制列浮現，並同步置頂狀態
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       setIsMouseNearTop(e.clientY <= 52);
     };
     window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
+
+    window.nonoDesktop?.getAlwaysOnTop?.().then((val) => {
+      setIsAlwaysOnTop(Boolean(val));
+    });
+    const unsubscribe = window.nonoDesktop?.onAlwaysOnTopChanged?.((val) => {
+      setIsAlwaysOnTop(Boolean(val));
+    });
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      unsubscribe?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -709,6 +725,24 @@ export function App() {
       window.nonoDesktop.minimize();
     } else {
       handleMinimizeAll();
+    }
+  };
+
+  const handleToggleAlwaysOnTop = async () => {
+    if (window.nonoDesktop?.toggleAlwaysOnTop) {
+      const next = await window.nonoDesktop.toggleAlwaysOnTop();
+      setIsAlwaysOnTop(Boolean(next));
+    } else {
+      setIsAlwaysOnTop((prev) => !prev);
+    }
+  };
+
+  const handleSendBehind = () => {
+    if (window.nonoDesktop?.sendBehind) {
+      window.nonoDesktop.sendBehind();
+      setIsAlwaysOnTop(false);
+    } else {
+      handleMinimizeWindow();
     }
   };
 
@@ -1394,6 +1428,19 @@ export function App() {
 
           <button
             type="button"
+            onClick={handleToggleAlwaysOnTop}
+            style={{
+              borderColor: isAlwaysOnTop ? activePanelTheme.highlightTagBg : 'rgba(255,255,255,0.2)',
+              color: isAlwaysOnTop ? activePanelTheme.highlightTagBg : '#e4e4e7',
+            }}
+            className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 border text-[10px] font-mono cursor-pointer"
+            title="切換「一般層級（可被其他視窗壓在下方）」或「釘選永遠置頂」。被壓在下方時可按 Alt+N 或點工作列/右下角圖示隨時叫出來！"
+          >
+            {isAlwaysOnTop ? '📌 釘選最上層' : '🔓 可被其他視窗壓住'}
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsNonoAwake((prev) => !prev)}
             className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[11px] text-zinc-200 cursor-pointer"
           >
@@ -1403,10 +1450,11 @@ export function App() {
           <button
             type="button"
             onClick={handleMinimizeWindow}
-            className="p-1 rounded-full bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer"
-            title="縮小視窗至工作列"
+            className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[10px] text-zinc-200 cursor-pointer flex items-center gap-0.5"
+            title="縮小至下方工作列（隨時可按 Alt+N 或點工作列圖示叫出來）"
           >
-            <Minus className="w-3.5 h-3.5" />
+            <Minus className="w-3 h-3" />
+            <span>退下(Alt+N叫出)</span>
           </button>
 
           <button
@@ -1534,18 +1582,19 @@ export function App() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsTransparentDesktop((prev) => !prev)}
+                  onClick={handleToggleAlwaysOnTop}
                   style={{
-                    borderColor: isTransparentDesktop
-                      ? activePanelTheme.accentSecondary
+                    borderColor: isAlwaysOnTop
+                      ? activePanelTheme.highlightTagBg
                       : 'rgba(255,255,255,0.22)',
-                    color: isTransparentDesktop
-                      ? activePanelTheme.accentSecondary
-                      : activePanelTheme.textMuted,
+                    color: isAlwaysOnTop
+                      ? activePanelTheme.highlightTagBg
+                      : activePanelTheme.textMain,
                   }}
-                  className="px-2 py-0.5 rounded-md bg-black/40 border text-[10px] font-mono cursor-pointer hover:brightness-110"
+                  className="px-2 py-0.5 rounded-md bg-black/45 border text-[10px] font-mono cursor-pointer hover:bg-white/10"
+                  title="預設「🔓 可被壓住」讓其他視窗可以蓋在 Nono 上方；被蓋住時按 Alt+N 或點下方工作列/右下角系統匣即可一秒叫出來！"
                 >
-                  {isTransparentDesktop ? '✦ 去背透明' : '深色底圖'}
+                  {isAlwaysOnTop ? '📌 置頂中' : '🔓 可被壓住(Alt+N喚出)'}
                 </button>
               </div>
 

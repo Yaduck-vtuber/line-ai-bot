@@ -1,6 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
+import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
 
@@ -468,74 +470,427 @@ function mapServiceToPlatformKey(serviceName: string): string {
   return s;
 }
 
-// 查詢 Buffer 後台目前已排程 (scheduled) 的貼文清單，讓前端能顯示「那天/最近幾天/最後一篇排程是何時」
-async function fetchBufferScheduledPosts(token: string): Promise<
-  Array<{
-    id: string;
-    text: string;
-    dueAt: string;
-    platform: string;
-    channelName: string;
-  }>
-> {
-  const orgRes = await executeBufferGraphQL(
-    token,
-    `query { account { organizations { id name } } }`
-  );
-  const organizations: Array<{ id: string; name: string }> =
-    orgRes.data?.account?.organizations || [];
-  if (organizations.length === 0) return [];
+interface StoredScheduledPost {
+  id: string;
+  text: string;
+  dueAt: string;
+  platforms: string[];
+  channelName: string;
+  modeLabel: string;
+  source: 'buffer_cloud' | 'local_dispatch';
+}
 
-  const results: Array<{
+interface StoredProjectItem {
+  id: string;
+  name: string;
+  folderPath: string;
+  category: string;
+  lastScannedAt: string;
+  themes: Array<{
     id: string;
-    text: string;
-    dueAt: string;
-    platform: string;
-    channelName: string;
-  }> = [];
+    versionTag: string;
+    title: string;
+    content: string;
+    updatedAt: string;
+  }>;
+}
 
-  for (const org of organizations) {
-    const chRes = await executeBufferGraphQL(
-      token,
-      `query { channels(input: { organizationId: ${JSON.stringify(org.id)} }) { id name displayName service } }`
-    );
-    const channels: BufferChannelInfo[] = chRes.data?.channels || [];
-    const channelMap = new Map<string, BufferChannelInfo>();
-    for (const c of channels) {
-      channelMap.set(c.id, c);
+interface NonoServerStoreData {
+  savedBufferToken?: string;
+  savedWebhookUrl?: string;
+  scheduledPosts: StoredScheduledPost[];
+  projects: StoredProjectItem[];
+}
+
+const SERVER_STORE_PATH = path.join(__dirname, '.nono-server-store.json');
+
+function loadServerStore(): NonoServerStoreData {
+  try {
+    if (fs.existsSync(SERVER_STORE_PATH)) {
+      const raw = fs.readFileSync(SERVER_STORE_PATH, 'utf-8');
+      const parsed = JSON.parse(raw);
+      return {
+        savedBufferToken: parsed.savedBufferToken || '',
+        savedWebhookUrl: parsed.savedWebhookUrl || '',
+        scheduledPosts: Array.isArray(parsed.scheduledPosts) ? parsed.scheduledPosts : [],
+        projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+      };
     }
+  } catch {
+    // ignore
+  }
+  return {
+    savedBufferToken: '',
+    savedWebhookUrl: '',
+    scheduledPosts: [],
+    projects: [],
+  };
+}
 
-    // 嘗試查詢該組織下 status: [scheduled] 或 status: scheduled 的貼文
-    const queriesToTry = [
-      `query { posts(input: { organizationId: ${JSON.stringify(org.id)}, filter: { status: [scheduled] } }) { edges { node { id text status dueAt channelId } } } }`,
-      `query { posts(input: { organizationId: ${JSON.stringify(org.id)}, filter: { status: scheduled } }) { edges { node { id text status dueAt channelId } } } }`,
-      `query { posts(input: { organizationId: ${JSON.stringify(org.id)} }) { edges { node { id text status dueAt channelId } } } }`,
-    ];
+function saveServerStore(store: NonoServerStoreData) {
+  try {
+    fs.writeFileSync(
+      SERVER_STORE_PATH,
+      JSON.stringify(
+        {
+          ...store,
+          scheduledPosts: (store.scheduledPosts || []).slice(0, 60),
+          projects: (store.projects || []).slice(0, 20),
+        },
+        null,
+        2
+      ),
+      'utf-8'
+    );
+  } catch {
+    // ignore
+  }
+}
 
-    for (const q of queriesToTry) {
-      const pRes = await executeBufferGraphQL(token, q);
-      const edges = pRes.data?.posts?.edges;
-      if (pRes.ok && Array.isArray(edges)) {
-        for (const edge of edges) {
-          const node = edge?.node;
-          if (!node || !node.dueAt) continue;
-          const st = String(node.status || '').toLowerCase();
-          if (st && st !== 'scheduled' && st !== 'buffer') continue;
-          const ch = channelMap.get(node.channelId);
-          results.push({
-            id: node.id,
-            text: node.text || '',
-            dueAt: node.dueAt,
-            platform: ch ? mapServiceToPlatformKey(ch.service) : 'threads',
-            channelName: ch ? ch.displayName || ch.name : 'Buffer 頻道',
-          });
-        }
-        break;
+function recordDispatchedPostToStore(post: StoredScheduledPost, tokenUsed?: string) {
+  const store = loadServerStore();
+  if (tokenUsed && tokenUsed.trim()) {
+    store.savedBufferToken = tokenUsed.trim();
+  }
+  const existingIdx = store.scheduledPosts.findIndex(
+    (p) =>
+      p.id === post.id ||
+      (p.dueAt.slice(0, 16) === post.dueAt.slice(0, 16) &&
+        p.text.trim().slice(0, 24) === post.text.trim().slice(0, 24))
+  );
+  if (existingIdx >= 0) {
+    const mergedPlatforms = Array.from(
+      new Set([...store.scheduledPosts[existingIdx].platforms, ...post.platforms])
+    );
+    store.scheduledPosts[existingIdx] = {
+      ...store.scheduledPosts[existingIdx],
+      ...post,
+      platforms: mergedPlatforms,
+    };
+  } else {
+    store.scheduledPosts.unshift(post);
+  }
+  store.scheduledPosts.sort((a, b) => (a.dueAt || '').localeCompare(b.dueAt || ''));
+  saveServerStore(store);
+}
+
+// 依照更新主題做前後故事化潤飾（絕不直接寫出 v0.1 / v0.2 等生硬版本號，而是引起觀眾好奇與共鳴）
+function buildStorytellingPostFromThemes(rawProgressText: string, projectName = 'Nono 數位夥伴'): string {
+  // 去除所有 v0.1、v0.2、[v0.3]、1.、2.、feat: 等生硬標籤
+  const cleanedLines = (rawProgressText || '')
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^[0-9.*•\-\s]+/, '')
+        .replace(/\[?v?\d+\.\d+(\.\d+)?\]?\s*[:：\-·]?\s*/gi, '')
+        .replace(/^(feat|fix|chore|refactor|docs|style)\s*(\([^)]*\))?\s*[:：]\s*/i, '')
+        .trim()
+    )
+    .filter(Boolean);
+
+  if (cleanedLines.length === 0) {
+    return `妳有沒有過那種盯著螢幕專注創作到一半，突然希望桌面上有個小生物能默默陪著自己的時刻？✨\n\n最近在打磨「${projectName}」的時候，比起塞滿複雜的功能，我更想讓它成為一個真正懂創作節奏的溫柔存在——在妳忙碌時安靜待在角落，需要整理靈感時又隨時都在。如果妳的電腦桌面上也住著一隻小夥伴，妳最希望它幫妳分擔什麼日常小事呢？ #Nono培育觀察日記 #獨立開發日常`;
+  }
+
+  const combinedText = cleanedLines.join('、');
+
+  // 依據主題關鍵字自動挑選最吸引觀眾的前言鉤子 (Hook) 與收尾互動 (Outro)
+  let hook = `每次在調整「${projectName}」的細節時，我常在想：怎樣的互動才不會像冷冰冰的工具，而是真的像一隻住在電腦裡的貼心夥伴？✨`;
+  let outro = `如果妳的桌面上也有這樣一隻會自己進化的小傢伙，妳最想先點開它的哪個功能試試看呢？歡迎留言跟我分享！ #Nono培育觀察日記 #創作日常`;
+
+  if (/去背|透明|視窗|壓在下方|滾輪|縮放|桌面/.test(combinedText)) {
+    hook = `不知道大家在電腦前工作時，會不會希望有個既能隨時陪伴、卻又絕對不擋住創作畫面的桌面小生物？🪄`;
+    outro = `現在它既能乖乖窩在視窗後面陪我趕工，隨時召喚又立刻跳出來打招呼。妳平常工作時喜歡桌面熱鬧一點，還是極簡清爽呢？ #Nono培育觀察日記 #桌面寵物`;
+  } else if (/毛髮|眼皮|閉眼|3D|軟糖|霓虹|配色|主題/.test(combinedText)) {
+    hook = `看著一團原本只有基礎骨架的 3D 模型，慢慢長出蓬鬆軟糖般的毛髮、甚至學會閉上眼睛打瞌睡，真的會有種在養電子寵物的療癒感！🍬`;
+    outro = `從眼神的光澤到身邊圍繞的迷幻撞色光暈，細節越調越捨不得關掉視窗了。大家覺得小夥伴眨眼跟打瞌睡哪個瞬間最討喜呢？ #Nono培育觀察日記 #3D創作`;
+  } else if (/排程|Buffer|日期|時段|社群|跨領域|專案/.test(combinedText)) {
+    hook = `身為創作者，最常遇到的煩惱就是「明明埋頭做了好多進度，卻總是忘記或沒空整理成貼文跟大家分享」對吧？📅`;
+    outro = `現在只要點一下小夥伴，它就能幫我把不同專案的靈感化成故事、還能自己看好日曆空檔準備排程。妳們平常都習慣幾點滑社群呢？ #Nono培育觀察日記 #IndieDev`;
+  }
+
+  // 將技術進度改寫成有畫面感的故事段落
+  const narrativeFragments = cleanedLines.slice(0, 3).map((item) => {
+    return item
+      .replace(/完成|新增|支援|實作/g, '讓它學會了')
+      .replace(/修正|解決/g, '順暢打通了')
+      .replace(/面板/g, '專屬互動空間');
+  });
+
+  const bodyParagraph =
+    narrativeFragments.length === 1
+      ? `這陣子特別針對「${narrativeFragments[0]}」下了不少功夫，看著原本生硬的操作變成自然流暢的陪伴體驗，整個創作工作台都活絡了起來。`
+      : `最近一步步${narrativeFragments.slice(0, -1).join('，同時也')}，甚至還${narrativeFragments[narrativeFragments.length - 1]}，讓整個陪伴與創作的節奏變得更有默契了。`;
+
+  return `${hook}\n\n${bodyParagraph}\n\n${outro}`;
+}
+
+// 掃描任意本地專案資料夾的 Git 紀錄與最近修改檔案，轉化為不帶生硬版本號的主題進度卡
+function scanLocalProjectProgress(folderPath: string, customName?: string): StoredProjectItem {
+  const resolvedPath = path.resolve(folderPath.trim());
+  const baseName = customName?.trim() || path.basename(resolvedPath) || '未命名專案';
+  const nowStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+  const themes: StoredProjectItem['themes'] = [];
+
+  if (!fs.existsSync(resolvedPath)) {
+    return {
+      id: `proj-${Buffer.from(resolvedPath).toString('base64').slice(0, 10)}`,
+      name: baseName,
+      folderPath: resolvedPath,
+      category: '自訂專案',
+      lastScannedAt: `路徑不存在 (${nowStr})`,
+      themes: [],
+    };
+  }
+
+  // 1. 優先嘗試讀取該專案資料夾的 Git Commit 紀錄
+  try {
+    const gitOut = execSync(
+      'git log -n 8 --pretty=format:"%h|%ad|%s" --date=short',
+      {
+        cwd: resolvedPath,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: 4000,
       }
+    );
+    const lines = gitOut
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    lines.forEach((line, idx) => {
+      const [hash, dateStr, ...msgParts] = line.split('|');
+      const rawMsg = msgParts.join('|').trim();
+      const cleanMsg = rawMsg
+        .replace(/^(feat|fix|chore|refactor|docs|style)\s*(\([^)]*\))?\s*[:：]\s*/i, '')
+        .replace(/\[?v?\d+\.\d+(\.\d+)?\]?\s*/gi, '')
+        .trim();
+      if (!cleanMsg) return;
+      const shortTitle = cleanMsg.split(/[、，,。]/)[0].slice(0, 16) || '階段性主題推進';
+      themes.push({
+        id: `git-${hash || idx}`,
+        versionTag: `主題 #${lines.length - idx}`,
+        title: shortTitle,
+        content: cleanMsg,
+        updatedAt: dateStr || '近期提交',
+      });
+    });
+  } catch {
+    // 若該專案尚未初始化 Git，改掃描最近修改的檔案與 package.json / README
+  }
+
+  // 2. 若沒有 Git 紀錄，掃描資料夾內最近修改的檔案作為創作進度線索
+  if (themes.length === 0) {
+    try {
+      const entries = fs.readdirSync(resolvedPath, { withFileTypes: true });
+      const recentFiles: Array<{ name: string; mtime: Date }> = [];
+      for (const entry of entries) {
+        if (
+          entry.name.startsWith('.') ||
+          entry.name === 'node_modules' ||
+          entry.name === 'dist' ||
+          entry.name === 'build'
+        ) {
+          continue;
+        }
+        const full = path.join(resolvedPath, entry.name);
+        try {
+          const st = fs.statSync(full);
+          recentFiles.push({ name: entry.name, mtime: st.mtime });
+        } catch {
+          // ignore
+        }
+      }
+      recentFiles.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+      const topFiles = recentFiles.slice(0, 5);
+      if (topFiles.length > 0) {
+        const fileNames = topFiles.map((f) => f.name).join('、');
+        const dateTag = topFiles[0].mtime.toLocaleDateString('zh-TW', {
+          month: '2-digit',
+          day: '2-digit',
+        });
+        themes.push({
+          id: `files-${Date.now()}`,
+          versionTag: '近期實作',
+          title: `${baseName} 核心模組推進`,
+          content: `持續打磨「${baseName}」專案的 ${fileNames} 等核心內容與互動細節`,
+          updatedAt: dateTag,
+        });
+      }
+    } catch {
+      // ignore
     }
   }
 
-  return results;
+  return {
+    id: `proj-${Buffer.from(resolvedPath).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 12)}`,
+    name: baseName,
+    folderPath: resolvedPath,
+    category: themes.some((t) => t.id.startsWith('git-')) ? 'Git 追蹤專案' : '本地創作專案',
+    lastScannedAt: `已同步 (${nowStr})`,
+    themes: themes.reverse(),
+  };
+}
+
+// 查詢 Buffer 後台目前已排程 (scheduled) 與近期貼文清單 + 合併伺服器本機歷史紀錄
+async function fetchBufferScheduledPosts(token: string): Promise<{
+  posts: StoredScheduledPost[];
+  channels: BufferChannelInfo[];
+  syncNote: string;
+}> {
+  const store = loadServerStore();
+  const cleanToken = (token || store.savedBufferToken || process.env.BUFFER_API_KEY || '').trim();
+  if (cleanToken && cleanToken !== store.savedBufferToken) {
+    store.savedBufferToken = cleanToken;
+    saveServerStore(store);
+  }
+
+  const allChannels: BufferChannelInfo[] = [];
+  const cloudPosts: StoredScheduledPost[] = [];
+  let syncNote = '';
+
+  if (cleanToken) {
+    const orgRes = await executeBufferGraphQL(
+      cleanToken,
+      `query { account { organizations { id name } } }`
+    );
+    const organizations: Array<{ id: string; name: string }> =
+      orgRes.data?.account?.organizations || [];
+
+    for (const org of organizations) {
+      const chRes = await executeBufferGraphQL(
+        cleanToken,
+        `query { channels(input: { organizationId: ${JSON.stringify(org.id)} }) { id name displayName service } }`
+      );
+      const channels: BufferChannelInfo[] = chRes.data?.channels || [];
+      allChannels.push(...channels);
+      const channelMap = new Map<string, BufferChannelInfo>();
+      for (const c of channels) {
+        channelMap.set(c.id, c);
+      }
+
+      // 先透過 Introspection 探測 Buffer Post 型別支援哪些欄位，避免因單一不支援欄位導致整筆 GraphQL 報錯
+      const introspectRes = await executeBufferGraphQL(
+        cleanToken,
+        `query {
+          postType: __type(name: "Post") {
+            fields { name }
+          }
+        }`
+      );
+      const supportedPostFields = new Set<string>(
+        (introspectRes.data?.postType?.fields || []).map((f: any) => String(f?.name || ''))
+      );
+
+      const hasStatus = supportedPostFields.size === 0 || supportedPostFields.has('status');
+      const hasChannelId = supportedPostFields.has('channelId');
+      const hasChannelObj = supportedPostFields.has('channel');
+      const hasSentAt = supportedPostFields.has('sentAt');
+      const hasCreatedAt = supportedPostFields.has('createdAt');
+
+      const dynamicFields = [
+        'id',
+        'text',
+        'dueAt',
+        hasStatus ? 'status' : '',
+        hasChannelId ? 'channelId' : '',
+        hasChannelObj ? 'channel { id name service }' : '',
+        hasSentAt ? 'sentAt' : '',
+        hasCreatedAt ? 'createdAt' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      // 依序嘗試最完整查詢與最精簡安全查詢 (id text dueAt 保證存在於 Post 型別)
+      const queriesToTry = [
+        `query { posts(input: { organizationId: ${JSON.stringify(org.id)}, filter: { status: [scheduled] } }) { edges { node { ${dynamicFields} } } } }`,
+        `query { posts(input: { organizationId: ${JSON.stringify(org.id)} }) { edges { node { ${dynamicFields} } } } }`,
+        `query { posts(input: { organizationId: ${JSON.stringify(org.id)} }) { edges { node { id text dueAt } } } }`,
+        `query { posts(input: { organizationId: ${JSON.stringify(org.id)} }) { nodes { id text dueAt } } }`,
+        `query { posts(input: { organizationId: ${JSON.stringify(org.id)} }) { id text dueAt } }`,
+      ];
+
+      for (const q of queriesToTry) {
+        const pRes = await executeBufferGraphQL(cleanToken, q);
+        if (!pRes.ok || !pRes.data?.posts) continue;
+
+        const rawPostsData = pRes.data.posts;
+        const nodesList: any[] = Array.isArray(rawPostsData?.edges)
+          ? rawPostsData.edges.map((e: any) => e?.node).filter(Boolean)
+          : Array.isArray(rawPostsData?.nodes)
+            ? rawPostsData.nodes
+            : Array.isArray(rawPostsData)
+              ? rawPostsData
+              : [];
+
+        if (nodesList.length > 0) {
+          for (const node of nodesList) {
+            const effectiveTime = node.dueAt || node.sentAt || node.createdAt;
+            if (!node || !effectiveTime) continue;
+            const st = String(node.status || 'scheduled').toLowerCase();
+            const chId = node.channelId || node.channel?.id;
+            const ch = chId ? channelMap.get(chId) : undefined;
+            const serviceStr = node.channel?.service || ch?.service || 'threads';
+            const platKey = mapServiceToPlatformKey(serviceStr);
+
+            cloudPosts.push({
+              id: node.id || `buf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              text: node.text || '(無文字內容)',
+              dueAt: effectiveTime,
+              platforms: [platKey],
+              channelName:
+                node.channel?.name || ch?.displayName || ch?.name || serviceStr,
+              modeLabel:
+                st === 'sent' ? '雲端已發佈' : 'Buffer 雲端排程',
+              source: 'buffer_cloud',
+            });
+          }
+          break;
+        }
+      }
+    }
+
+    syncNote =
+      cloudPosts.length > 0
+        ? `已從 Buffer 雲端抓回 ${cloudPosts.length} 筆貼文資料（綁定頻道：${allChannels.map((c) => c.service).join('、') || '無'}）`
+        : allChannels.length > 0
+          ? `已連線 Buffer（頻道：${allChannels.map((c) => `${c.service}(${c.displayName || c.name})`).join('、')}），目前雲端佇列無待發排程，顯示本機已發送排程紀錄`
+          : '已讀取本機排程紀錄';
+  } else {
+    syncNote = '顯示本機已保存之排程紀錄（填入 Buffer API Key 可同步雲端資料）';
+  }
+
+  // 將雲端抓回的貼文與伺服器本機記錄的貼文合併並去重
+  const mergedMap = new Map<string, StoredScheduledPost>();
+  for (const item of store.scheduledPosts) {
+    if (!item.dueAt) continue;
+    const key = `${item.dueAt.slice(0, 16)}-${(item.text || '').trim().slice(0, 20)}`;
+    mergedMap.set(key, item);
+  }
+  for (const cloud of cloudPosts) {
+    const key = `${cloud.dueAt.slice(0, 16)}-${(cloud.text || '').trim().slice(0, 20)}`;
+    const existing = mergedMap.get(key);
+    if (existing) {
+      existing.platforms = Array.from(new Set([...existing.platforms, ...cloud.platforms]));
+      existing.modeLabel = cloud.modeLabel;
+    } else {
+      mergedMap.set(key, cloud);
+    }
+  }
+
+  const finalPosts = Array.from(mergedMap.values()).sort((a, b) =>
+    (a.dueAt || '').localeCompare(b.dueAt || '')
+  );
+
+  store.scheduledPosts = finalPosts;
+  saveServerStore(store);
+
+  return {
+    posts: finalPosts,
+    channels: allChannels,
+    syncNote,
+  };
 }
 
 async function generateWithFallback(
@@ -707,10 +1062,11 @@ async function startServer() {
     }
   });
 
-  // 3. Generate Social Copy EXCLUSIVELY from Nono's Notebook + Per-Platform Auto-Adapt
+  // 3. Generate Social Copy EXCLUSIVELY from Nono's Notebook + Per-Platform Auto-Adapt (主題故事化前後潤飾，絕不直寫 v0.1 / v0.2)
   app.post('/api/nono/generate-from-notebook', async (req, res) => {
     const {
       notebook,
+      projectName = 'Nono 數位夥伴',
       model = 'gemini-2.5-flash',
     } = req.body as {
       notebook: {
@@ -720,6 +1076,7 @@ async function startServer() {
         mimicUserStyle?: boolean;
         customSamplePosts?: string;
       };
+      projectName?: string;
       model?: string;
     };
 
@@ -731,17 +1088,21 @@ async function startServer() {
 
       const styleInstruction = useMimic
         ? `【已開啟：模仿糖糖個人寫作風格】
-請務必參照以下她在筆記本設定的風格與範例來寫，像她本人自然平實的分享，不要有行銷小編腔調：
-- 筆記本風格備註：${notebook?.styleGuidelines || '自然、平實、不浮誇'}
-- 寫作範例參考：${notebook?.customSamplePosts || '保持平實自然即可'}`
-        : `【一般自然風格】：${notebook?.styleGuidelines || '自然、平實、不浮誇'}`;
+請務必參照以下她在筆記本設定的風格與範例來寫，像她本人自然有溫度的分享，不要有生硬工程報告腔調：
+- 筆記本風格備註：${notebook?.styleGuidelines || '自然、有故事感、能引起觀眾好奇'}
+- 寫作範例參考：${notebook?.customSamplePosts || '保持溫暖自然即可'}`
+        : `【一般自然風格】：${notebook?.styleGuidelines || '自然、有故事感、能引起觀眾好奇'}`;
 
-      const prompt = `請根據「Nono 筆記本」幫獨立創作者糖糖整理今天的社群貼文。
-注意：只能使用這份筆記本裡的資訊，絕對不要引用任何筆記本以外的內容。
+      const prompt = `請根據「${projectName}」的進度主題，幫獨立創作者糖糖撰寫一篇能引起觀眾興趣與互動的社群貼文。
+【極重要寫作鐵則】：
+1. 絕對禁止在貼文中直接寫出「v0.1」、「v0.2」、「更新0.1」、「1. 2.」等生硬版本號或工程條列！
+2. 請務必依照「更新主題」做前後故事化潤飾（三段式結構）：
+   - 【前段開場 (Hook)】：用一句能引發觀眾共鳴、好奇或畫面感的日常情境切入。
+   - 【中段故事 (Theme)】：將進度內容轉化為生動的使用體驗或角色成長故事，讓觀眾感受到這個功能的魅力。
+   - 【後段互動 (Outro)】：用一句溫暖自然的提問收尾，邀請觀眾留言分享想法，並加上 #Nono培育觀察日記。
 
-=== Nono 筆記本（唯一資料來源） ===
-【今日實際進度（選填）】：
-${progressText || '（今日未特別填寫具體工程進度，請以日常創作陪伴、整理靈感與穩定推進節奏為主軸）'}
+=== 更新主題與素材 ===
+${progressText || '（以日常創作陪伴、打磨互動細節與穩定推進節奏為主軸）'}
 
 ${styleInstruction}
 ===================================
@@ -749,21 +1110,21 @@ ${styleInstruction}
 請嚴格依照以下兩個區塊格式輸出：
 
 【Nono的碎碎念】
-（請分成兩小段話，中間空一行。第一段說明你是怎麼照著筆記本幫她整理這篇貼文的，第一段不要加稱呼；第二段提醒她已經同步幫各平台自動適配好字數，並在第二段句尾加上唯一一次「喔糖糖。」）
+（請分成兩小段話，中間空一行。第一段說明你是怎麼用故事化開場與收尾幫她把這個主題包裝得更吸引觀眾，第一段不要加稱呼；第二段提醒她已經同步幫各平台自動適配好字數，並在第二段句尾加上唯一一次「喔糖糖。」）
 
 【發送文案】
-（直接寫出 50-100 字的繁體中文純貼文，忠實呈現筆記本裡的實際進度，並包含 #Nono培育觀察日記。Hashtag 總數請控制在 5 個以內以符合 Instagram 規範。這區塊絕對不可以有任何開場白或引號。）`;
+（直接寫出 70-135 字的繁體中文故事化貼文，絕不含版本號，並包含 #Nono培育觀察日記。Hashtag 總數請控制在 5 個以內以符合 Instagram 規範。這區塊絕對不可以有任何開場白或引號。）`;
 
       const { text, modelUsed } = await generateWithFallback(
         ai,
         model,
         [{ role: 'user', parts: [{ text: prompt }] }],
         TANGTANG_PERSONA_INSTRUCTION,
-        0.6
+        0.7
       );
 
       const { murmur, socialCopy } = parseDualBlocks(text);
-      const finalDraft = socialCopy || text;
+      const finalDraft = socialCopy || buildStorytellingPostFromThemes(progressText, projectName);
       const finalMurmur = enforceTwoParagraphTangTangRule(murmur);
       const platformCopies = buildPlatformTailoredCopies(finalDraft);
 
@@ -776,17 +1137,10 @@ ${styleInstruction}
         modelUsed,
       });
     } catch {
-      const cleanLines = progressText
-        .split('\n')
-        .map((l) => l.replace(/^[0-9.*•\-\s]+/, '').trim())
-        .filter(Boolean)
-        .join('，');
-      const fallbackCopy = cleanLines
-        ? `今天持續推進桌面小夥伴的開發進度：${cleanLines.slice(0, 78)}。一步一步把細節調整到位，繼續往下推進。 #Nono培育觀察日記 #IndieDev`
-        : `今天在桌面前跟軟糖 Nono 一起整理日常創作節奏，把接下來的靈感與排程順過一遍，一步一步穩定往前推進。 #Nono培育觀察日記 #IndieDev`;
+      const fallbackCopy = buildStorytellingPostFromThemes(progressText, projectName);
       const platformCopies = buildPlatformTailoredCopies(fallbackCopy);
       const fallbackMurmur =
-        '貼文已經嚴格照著 Nono 筆記本的紀錄寫好了，而且我也同步幫 X、IG、Threads 自動適配好專屬字數與標籤囉。\n\n現在幫妳切到 Buffer 排程視窗，確認時段沒問題就能直接送進排程佇列喔糖糖。';
+        '我已經幫妳把生硬的版本編號拿掉，改用「引起好奇的情境開場 ➔ 主題故事體驗 ➔ 觀眾互動提問」幫妳前後潤飾好貼文，並同步適配了 X、IG、Threads 的字數囉。\n\n現在切到貼文與排程面板巡一下，覺得順眼就可以直接挑個好時段送出排程喔糖糖。';
 
       res.json({
         bufferDraft: fallbackCopy,
@@ -893,18 +1247,269 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
     });
   });
 
-  // 5a-0. 同步查詢 Buffer 雲端目前已排程貼文清單
+  // 5a-0. 同步查詢 Buffer 雲端目前已排程貼文清單 + 伺服器永久保存之排程紀錄
   app.post('/api/buffer/scheduled-posts', async (req, res) => {
     try {
       const { bufferApiToken } = req.body as { bufferApiToken?: string };
-      const token = (bufferApiToken || process.env.BUFFER_API_KEY || '').trim();
-      if (!token) {
-        return res.json({ ok: true, scheduledPosts: [] });
-      }
-      const scheduledPosts = await fetchBufferScheduledPosts(token);
-      return res.json({ ok: true, scheduledPosts });
+      const store = loadServerStore();
+      const token = (bufferApiToken || store.savedBufferToken || process.env.BUFFER_API_KEY || '').trim();
+      const { posts, channels, syncNote } = await fetchBufferScheduledPosts(token);
+      return res.json({
+        ok: true,
+        scheduledPosts: posts,
+        channels,
+        syncNote,
+        savedTokenExists: Boolean(token),
+      });
     } catch {
-      return res.json({ ok: true, scheduledPosts: [] });
+      const store = loadServerStore();
+      return res.json({
+        ok: true,
+        scheduledPosts: store.scheduledPosts || [],
+        channels: [],
+        syncNote: '已載入本機保存的排程紀錄',
+      });
+    }
+  });
+
+  // 刪除單筆或清空伺服器本機排程紀錄
+  app.post('/api/buffer/delete-history-item', (req, res) => {
+    const { id, clearAll } = req.body as { id?: string; clearAll?: boolean };
+    const store = loadServerStore();
+    if (clearAll) {
+      store.scheduledPosts = [];
+    } else if (id) {
+      store.scheduledPosts = store.scheduledPosts.filter((p) => p.id !== id);
+    }
+    saveServerStore(store);
+    res.json({ ok: true, scheduledPosts: store.scheduledPosts });
+  });
+
+  // 6. 多專案自動探索與進度抓取 API（支援未來任何其他專案資料夾）
+  app.get('/api/projects/list', (_req, res) => {
+    const store = loadServerStore();
+    const currentRepoScanned = scanLocalProjectProgress(__dirname, 'Nono 3D 數位夥伴');
+
+    // 自動探索上層目錄 (d:\NONO poject) 下是否有其他子專案資料夾
+    const parentDir = path.dirname(__dirname);
+    const discoveredProjects: StoredProjectItem[] = [currentRepoScanned];
+
+    try {
+      const siblings = fs.readdirSync(parentDir, { withFileTypes: true });
+      for (const dirent of siblings) {
+        if (!dirent.isDirectory() || dirent.name.startsWith('.')) continue;
+        const sibPath = path.join(parentDir, dirent.name);
+        if (path.resolve(sibPath) === path.resolve(__dirname)) continue;
+        const scanned = scanLocalProjectProgress(sibPath, dirent.name);
+        if (scanned.themes.length > 0) {
+          discoveredProjects.push(scanned);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 合併使用者先前手動登錄的其他路徑專案
+    for (const saved of store.projects) {
+      if (
+        !discoveredProjects.some(
+          (p) => path.resolve(p.folderPath) === path.resolve(saved.folderPath)
+        )
+      ) {
+        discoveredProjects.push(saved);
+      }
+    }
+
+    store.projects = discoveredProjects;
+    saveServerStore(store);
+    res.json({ ok: true, projects: discoveredProjects });
+  });
+
+  app.post('/api/projects/scan', (req, res) => {
+    const { folderPath, projectName } = req.body as {
+      folderPath?: string;
+      projectName?: string;
+    };
+    const targetPath = (folderPath || __dirname).trim();
+    const scanned = scanLocalProjectProgress(targetPath, projectName);
+    const store = loadServerStore();
+    const idx = store.projects.findIndex(
+      (p) => path.resolve(p.folderPath) === path.resolve(scanned.folderPath)
+    );
+    if (idx >= 0) {
+      store.projects[idx] = scanned;
+    } else {
+      store.projects.push(scanned);
+    }
+    saveServerStore(store);
+    res.json({
+      ok: true,
+      project: scanned,
+      projects: store.projects,
+    });
+  });
+
+  // 7. 同一個 Nono 多專案＋多功能同時處理連段引擎 (Single-Nono Multi-Skill Pipeline)
+  app.post('/api/nono/multi-skill', async (req, res) => {
+    const {
+      projectPath,
+      projectName = 'Nono 3D 數位夥伴',
+      customThemeText = '',
+      commandText = '自動抓取最新專案進度、故事化潤飾並安排在最後一篇排程隔天',
+      bufferApiToken = '',
+    } = req.body as {
+      projectPath?: string;
+      projectName?: string;
+      customThemeText?: string;
+      commandText?: string;
+      bufferApiToken?: string;
+    };
+
+    const steps: Array<{ title: string; detail: string }> = [];
+
+    // 技能 1：抓取指定專案最新進度
+    const scanned = scanLocalProjectProgress(projectPath || __dirname, projectName);
+    const latestThemes = scanned.themes.slice(-2);
+    const extractedThemeText =
+      customThemeText.trim() ||
+      latestThemes.map((t) => `${t.title}：${t.content}`).join('\n') ||
+      `持續打磨「${projectName}」的核心互動體驗`;
+    steps.push({
+      title: `📂 技能 1 · 掃描專案「${scanned.name}」進度`,
+      detail: `已自動提取最新主題：${latestThemes.map((t) => t.title).join('、') || '核心體驗優化'}`,
+    });
+
+    // 技能 2：依更新主題進行前後故事化潤飾（引起觀眾好奇，不含 v0.1/v0.2）
+    const storyCopy = buildStorytellingPostFromThemes(extractedThemeText, scanned.name);
+    const platformCopies = buildPlatformTailoredCopies(storyCopy);
+    steps.push({
+      title: '✍️ 技能 2 · 主題故事化前後潤飾與多平台適配',
+      detail: '已完成「情境開場 ➔ 主題故事 ➔ 互動提問」三段式潤飾，並同步適配 Threads / X / IG 字數',
+    });
+
+    // 技能 3：同步 Buffer 排程並自動計算最佳排程日期（最後一篇排程的隔天 20:30）
+    const { posts } = await fetchBufferScheduledPosts(bufferApiToken);
+    let recommendedDateIso = '';
+    if (posts.length > 0) {
+      const lastDue = new Date(posts[posts.length - 1].dueAt);
+      const nextDay = new Date(lastDue.getTime() + 24 * 60 * 60 * 1000);
+      nextDay.setHours(20, 30, 0, 0);
+      recommendedDateIso = new Date(nextDay.getTime() - nextDay.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+    } else {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      tomorrow.setHours(20, 30, 0, 0);
+      recommendedDateIso = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+    }
+    steps.push({
+      title: '📅 技能 3 · 對齊 Buffer 排程空檔',
+      detail: `已根據目前排程紀錄（共 ${posts.length} 篇），自動將排程鎖定於 ${recommendedDateIso.replace('T', ' ')} 黃金時段`,
+    });
+
+    res.json({
+      ok: true,
+      commandText,
+      steps,
+      extractedThemeText,
+      storyCopy,
+      platformCopies,
+      recommendedDateIso,
+      scheduledPosts: posts,
+      nonoSpeech: `我剛剛同時動用了「專案進度掃描」、「故事化主題潤飾」跟「Buffer 空檔對齊」三個功能，一次幫妳把「${scanned.name}」的貼文與最佳排程時間都準備好囉！\n\n現在切到貼文或排程面板確認一下，點一鍵發送就能直接送進 Buffer 佇列喔糖糖。`,
+    });
+  });
+
+  // 8. 多領域 Nono 跨領域互相溝通議會 (GrokBot-Style Multi-Nono Inter-Agent Communication)
+  app.post('/api/nono/council', async (req, res) => {
+    const {
+      command = '請各領域 Nono 一起把目前的專案更新包裝成最能吸引觀眾討論的社群企劃與排程方案',
+      projectName = 'Nono 3D 數位夥伴',
+      progressText = '',
+      lastScheduledTime = '尚無排程',
+      model = 'gemini-2.5-flash',
+    } = req.body as {
+      command?: string;
+      projectName?: string;
+      progressText?: string;
+      lastScheduledTime?: string;
+      model?: string;
+    };
+
+    const cleanTheme = progressText
+      .replace(/\[?v?\d+\.\d+(\.\d+)?\]?\s*/gi, '')
+      .replace(/^[0-9.*•\-\s]+/gm, '')
+      .trim();
+
+    const defaultStory = buildStorytellingPostFromThemes(cleanTheme, projectName);
+    const defaultPlatformCopies = buildPlatformTailoredCopies(defaultStory);
+
+    // 預設 4 隻不同領域的 Nono 像 GrokBot 一樣互相對話、接力完成跨領域任務
+    const fallbackDiscussion = [
+      {
+        agentId: 'dev-nono',
+        agentName: '🛠️ 研發觀察 Nono',
+        domain: '多專案掃描與技術提煉',
+        color: '#22d3ee',
+        message: `@敘事企劃 Nono 我剛掃描完「${projectName}」的最新實作，核心亮點在於「${cleanTheme.slice(0, 56) || '去背桌面陪伴、多面板模組化與跨專案自動化'}」。千萬別直接寫更新 0.1、0.2，那樣太像工程日誌了，交給妳用故事包裝！`,
+      },
+      {
+        agentId: 'story-nono',
+        agentName: '✨ 敘事企劃 Nono',
+        domain: '主題前後潤飾與觀眾鉤子',
+        color: '#f472b6',
+        message: `收到 @研發觀察 Nono！我把開場改成「創作者盯著螢幕時渴望有個不擋畫面又懂默契的小生物」來勾起觀眾好奇，中段把技術融入日常陪伴體驗，結尾再用開放式提問邀請大家留言。@視覺展演 Nono 幫我看一下各平台閱讀節奏？`,
+      },
+      {
+        agentId: 'art-nono',
+        agentName: '🎨 視覺展演 Nono',
+        domain: '3D 舞台氛圍與平台視覺適配',
+        color: '#a855f7',
+        message: `@敘事企劃 Nono 這個故事感超棒！我已經同步把 X 版本濃縮在 140 中文字內、IG 控制在 5 個標籤內，建議配上一張 Nono 在桌面角落散發霓虹星光的截圖或短片。@排程策略 Nono 請決定最佳發佈時段！`,
+      },
+      {
+        agentId: 'schedule-nono',
+        agentName: '📊 排程策略 Nono',
+        domain: 'Buffer 雲端排程與流量空檔',
+        color: '#34d399',
+        message: `@全體 Nono 我查過 Buffer 排程紀錄（最後一篇為：${lastScheduledTime}），建議直接排在最後一篇的隔天晚間 20:30 創作者互動最高峰！我已經把大家共同完成的文案與時段同步到工作台囉！`,
+      },
+    ];
+
+    try {
+      const ai = getAiClient();
+      const prompt = `現在有 4 隻掌管不同領域的 Nono 正在像 GrokBot 多代理一樣互相溝通，共同完成糖糖下達的跨領域指令：
+【跨領域指令】：${command}
+【目標專案】：${projectName}
+【專案進度素材】：${cleanTheme || '桌面陪伴體驗與多面板升級'}
+【目前最後一篇排程時間】：${lastScheduledTime}
+
+請產生一篇依照「更新主題」做前後故事化潤飾、絕對不寫出 v0.1/v0.2 等版本號、且能引起觀眾興趣與留言慾望的社群貼文（70-130字，含 #Nono培育觀察日記）。
+直接輸出貼文內容即可，不要加任何標題或引號。`;
+
+      const { text } = await generateWithFallback(
+        ai,
+        model,
+        [{ role: 'user', parts: [{ text: prompt }] }],
+        undefined,
+        0.7
+      );
+      const finalCopy = (text || '').trim() || defaultStory;
+      res.json({
+        ok: true,
+        discussion: fallbackDiscussion,
+        finalCopy,
+        platformCopies: buildPlatformTailoredCopies(finalCopy),
+      });
+    } catch {
+      res.json({
+        ok: true,
+        discussion: fallbackDiscussion,
+        finalCopy: defaultStory,
+        platformCopies: defaultPlatformCopies,
+      });
     }
   });
 
@@ -917,8 +1522,9 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         webhookUrl?: string;
       };
 
-      const token = (bufferApiToken || process.env.BUFFER_API_KEY || '').trim();
-      const hook = (webhookUrl || '').trim();
+      const store = loadServerStore();
+      const token = (bufferApiToken || store.savedBufferToken || process.env.BUFFER_API_KEY || '').trim();
+      const hook = (webhookUrl || store.savedWebhookUrl || '').trim();
 
       if (!token && !hook) {
         return res.status(400).json({
@@ -928,6 +1534,8 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
       }
 
       if (token) {
+        store.savedBufferToken = token;
+        saveServerStore(store);
         const discovery = await discoverBufferChannels(token);
         if (!discovery.ok) {
           return res.status(400).json({
@@ -949,6 +1557,9 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
           (ch) => `${ch.service}(${ch.displayName || ch.name})`
         );
 
+        // 測試連線成功時順便同步雲端已排程貼文
+        const { posts } = await fetchBufferScheduledPosts(token);
+
         return res.json({
           ok: true,
           profiles: discovery.channels.map((ch) => ({
@@ -956,7 +1567,8 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
             service: ch.service,
             formatted_username: ch.displayName || ch.name,
           })),
-          message: `Buffer GraphQL API 連線成功！已自動抓取到 ${discovery.channels.length} 個頻道：${summaryList.join('、')}（Channel ID 已自動填入！）`,
+          scheduledPosts: posts,
+          message: `Buffer GraphQL API 連線成功！已自動抓取到 ${discovery.channels.length} 個頻道：${summaryList.join('、')}，並同步了 ${posts.length} 筆排程紀錄！`,
         });
       }
 
@@ -1028,9 +1640,20 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         }>;
       };
 
-      const cleanWebhook = (webhookUrl || '').trim();
-      const cleanToken = (bufferApiToken || process.env.BUFFER_API_KEY || '').trim();
+      const store = loadServerStore();
+      const cleanWebhook = (webhookUrl || store.savedWebhookUrl || '').trim();
+      const cleanToken = (
+        bufferApiToken ||
+        store.savedBufferToken ||
+        process.env.BUFFER_API_KEY ||
+        ''
+      ).trim();
       const cleanProfileId = (bufferProfileId || '').trim();
+
+      if (cleanToken && cleanToken !== store.savedBufferToken) {
+        store.savedBufferToken = cleanToken;
+        saveServerStore(store);
+      }
 
       if (!cleanWebhook && !cleanToken) {
         return res.status(400).json({
@@ -1128,10 +1751,22 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         }
 
         if (!cleanToken) {
+          const fallbackIso = effectiveScheduledIso || new Date().toISOString();
+          recordDispatchedPostToStore({
+            id: `wh-${Date.now()}`,
+            text: content || '',
+            dueAt: fallbackIso,
+            platforms: platforms.length > 0 ? platforms : ['threads'],
+            channelName: 'Webhook 自動排程',
+            modeLabel: scheduleMode === 'now' ? '立即發佈' : '指定時間排程',
+            source: 'local_dispatch',
+          });
+          const updatedStore = loadServerStore();
           return res.json({
             ok: true,
             mode: 'webhook',
             message: '已經透過 Webhook 將貼文直接送進 Buffer 排程佇列囉！',
+            scheduledPosts: updatedStore.scheduledPosts,
           });
         }
       }
@@ -1148,7 +1783,6 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         const missingPlatformWarnings: string[] = [];
 
         if (discovery.ok && discovery.channels.length > 0) {
-          // 檢查使用者勾選的平台中，有哪些在 Buffer 帳號內有對應綁定頻道
           for (const reqPlat of platforms) {
             const hasBound = discovery.channels.some(
               (ch) => mapServiceToPlatformKey(ch.service) === reqPlat
@@ -1233,7 +1867,6 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
           const postTextForChannel =
             tailoredMap[target.platformKey as keyof typeof tailoredMap] || content || '';
 
-          // 若是 Instagram 但沒有附圖，直接略過 IG 不發送（不影響 Threads / X 發送）
           if (isIgChannel && resolvedPublicMedia.length === 0) {
             continue;
           }
@@ -1272,7 +1905,6 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
           });
           let createResult = mutRes.data?.createPost;
 
-          // 若一般平台（非 IG）因圖片網址問題報錯，自動退回純文字排程重試
           if (
             (!mutRes.ok || createResult?.__typename === 'MutationError') &&
             !isIgChannel &&
@@ -1285,13 +1917,18 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
           }
 
           if (mutRes.ok && createResult?.post?.id) {
+            const savedDueAt =
+              createResult.post.dueAt ||
+              effectiveScheduledIso ||
+              new Date().toISOString();
             createdPosts.push({
               channel: target.label,
+              platformKey: target.platformKey,
               postId: createResult.post.id,
-              dueAt: createResult.post.dueAt,
+              text: createResult.post.text || postTextForChannel,
+              dueAt: savedDueAt,
             });
           } else if (!isIgChannel) {
-            // 若是 IG 失敗則靜默略過，不影響其他平台成功狀態
             const errDetail =
               createResult?.message ||
               mutRes.errorMessage ||
@@ -1311,12 +1948,39 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         }
 
         const successChannelsStr = createdPosts.map((c) => c.channel).join('、');
+        const primaryDueAt =
+          createdPosts[0]?.dueAt || effectiveScheduledIso || new Date().toISOString();
+        const sentPlatforms = Array.from(
+          new Set(createdPosts.map((c) => c.platformKey || 'threads'))
+        );
+
+        // 永久寫入伺服器排程紀錄，確保發送過的貼文內容與排程時間 100% 留存且隨時可顯示！
+        recordDispatchedPostToStore(
+          {
+            id: createdPosts[0]?.postId || `post-${Date.now()}`,
+            text: content || createdPosts[0]?.text || '',
+            dueAt: primaryDueAt,
+            platforms: sentPlatforms,
+            channelName: successChannelsStr,
+            modeLabel:
+              scheduleMode === 'now'
+                ? '立即發佈'
+                : scheduleMode === 'queue'
+                  ? 'Buffer 佇列排程'
+                  : '指定時間排程',
+            source: 'local_dispatch',
+          },
+          cleanToken
+        );
+
+        const updatedStore = loadServerStore();
 
         return res.json({
           ok: true,
           mode: 'buffer_graphql',
           message: `已成功將貼文直接送入【${successChannelsStr}】正式排程佇列！`,
           bufferResult: createdPosts,
+          scheduledPosts: updatedStore.scheduledPosts,
         });
       }
     } catch (err: any) {

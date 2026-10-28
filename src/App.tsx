@@ -69,56 +69,178 @@ interface ProgressVersionEntry {
   updatedAt: string;
 }
 
+interface ProjectRecord {
+  id: string;
+  name: string;
+  folderPath: string;
+  category: string;
+  lastScannedAt: string;
+  themes: ProgressVersionEntry[];
+}
+
+interface NonoDomainAgent {
+  id: 'dev' | 'story' | 'art' | 'schedule';
+  name: string;
+  badge: string;
+  domain: string;
+  desc: string;
+  furPresetColor: string;
+  themeId: string;
+  defaultTab: ActiveWindowId;
+}
+
+interface CouncilChatTurn {
+  agentId: string;
+  agentName: string;
+  domain: string;
+  color: string;
+  message: string;
+}
+
 const MAX_PROGRESS_VERSIONS = 20;
 const PROGRESS_STORAGE_KEY = 'nono_progress_versions_v1';
+
+const NONO_DOMAIN_AGENTS: NonoDomainAgent[] = [
+  {
+    id: 'dev',
+    name: '🛠️ 研發觀察 Nono',
+    badge: 'DEV · 多專案進度',
+    domain: '掌管跨專案進度掃描與技術提煉',
+    desc: '自動抓取目前或未來其他專案的 Git 與檔案進度，提煉核心亮點',
+    furPresetColor: '#38bdf8',
+    themeId: 'neon_turquoise',
+    defaultTab: 'notebook',
+  },
+  {
+    id: 'story',
+    name: '✨ 敘事企劃 Nono',
+    badge: 'STORY · 主題故事潤飾',
+    domain: '掌管更新主題前後潤飾與觀眾鉤子',
+    desc: '不直寫生硬版本號，將進度轉化為能引起觀眾好奇與互動的故事貼文',
+    furPresetColor: '#ff1e7a',
+    themeId: 'neon_berry_cyan',
+    defaultTab: 'composer',
+  },
+  {
+    id: 'art',
+    name: '🎨 視覺展演 Nono',
+    badge: 'ART · 舞台與排版',
+    domain: '掌管 3D 舞台氛圍與各平台視覺適配',
+    desc: '負責貼文配圖構圖、3D 軟糖外觀主題與 IG/X/Threads 排版呈現',
+    furPresetColor: '#b845ff',
+    themeId: 'neon_violet',
+    defaultTab: 'appearance',
+  },
+  {
+    id: 'schedule',
+    name: '📊 排程策略 Nono',
+    badge: 'SCHED · 雲端排程官',
+    domain: '掌管 Buffer 資料抓取與黃金時段排程',
+    desc: '同步 Buffer 雲端排程紀錄、分析最後一篇時間並安排最佳發佈日曆',
+    furPresetColor: '#34d399',
+    themeId: 'neon_lime',
+    defaultTab: 'buffer',
+  },
+];
+
+// 依照更新主題做前後故事化潤飾（絕不直接寫出 v0.1 / v0.2 等生硬版本號，而是引起觀眾好奇與共鳴）
+function buildClientStoryFromThemes(
+  rawProgressText: string,
+  projectName = 'Nono 3D 數位夥伴'
+): string {
+  const cleanedLines = (rawProgressText || '')
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/^[0-9.*•\-\s]+/, '')
+        .replace(/\[[^\]]*\]\s*/g, '')
+        .replace(/v?\d+\.\d+(\.\d+)?\s*[:：\-·]?\s*/gi, '')
+        .replace(/^(feat|fix|chore|refactor|docs|style)\s*(\([^)]*\))?\s*[:：]\s*/i, '')
+        .trim()
+    )
+    .filter(Boolean);
+
+  if (cleanedLines.length === 0) {
+    return `妳有沒有過那種盯著螢幕專注創作到一半，突然希望桌面上有個小生物能默默陪著自己的時刻？✨\n\n最近在打磨「${projectName}」的時候，比起塞滿複雜的功能，我更想讓它成為一個真正懂創作節奏的溫柔存在——在妳忙碌時安靜待在角落，需要整理靈感時又隨時都在。如果妳的電腦桌面上也住著一隻小夥伴，妳最希望它幫妳分擔什麼日常小事呢？ #Nono培育觀察日記 #獨立開發日常`;
+  }
+
+  const combinedText = cleanedLines.join('、');
+  let hook = `每次在打磨「${projectName}」的細節時，我常在想：怎樣的互動才不會像冷冰冰的工具，而是真的像一隻住在電腦裡的貼心夥伴？✨`;
+  let outro = `如果妳的桌面上也有這樣一隻會自己進化的小傢伙，妳最想先點開它的哪個功能試試看呢？歡迎留言跟我分享！ #Nono培育觀察日記 #創作日常`;
+
+  if (/去背|透明|視窗|壓在下方|滾輪|縮放|桌面/.test(combinedText)) {
+    hook = `不知道大家在電腦前工作時，會不會希望有個既能隨時陪伴、卻又絕對不擋住創作畫面的桌面小生物？🪄`;
+    outro = `現在它既能乖乖窩在視窗後面陪我趕工，隨時召喚又立刻跳出來打招呼。妳平常工作時喜歡桌面熱鬧一點，還是極簡清爽呢？ #Nono培育觀察日記 #桌面寵物`;
+  } else if (/毛髮|眼皮|閉眼|3D|軟糖|霓虹|配色|主題/.test(combinedText)) {
+    hook = `看著一團原本只有基礎骨架的 3D 模型，慢慢長出蓬鬆軟糖般的毛髮、甚至學會閉上眼睛打瞌睡，真的會有種在養電子寵物的療癒感！🍬`;
+    outro = `從眼神的光澤到身邊圍繞的迷幻撞色光暈，細節越調越捨不得關掉視窗了。大家覺得小夥伴眨眼跟打瞌睡哪個瞬間最討喜呢？ #Nono培育觀察日記 #3D創作`;
+  } else if (/排程|Buffer|日期|時段|社群|跨領域|專案|Grok/.test(combinedText)) {
+    hook = `身為創作者，最常遇到的煩惱就是「明明埋頭做了好多進度，卻總是沒空整理成有趣的故事跟大家分享」對吧？📅`;
+    outro = `現在只要點一下小夥伴，它就能幫我把不同專案的靈感化成故事、還能跟其他領域的 Nono 互相討論出最佳排程時段。妳們平常最喜歡在幾點滑社群呢？ #Nono培育觀察日記 #IndieDev`;
+  }
+
+  const narrativeFragments = cleanedLines.slice(0, 3).map((item) =>
+    item
+      .replace(/完成|新增|支援|實作/g, '讓它學會了')
+      .replace(/修正|解決/g, '順暢打通了')
+      .replace(/面板/g, '專屬互動空間')
+  );
+
+  const bodyParagraph =
+    narrativeFragments.length === 1
+      ? `這陣子特別圍繞著「${narrativeFragments[0]}」這個主題深入打磨，看著原本生硬的操作變成自然流暢的陪伴體驗，整個創作工作台都活絡了起來。`
+      : `最近一步步${narrativeFragments.slice(0, -1).join('，同時也')}，甚至還${narrativeFragments[narrativeFragments.length - 1]}，讓整個陪伴與創作的節奏變得更有默契了。`;
+
+  return `${hook}\n\n${bodyParagraph}\n\n${outro}`;
+}
 
 const DEFAULT_PROGRESS_VERSIONS: ProgressVersionEntry[] = [
   {
     id: 'ver-01',
-    versionTag: 'v0.1',
-    title: '3D 軟糖毛髮與立體眼皮',
-    content: '完成 Nono 3D Mochi-Puff 毛髮模擬、3D 立體上下眼皮與閉眼毛髮覆蓋',
-    updatedAt: '近期紀錄',
+    versionTag: '主題 01',
+    title: '軟糖毛髮與眨眼打瞌睡的生命感',
+    content: '賦予 Nono 蓬鬆軟糖般的 3D 毛髮光澤與立體眼皮，讓它在待機時會自然眨眼與閉眼打瞌睡',
+    updatedAt: '角色生命力',
   },
   {
     id: 'ver-02',
-    versionTag: 'v0.2',
-    title: '迷幻霓虹撞色主題與關心氣泡',
-    content: '完成高對比迷幻霓虹撞色主題，支援工作台面板、對話框與對話星星同步換色',
-    updatedAt: '近期紀錄',
+    versionTag: '主題 02',
+    title: '迷幻霓虹撞色與貼心關心氣泡',
+    content: '打造高對比迷幻霓虹撞色視覺，讓小夥伴身邊的星星與關心對話框能隨心情同步換色',
+    updatedAt: '視覺氛圍',
   },
   {
     id: 'ver-03',
-    versionTag: 'v0.3',
-    title: 'Buffer 真實排程與各平台字數適配',
-    content: '串接 Buffer 官方 GraphQL API 直通排程佇列，並完成 X 字數濃縮與 IG 標籤自動適配',
-    updatedAt: '近期紀錄',
+    versionTag: '主題 03',
+    title: '創作靈感自動轉化與跨平台排程',
+    content: '將日常開發點滴自動潤飾成各平台適配的故事貼文，並直通 Buffer 雲端排程佇列',
+    updatedAt: '社群自動化',
   },
   {
     id: 'ver-04',
-    versionTag: 'v0.4',
-    title: '桌面完全去背與自由視窗控制',
-    content: '完成桌面完全去背透明視窗、面板收窄單邊與右緣拉寬、按住標題列拖動視窗與右下角縮放',
-    updatedAt: '近期紀錄',
+    versionTag: '主題 04',
+    title: '完全去背融入桌面與一鍵喚出默契',
+    content: '讓 Nono 完全去背融入電腦桌面、可退到視窗後方安靜陪伴，隨時按 Alt+N 或滾輪縮放互動',
+    updatedAt: '桌面陪伴體驗',
   },
   {
     id: 'ver-05',
-    versionTag: 'v0.5',
-    title: '背景層級切換、Alt+N 喚出與滾輪縮放',
-    content: '支援視窗被其他程式壓在下方並用 Alt+N 隨時叫出來，新增模型滑鼠滾輪放大縮小與輕量版本進度庫',
-    updatedAt: '最新進度',
+    versionTag: '主題 05',
+    title: '點選 Nono 喚出專屬面板與跨領域協作',
+    content: '先點選 Nono 再展開對應領域面板，支援跨專案自動抓進度與多隻 Nono 互相討論完成任務',
+    updatedAt: '最新主題',
   },
 ];
 
 const INITIAL_NOTEBOOK: NonoNotebookData = {
-  actualProgressLog: `1. 完成桌面完全去背透明視窗、面板收窄單邊與右緣拉寬、按住標題列拖動視窗與右下角縮放
-2. 支援視窗被其他程式壓在下方並用 Alt+N 隨時叫出來，新增模型滑鼠滾輪放大縮小與輕量版本進度庫`,
-  styleGuidelines: `- 語氣自然平實，像獨立創作者 Ave 的真實開發紀錄
-- 不要過度誇張或太像行銷廣告，也不要太科技風
-- 結尾固定加上 #Nono培育觀察日記
-- 字數控制在 50 到 100 字之間`,
+  actualProgressLog: `讓 Nono 完全去背融入電腦桌面、可退到視窗後方安靜陪伴，隨時按 Alt+N 或滾輪縮放互動\n先點選 Nono 再展開對應領域面板，支援跨專案自動抓進度與多隻 Nono 互相討論完成任務`,
+  styleGuidelines: `- 依照更新主題做前後故事化潤飾（引起觀眾好奇的開場 ➔ 主題體驗故事 ➔ 互動提問收尾）
+- 絕對不要直接寫出 v0.1、v0.2 等生硬版本號或工程條列
+- 結尾固定加上 #Nono培育觀察日記`,
   useCustomStyleMimic: true,
-  customSamplePosts: `今天把桌面軟糖 Nono 的 3D 眼皮跟閉眼毛髮覆蓋調好了，面板跟身邊的對話框也換成喜歡的撞色風格，隨時可以開關對話氣泡。接著把 Buffer 排程預覽確認好，繼續推進度。 #Nono培育觀察日記 #IndieDev`,
+  customSamplePosts: buildClientStoryFromThemes(
+    '讓 Nono 完全去背融入電腦桌面、可退到視窗後方安靜陪伴，隨時按 Alt+N 或滾輪縮放互動'
+  ),
 };
 
 const PLATFORM_META: Record<
@@ -560,22 +682,62 @@ const BEHAVIOR_DIALOGUE_MAP: Record<UserBehaviorContext, string[]> = {
   ],
 };
 
-type ActiveWindowId = 'notebook' | 'buffer' | 'appearance' | null;
+type ActiveWindowId = 'notebook' | 'composer' | 'buffer' | 'council' | 'appearance' | null;
 
-const INITIAL_BASE_COPY =
-  '今天把桌面軟糖 Nono 的 3D 眼皮跟閉眼毛髮覆蓋調好了，面板跟身邊的對話框也換成喜歡的撞色風格，隨時可以開關對話氣泡。接著把 Buffer 排程預覽確認好，繼續推進度。 #Nono培育觀察日記 #IndieDev #3DDev';
+const INITIAL_BASE_COPY = buildClientStoryFromThemes(
+  '讓 Nono 完全去背融入電腦桌面、可退到視窗後方安靜陪伴，隨時按 Alt+N 或滾輪縮放互動\n先點選 Nono 再展開對應領域面板，支援跨專案自動抓進度與多隻 Nono 互相討論完成任務',
+  'Nono 3D 數位夥伴'
+);
 
 export function App() {
   // Desktop Care Bubble & Responsive Workbench states
   const [isNonoAwake, setIsNonoAwake] = useState<boolean>(true);
   const [isBubbleOpen, setIsBubbleOpen] = useState<boolean>(true);
+  // 預設支援「先點 Nono 浮現功能環 ➔ 再點選要用的功能出現對應面板」
+  const [isNonoHubOpen, setIsNonoHubOpen] = useState<boolean>(true);
   const [activeWindow, setActiveWindow] = useState<ActiveWindowId>('notebook');
   const [isCompactPanel, setIsCompactPanel] = useState<boolean>(false);
-  // 面板自訂寬度（支援點擊「窄版單欄 / 展開雙欄」或直接拖拉面板右邊界自由縮放！）
+  // 面板自訂寬度（支援點擊「窄版單邊 / 展開雙欄」或直接拖拉面板右邊界自由縮放！）
   const [customPanelWidth, setCustomPanelWidth] = useState<number | null>(null);
   const [isMouseNearTop, setIsMouseNearTop] = useState<boolean>(false);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState<boolean>(false);
   const lastOpenWindowRef = useRef<ActiveWindowId>('notebook');
+
+  // 多領域 Nono 與 GrokBot 跨領域互聊狀態
+  const [activeNonoAgentId, setActiveNonoAgentId] = useState<NonoDomainAgent['id']>('story');
+  const activeDomainNono =
+    NONO_DOMAIN_AGENTS.find((a) => a.id === activeNonoAgentId) || NONO_DOMAIN_AGENTS[1];
+  const [councilCommandInput, setCouncilCommandInput] = useState<string>('');
+  const [isRunningCouncil, setIsRunningCouncil] = useState<boolean>(false);
+  const [councilMessages, setCouncilMessages] = useState<CouncilChatTurn[]>([
+    {
+      agentId: 'dev-nono',
+      agentName: '🛠️ 研發觀察 Nono',
+      domain: '多專案掃描與技術提煉',
+      color: '#22d3ee',
+      message:
+        '@敘事企劃 Nono 我已經準備好隨時掃描目前或未來的其他專案資料夾進度了！抓到進度後會交給妳做故事化包裝，不再直接寫生硬的 0.1、0.2 版本號。',
+    },
+    {
+      agentId: 'story-nono',
+      agentName: '✨ 敘事企劃 Nono',
+      domain: '主題前後潤飾與觀眾鉤子',
+      color: '#f472b6',
+      message:
+        '沒問題 @研發觀察 Nono！只要點選任何更新主題，我都會用「引發好奇的開場 ➔ 主題體驗故事 ➔ 互動提問收尾」幫糖糖潤飾成吸引人的貼文，再交給 @排程策略 Nono 安排最佳時段！',
+    },
+  ]);
+  const [multiSkillSteps, setMultiSkillSteps] = useState<
+    Array<{ title: string; detail: string }>
+  >([]);
+  const [isRunningMultiSkill, setIsRunningMultiSkill] = useState<boolean>(false);
+
+  // 多專案自動抓進度狀態
+  const [projectsList, setProjectsList] = useState<ProjectRecord[]>([]);
+  const [activeProjectName, setActiveProjectName] = useState<string>('Nono 3D 數位夥伴');
+  const [customProjectPathInput, setCustomProjectPathInput] = useState<string>('');
+  const [customProjectNameInput, setCustomProjectNameInput] = useState<string>('');
+  const [isScanningProject, setIsScanningProject] = useState<boolean>(false);
 
   const [selectedModel] = useState<AIModelId>('gemini-3-flash-preview');
 
@@ -585,7 +747,7 @@ export function App() {
 
   // Nono Desktop Care Speech Bubble
   const [nonoSpeech, setNonoSpeech] = useState<string>(
-    'Ave 伸個懶腰休息一下吧，螢幕看太久眼睛容易乾澀。\n\n肩膀放輕鬆深呼吸一下，等妳準備好隨時可以把進度寫進筆記本裡喔糖糖。'
+    'Ave 伸個懶腰休息一下吧，螢幕看太久眼睛容易乾澀。\n\n隨時點我一下就能從旁邊的功能選單切換「專案進度」、「貼文潤飾」、「Buffer 排程」或「多 Nono 協作」面板喔糖糖。'
   );
   const [careBadgeText, setCareBadgeText] = useState<string>('CARE · 貼心陪伴中');
 
@@ -613,11 +775,14 @@ export function App() {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // 確保預設的近期版本也都包含在內
-          const existingIds = new Set(parsed.map((item: ProgressVersionEntry) => item.id));
+          const cleaned = parsed.map((item: ProgressVersionEntry, idx: number) => ({
+            ...item,
+            versionTag: item.versionTag?.replace(/^v0\.(\d+)$/i, '主題 0$1') || `主題 0${idx + 1}`,
+          }));
+          const existingIds = new Set(cleaned.map((item: ProgressVersionEntry) => item.id));
           const merged = [
             ...DEFAULT_PROGRESS_VERSIONS.filter((d) => !existingIds.has(d.id)),
-            ...parsed,
+            ...cleaned,
           ].slice(-MAX_PROGRESS_VERSIONS);
           return merged;
         }
@@ -670,7 +835,7 @@ export function App() {
   const [isRefiningPost, setIsRefiningPost] = useState(false);
   const [lastRefinedNotice, setLastRefinedNotice] = useState<string | null>(null);
 
-  // Buffer Real Connection & Persistent Scheduled Queue State (記錄那天、最近幾天與最後一篇排程時間)
+  // Buffer Real Connection & Persistent Scheduled Queue State (記錄發送完整內容、那天、最近幾天與最後一篇排程時間)
   const [queuedPosts, setQueuedPosts] = useState<
     {
       id: string;
@@ -693,6 +858,7 @@ export function App() {
     return [];
   });
   const [isSyncingSchedule, setIsSyncingSchedule] = useState<boolean>(false);
+  const [scheduleSyncNote, setScheduleSyncNote] = useState<string>('');
 
   const [cloudMediaUrlInput, setCloudMediaUrlInput] = useState('');
   const [cloudMediaType] = useState<'image' | 'video'>('image');
@@ -765,98 +931,356 @@ export function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('nono_scheduled_posts_v2', JSON.stringify(queuedPosts.slice(0, 30)));
+      localStorage.setItem('nono_scheduled_posts_v2', JSON.stringify(queuedPosts.slice(0, 40)));
     } catch {
       // ignore
     }
   }, [queuedPosts]);
 
-  // 同步 Buffer 雲端已排程貼文（讓使用者能清楚看到那天、最近幾天與最後一篇排程是何時）
+  // 將後端回傳的排程陣列合併至前端 queuedPosts 狀態
+  const mergeServerScheduledPosts = (rawList: any[]) => {
+    if (!Array.isArray(rawList)) return;
+    setQueuedPosts((prev) => {
+      const map = new Map<string, (typeof prev)[number]>();
+      for (const item of prev) {
+        if (!item.scheduledIso) continue;
+        map.set(`${item.scheduledIso.slice(0, 16)}-${(item.text || '').trim().slice(0, 20)}`, item);
+      }
+      for (const cloud of rawList) {
+        const rawDue = cloud.dueAt || cloud.scheduledIso;
+        if (!rawDue) continue;
+        const parsedDate = new Date(rawDue);
+        const localIso = Number.isNaN(parsedDate.getTime())
+          ? String(rawDue).slice(0, 16)
+          : toLocalIsoString(parsedDate);
+        const textVal = cloud.text || '(已排程貼文)';
+        const key = `${localIso.slice(0, 16)}-${textVal.trim().slice(0, 20)}`;
+
+        const incomingPlats: BufferPlatform[] = Array.isArray(cloud.platforms)
+          ? cloud.platforms.filter((p: string) =>
+              ['threads', 'x', 'instagram', 'facebook'].includes(p)
+            )
+          : ['threads', 'x', 'instagram', 'facebook'].includes(cloud.platform)
+            ? [cloud.platform as BufferPlatform]
+            : ['threads'];
+
+        const existing = map.get(key);
+        const ymd = localIso.slice(0, 10);
+        const hm = localIso.slice(11, 16);
+        if (existing) {
+          existing.platforms = Array.from(
+            new Set([...existing.platforms, ...incomingPlats])
+          ) as BufferPlatform[];
+          if (cloud.text && cloud.text.length > existing.text.length) {
+            existing.text = cloud.text;
+          }
+          if (cloud.modeLabel) {
+            existing.modeLabel = cloud.modeLabel;
+          }
+        } else {
+          map.set(key, {
+            id: cloud.id || `cloud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+            text: textVal,
+            platforms: incomingPlats.length > 0 ? incomingPlats : ['threads'],
+            scheduledIso: localIso,
+            time: `${formatYmdWithWeekday(ymd)} ${hm}`,
+            modeLabel: cloud.modeLabel || 'Buffer 已排程',
+          });
+        }
+      }
+      return Array.from(map.values()).sort((a, b) =>
+        (a.scheduledIso || '').localeCompare(b.scheduledIso || '')
+      );
+    });
+  };
+
+  // 同步 Buffer 雲端已排程貼文 + 伺服器永久保存的排程紀錄
   const handleSyncCloudScheduledPosts = async (silent = false) => {
     const token = bufferApiToken.trim();
-    if (!token) return;
     if (!silent) setIsSyncingSchedule(true);
     try {
       const res = await fetch('/api/buffer/scheduled-posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bufferApiToken: token }),
+        body: JSON.stringify({ bufferApiToken: token || undefined }),
       });
       const data = await res.json().catch(() => null);
-      if (res.ok && Array.isArray(data?.scheduledPosts) && data.scheduledPosts.length > 0) {
-        setQueuedPosts((prev) => {
-          const map = new Map<string, (typeof prev)[number]>();
-          for (const item of prev) {
-            map.set(`${item.scheduledIso}-${item.text.slice(0, 18)}`, item);
-          }
-          for (const cloud of data.scheduledPosts) {
-            if (!cloud.dueAt) continue;
-            const localIso = toLocalIsoString(new Date(cloud.dueAt));
-            const key = `${localIso}-${(cloud.text || '').slice(0, 18)}`;
-            const plat = (['threads', 'x', 'instagram', 'facebook'].includes(cloud.platform)
-              ? cloud.platform
-              : 'threads') as BufferPlatform;
-            const existing = map.get(key);
-            if (existing) {
-              if (!existing.platforms.includes(plat)) {
-                existing.platforms = [...existing.platforms, plat];
-              }
-            } else {
-              const ymd = localIso.slice(0, 10);
-              const hm = localIso.slice(11, 16);
-              map.set(key, {
-                id: cloud.id || `cloud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
-                text: cloud.text || '(已排程貼文)',
-                platforms: [plat],
-                scheduledIso: localIso,
-                time: `${formatYmdWithWeekday(ymd)} ${hm}`,
-                modeLabel: '雲端已排程',
-              });
-            }
-          }
-          return Array.from(map.values()).sort((a, b) =>
-            (a.scheduledIso || '').localeCompare(b.scheduledIso || '')
-          );
-        });
+      if (res.ok && data) {
+        if (Array.isArray(data.scheduledPosts)) {
+          mergeServerScheduledPosts(data.scheduledPosts);
+        }
+        if (data.syncNote) {
+          setScheduleSyncNote(data.syncNote);
+        }
       }
     } catch {
-      // ignore network error
+      if (!silent) {
+        setScheduleSyncNote('已載入本機保存的排程紀錄');
+      }
     } finally {
       if (!silent) setIsSyncingSchedule(false);
     }
   };
 
-  useEffect(() => {
-    if (bufferApiToken.trim()) {
-      handleSyncCloudScheduledPosts(true);
+  // 自動載入所有已探索專案（支援未來其他專案進度自動抓取）
+  const handleLoadProjectsList = async () => {
+    try {
+      const res = await fetch('/api/projects/list');
+      const data = await res.json().catch(() => null);
+      if (res.ok && Array.isArray(data?.projects)) {
+        setProjectsList(data.projects);
+      }
+    } catch {
+      // ignore
     }
+  };
+
+  const handleScanProjectFolder = async (targetPath?: string, targetName?: string) => {
+    const folderToScan = (targetPath ?? customProjectPathInput).trim();
+    const nameToUse = (targetName ?? customProjectNameInput).trim() || undefined;
+    setIsScanningProject(true);
+    setProgressNotice(null);
+    try {
+      const res = await fetch('/api/projects/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folderPath: folderToScan || undefined,
+          projectName: nameToUse,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.project) {
+        const scanned: ProjectRecord = data.project;
+        if (Array.isArray(data.projects)) {
+          setProjectsList(data.projects);
+        }
+        setActiveProjectName(scanned.name);
+        if (scanned.themes && scanned.themes.length > 0) {
+          setProgressVersions((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const merged = [
+              ...prev,
+              ...scanned.themes.filter((t) => !existingIds.has(t.id)),
+            ].slice(-MAX_PROGRESS_VERSIONS);
+            return merged;
+          });
+          const latestTwo = scanned.themes.slice(-2);
+          setSelectedVersionIds(latestTwo.map((t) => t.id));
+          const themeLines = latestTwo.map((t) => t.content).join('\n');
+          setNotebook((nb) => ({ ...nb, actualProgressLog: themeLines }));
+          const story = buildClientStoryFromThemes(themeLines, scanned.name);
+          setBufferConfig((prev) => ({
+            ...prev,
+            content: story,
+            platformContents: buildClientPlatformCopies(story),
+          }));
+          setProgressNotice(
+            `✓ 已成功從專案「${scanned.name}」自動抓出 ${scanned.themes.length} 項最新進度主題，並自動做好前後故事潤飾！`
+          );
+        } else {
+          setProgressNotice(`⚠️ 掃描了「${scanned.folderPath}」，但尚未發現 Git 提交或近期變更檔案。`);
+        }
+        setCustomProjectPathInput('');
+        setCustomProjectNameInput('');
+      }
+    } catch {
+      setProgressNotice('⚠️ 掃描專案資料夾時發生連線錯誤。');
+    } finally {
+      setIsScanningProject(false);
+    }
+  };
+
+  // 同一個 Nono 多專案＋多功能同時處理（抓進度 ➔ 主題故事潤飾 ➔ 自動對齊最後一篇排程隔天）
+  const handleRunMultiSkillPipeline = async () => {
+    if (isRunningMultiSkill) return;
+    setIsRunningMultiSkill(true);
+    setMultiSkillSteps([]);
+    try {
+      const res = await fetch('/api/nono/multi-skill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName: activeProjectName,
+          customThemeText: notebook.actualProgressLog,
+          bufferApiToken: bufferApiToken.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok) {
+        setMultiSkillSteps(data.steps || []);
+        if (data.storyCopy) {
+          const adapted = data.platformCopies || buildClientPlatformCopies(data.storyCopy);
+          setBufferConfig((prev) => ({
+            ...prev,
+            content: data.storyCopy,
+            platformContents: adapted,
+            usePerPlatformCopy: true,
+            scheduleMode: 'custom_time',
+            scheduledTime: data.recommendedDateIso || prev.scheduledTime,
+            selectedSlotLabel: data.recommendedDateIso
+              ? `${formatYmdWithWeekday(data.recommendedDateIso.slice(0, 10))} ${data.recommendedDateIso.slice(11, 16)}`
+              : prev.selectedSlotLabel,
+            status: 'ready_to_schedule',
+          }));
+        }
+        if (data.recommendedDateIso) {
+          setSelectedScheduleDate(data.recommendedDateIso.slice(0, 10));
+          setHasPickedScheduleDate(true);
+        }
+        if (Array.isArray(data.scheduledPosts)) {
+          mergeServerScheduledPosts(data.scheduledPosts);
+        }
+        setIsNonoAwake(true);
+        setIsBubbleOpen(true);
+        setIdleAction('excited_spin');
+        setActionLabel('多功能連段完成！');
+        setCareBadgeText('MULTI-SKILL · 單一 Nono 多功能同時處理完成');
+        setNonoSpeech(
+          data.nonoSpeech ||
+            '我已經同時完成「專案進度抓取」、「主題前後故事潤飾」跟「Buffer 最佳排程日期計算」囉！\n\n現在切到排程面板確認一下就能直接發送喔糖糖。'
+        );
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsRunningMultiSkill(false);
+    }
+  };
+
+  // 多隻不同領域 Nono 像 GrokBot 一樣互相溝通完成跨領域指令
+  const handleRunGrokBotCouncil = async (customCmd?: string) => {
+    if (isRunningCouncil) return;
+    const cmdToUse =
+      (customCmd ?? councilCommandInput).trim() ||
+      `把「${activeProjectName}」的最新進度用能引起觀眾好奇的故事方式包裝，並協調出最棒的排程時段`;
+    setIsRunningCouncil(true);
+    if (!customCmd) setCouncilCommandInput('');
+    try {
+      const lastTimeStr =
+        queuedPosts.length > 0
+          ? queuedPosts[queuedPosts.length - 1].scheduledIso.replace('T', ' ')
+          : '目前尚無排程';
+      const res = await fetch('/api/nono/council', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: cmdToUse,
+          projectName: activeProjectName,
+          progressText: notebook.actualProgressLog,
+          lastScheduledTime: lastTimeStr,
+          model: selectedModel,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok) {
+        if (Array.isArray(data.discussion)) {
+          setCouncilMessages(data.discussion);
+        }
+        if (data.finalCopy) {
+          const adapted = data.platformCopies || buildClientPlatformCopies(data.finalCopy);
+          setBufferConfig((prev) => ({
+            ...prev,
+            content: data.finalCopy,
+            platformContents: adapted,
+            usePerPlatformCopy: true,
+            status: 'ready_to_schedule',
+          }));
+        }
+        setIsNonoAwake(true);
+        setIsBubbleOpen(true);
+        setIdleAction('happy_bounce');
+        setActionLabel('跨領域 Nono 協作完成');
+        setCareBadgeText('GROKBOT COUNCIL · 四領域 Nono 討論完畢');
+        setNonoSpeech(
+          `研發、企劃、視覺跟排程四隻不同領域的 Nono 剛剛已經互相討論完畢，幫妳把「${activeProjectName}」的故事貼文與排程策略都定案囉！\n\n妳可以在協作室看他們的對話紀錄，或直接切到貼文與排程面板發佈喔糖糖。`
+        );
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsRunningCouncil(false);
+    }
+  };
+
+  const handleSwitchDomainNono = (agent: NonoDomainAgent) => {
+    setActiveNonoAgentId(agent.id);
+    setFurColor(agent.furPresetColor);
+    if (syncPanelWithFur) {
+      setPanelThemeId(agent.themeId);
+    }
+    setIdleAction('happy_bounce');
+    setActionLabel(`${agent.name} 值班中`);
+    setCareBadgeText(agent.badge);
+    setIsBubbleOpen(true);
+    setNonoSpeech(
+      `現在切換由「${agent.name}」為妳主控服務（${agent.domain}）！\n\n我也可以隨時同時處理多個專案功能，或呼叫其他領域的 Nono 一起討論完成跨領域任務喔糖糖。`
+    );
+  };
+
+  useEffect(() => {
+    handleSyncCloudScheduledPosts(true);
+    handleLoadProjectsList();
   }, []);
 
   const progressStorageKb = (
     new Blob([JSON.stringify(progressVersions)]).size / 1024
   ).toFixed(1);
 
+  // 點選或勾選更新主題時，絕不直接塞入生硬的 v0.1 / v0.2，而是提取主題並立即做前後故事化潤飾！
   const handleToggleVersionSelection = (id: string) => {
     setProgressNotice(null);
     setSelectedVersionIds((prev) => {
       const exists = prev.includes(id);
       const nextIds = exists ? prev.filter((item) => item !== id) : [...prev, id];
       const selectedEntries = progressVersions.filter((v) => nextIds.includes(v.id));
-      const combinedLog = selectedEntries
-        .map((v, idx) => `${idx + 1}. [${v.versionTag}] ${v.content}`)
+      const cleanThemeLines = selectedEntries
+        .map((v) =>
+          v.content
+            .replace(/\[?v?\d+\.\d+(\.\d+)?\]?\s*/gi, '')
+            .replace(/^[0-9.*•\-\s]+/, '')
+            .trim()
+        )
+        .filter(Boolean)
         .join('\n');
-      setNotebook((nb) => ({ ...nb, actualProgressLog: combinedLog }));
+      setNotebook((nb) => ({ ...nb, actualProgressLog: cleanThemeLines }));
+
+      const storyCopy = buildClientStoryFromThemes(cleanThemeLines, activeProjectName);
+      setBufferConfig((cfg) => ({
+        ...cfg,
+        content: storyCopy,
+        platformContents: buildClientPlatformCopies(storyCopy),
+        usePerPlatformCopy: true,
+        status: 'ready_to_schedule',
+      }));
+      setProgressNotice(
+        `✓ 已組合 ${selectedEntries.length} 個更新主題，並自動完成「引發好奇開場 ➔ 主題故事 ➔ 互動收尾」潤飾（不含生硬版本號）！`
+      );
       return nextIds;
     });
   };
 
   const handleApplySingleVersion = (entry: ProgressVersionEntry) => {
     setSelectedVersionIds([entry.id]);
+    const cleanTheme = entry.content
+      .replace(/\[?v?\d+\.\d+(\.\d+)?\]?\s*/gi, '')
+      .replace(/^[0-9.*•\-\s]+/, '')
+      .trim();
     setNotebook((nb) => ({
       ...nb,
-      actualProgressLog: `1. [${entry.versionTag} ${entry.title}] ${entry.content}`,
+      actualProgressLog: `${entry.title}：${cleanTheme}`,
     }));
-    setProgressNotice(`✓ 已選用「${entry.versionTag} ${entry.title}」的進度內容`);
+    const storyCopy = buildClientStoryFromThemes(`${entry.title}：${cleanTheme}`, activeProjectName);
+    setBufferConfig((cfg) => ({
+      ...cfg,
+      content: storyCopy,
+      platformContents: buildClientPlatformCopies(storyCopy),
+      usePerPlatformCopy: true,
+      status: 'ready_to_schedule',
+    }));
+    setProgressNotice(
+      `✓ 已依主題「${entry.title}」做好前後故事化潤飾並同步至貼文工坊！`
+    );
   };
 
   const handleUpdateVersionWithCurrentText = (id: string) => {
@@ -864,7 +1288,7 @@ export function App() {
       .replace(/^[0-9]+\.\s*(\[[^\]]+\]\s*)?/, '')
       .trim();
     if (!cleanText) {
-      setProgressNotice('⚠️ 請先在下方進度框輸入內容，再點更新版本喔！');
+      setProgressNotice('⚠️ 請先在下方進度框輸入內容，再點更新主題喔！');
       return;
     }
     const nowTag = new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
@@ -880,22 +1304,23 @@ export function App() {
       )
     );
     const target = progressVersions.find((v) => v.id === id);
-    setProgressNotice(`✓ 已將目前進度內容更新至「${target?.versionTag || ''} ${target?.title || ''}」！`);
+    setProgressNotice(`✓ 已將目前內容更新至主題「${target?.title || ''}」！`);
   };
 
   const handleSaveNewProgressVersion = () => {
     const rawContent = notebook.actualProgressLog.trim();
     if (!rawContent) {
-      setProgressNotice('⚠️ 請先在下方進度框寫下這次的進度，再點儲存新版本喔！');
+      setProgressNotice('⚠️ 請先在下方進度框寫下這次的更新主題，再點儲存喔！');
       return;
     }
     const nextNum = progressVersions.length + 1;
-    const tag = newVersionTag.trim() || `v0.${nextNum}`;
+    const tag = newVersionTag.trim() || `主題 0${nextNum}`;
     const cleanFirstLine = rawContent
       .split('\n')[0]
       .replace(/^[0-9]+\.\s*(\[[^\]]+\]\s*)?/, '')
+      .replace(/\[?v?\d+\.\d+(\.\d+)?\]?\s*/gi, '')
       .trim();
-    const title = newVersionTitle.trim() || cleanFirstLine.slice(0, 14) || '開發進度更新';
+    const title = newVersionTitle.trim() || cleanFirstLine.slice(0, 14) || '創作主題推進';
     const nowTag = new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
 
     const newEntry: ProgressVersionEntry = {
@@ -910,7 +1335,14 @@ export function App() {
     setSelectedVersionIds([newEntry.id]);
     setNewVersionTag('');
     setNewVersionTitle('');
-    setProgressNotice(`✓ 已新增並選用「${tag} · ${title}」（自動控管容量，極輕量不佔空間）`);
+    const storyCopy = buildClientStoryFromThemes(rawContent, activeProjectName);
+    setBufferConfig((cfg) => ({
+      ...cfg,
+      content: storyCopy,
+      platformContents: buildClientPlatformCopies(storyCopy),
+      usePerPlatformCopy: true,
+    }));
+    setProgressNotice(`✓ 已新增主題「${title}」並完成前後故事化潤飾！`);
   };
 
   const handleDeleteProgressVersion = (id: string) => {
@@ -1133,13 +1565,7 @@ export function App() {
     setIdleAction(chosen.action);
     setActionLabel(chosen.label);
     setIsBubbleOpen(true);
-
-    if (!isNonoAwake) {
-      setIsNonoAwake(true);
-      if (lastOpenWindowRef.current) {
-        setActiveWindow(lastOpenWindowRef.current);
-      }
-    }
+    setIsNonoHubOpen(true);
 
     const pool = wasLightSleeping
       ? BEHAVIOR_DIALOGUE_MAP.woke_up
@@ -1147,7 +1573,7 @@ export function App() {
     const picked =
       pool[Math.floor(Math.random() * pool.length)] || BEHAVIOR_DIALOGUE_MAP.clicked_nono[0];
     setNonoSpeech(picked);
-    setCareBadgeText(wasLightSleeping ? 'WAKE · 充飽電醒來囉' : 'CARE · 給 Ave 的關心');
+    setCareBadgeText(wasLightSleeping ? 'WAKE · 充飽電醒來囉' : 'HUB · 請點選下方 Nono 功能面板');
   };
 
   const handleDragEndNono = () => {
@@ -1300,11 +1726,15 @@ export function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           notebook,
+          projectName: activeProjectName,
           model: selectedModel,
         }),
       });
       const data = await response.json();
-      const draft = data.bufferDraft || data.socialCopy;
+      const draft =
+        data.bufferDraft ||
+        data.socialCopy ||
+        buildClientStoryFromThemes(notebook.actualProgressLog, activeProjectName);
 
       if (draft) {
         const adapted = data.platformCopies || buildClientPlatformCopies(draft);
@@ -1315,20 +1745,21 @@ export function App() {
           usePerPlatformCopy: true,
           status: 'ready_to_schedule',
         }));
-        openSideWindow('buffer');
+        setIsNonoAwake(true);
+        openSideWindow('composer');
       }
-      setIsNonoAwake(true);
       setIsBubbleOpen(true);
-      setCareBadgeText('READY · 筆記本貼文與各平台適配完成');
+      setCareBadgeText('STORY · 主題前後潤飾完成');
       setNonoSpeech(
         data.nonoNote ||
           data.murmur ||
-          'Ave！我已經嚴格照著筆記本裡的進度幫妳寫好貼文，並自動幫 X、IG、Threads 適配好字數了。\n\n現在已經切到 Buffer 排程分頁，確認時段後按上傳就會直接進排程佇列喔糖糖。'
+          '我已經把更新主題用「引發好奇開場 ➔ 主題故事體驗 ➔ 互動提問收尾」前後潤飾好，並同步幫 X、IG、Threads 適配好字數囉。\n\n現在幫妳切到「貼文潤飾工坊」，確認順眼就可以按底部按鈕前往排程喔糖糖。'
       );
     } catch {
-      const firstLine =
-        notebook.actualProgressLog.split('\n').filter(Boolean)[0] || '推進今日開發進度';
-      const fallbackText = `今天完成了：${firstLine.replace(/^[0-9.•\-]+\s*/, '')}。一步一步把細節調整到位，繼續往下推進。 #Nono培育觀察日記 #IndieDev`;
+      const fallbackText = buildClientStoryFromThemes(
+        notebook.actualProgressLog,
+        activeProjectName
+      );
       setBufferConfig((prev) => ({
         ...prev,
         content: fallbackText,
@@ -1336,11 +1767,11 @@ export function App() {
         usePerPlatformCopy: true,
         status: 'ready_to_schedule',
       }));
-      openSideWindow('buffer');
       setIsNonoAwake(true);
+      openSideWindow('composer');
       setIsBubbleOpen(true);
-      setCareBadgeText('READY · 筆記本貼文完成');
-      updateSpeechForBehavior('generated_post', 'READY · 筆記本貼文完成');
+      setCareBadgeText('STORY · 主題故事潤飾完成');
+      updateSpeechForBehavior('generated_post', 'STORY · 主題故事潤飾完成');
     } finally {
       setIsGeneratingDraft(false);
     }
@@ -1707,17 +2138,21 @@ export function App() {
           ? `立即發佈 (${recordedHm})`
           : `${formatYmdWithWeekday(recordedYmd)} ${recordedHm}`;
 
-      setQueuedPosts((prev) => [
-        {
-          id: `q-${Date.now()}`,
-          text: primaryOutgoingText,
-          platforms: bufferConfig.platforms,
-          time: formattedTime,
-          scheduledIso: recordedIso,
-          modeLabel: modeBadge,
-        },
-        ...prev,
-      ]);
+      if (Array.isArray(data?.scheduledPosts) && data.scheduledPosts.length > 0) {
+        mergeServerScheduledPosts(data.scheduledPosts);
+      } else {
+        setQueuedPosts((prev) => [
+          {
+            id: `q-${Date.now()}`,
+            text: bufferConfig.content || primaryOutgoingText,
+            platforms: bufferConfig.platforms,
+            time: formattedTime,
+            scheduledIso: recordedIso,
+            modeLabel: modeBadge,
+          },
+          ...prev,
+        ]);
+      }
 
       setBufferConfig((prev) => ({ ...prev, status: 'scheduled' }));
       setDispatchSuccessBanner(
@@ -1813,7 +2248,13 @@ export function App() {
   // 計算面板明確像素寬度（保證點「窄版單欄 / 展開雙欄」或拖拉面板右邊界時 100% 立即生效！）
   const targetPanelWidthPx =
     customPanelWidth ??
-    (isCompactPanel ? 390 : activeWindow === 'buffer' ? 740 : 430);
+    (isCompactPanel
+      ? 390
+      : activeWindow === 'buffer' || activeWindow === 'composer'
+        ? 730
+        : activeWindow === 'council'
+          ? 520
+          : 440);
   const isSingleColumnLayout = isCompactPanel || targetPanelWidthPx < 580;
 
   return (
@@ -1965,8 +2406,140 @@ export function App() {
         onDragEndNono={handleDragEndNono}
       />
 
+      {/* ==================== 點選 Nono 浮現的「專屬領域與功能選單環」 (先點 Nono ➔ 再點選要用的功能出現對應面板) ==================== */}
+      {isNonoHubOpen && (
+        <div
+          style={{
+            backgroundColor: activePanelTheme.panelBg,
+            borderColor: activePanelTheme.border,
+            boxShadow: `0 14px 42px rgba(0,0,0,0.88), 0 0 24px ${activePanelTheme.glowRgba}`,
+          }}
+          className="fixed bottom-11 right-3 z-40 w-[310px] rounded-2xl border-2 backdrop-blur-xl p-2.5 space-y-2 transition-all duration-200"
+        >
+          <div className="flex items-center justify-between gap-1 border-b border-white/10 pb-1.5">
+            <div className="flex items-center gap-1.5">
+              <PastelAuraStar
+                size={18}
+                idSuffix="hub-star"
+                accentColor={activePanelTheme.accent}
+                secondaryColor={activePanelTheme.accentSecondary}
+                coreColor={activePanelTheme.highlightTagBg}
+              />
+              <span className="text-[11px] font-bold text-white">
+                {activeDomainNono.name} · 功能選單
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsNonoHubOpen(false)}
+              className="text-[10px] text-zinc-400 hover:text-white px-1.5 py-0.5 rounded bg-white/5 cursor-pointer"
+              title="收起此選單（隨時點一下 3D Nono 即可再次叫出）"
+            >
+              收起選單 ✕
+            </button>
+          </div>
+
+          {/* 切換不同領域的 Nono */}
+          <div className="space-y-1">
+            <div className="text-[9px] font-mono text-zinc-400 flex items-center justify-between">
+              <span>1. 切換掌管不同領域的 Nono：</span>
+              <span style={{ color: activePanelTheme.accentSecondary }}>同 Nono 可跨專案多工</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {NONO_DOMAIN_AGENTS.map((agent) => {
+                const isCurr = agent.id === activeNonoAgentId;
+                return (
+                  <button
+                    key={agent.id}
+                    type="button"
+                    onClick={() => handleSwitchDomainNono(agent)}
+                    style={
+                      isCurr
+                        ? {
+                            backgroundColor: `${activePanelTheme.accent}35`,
+                            borderColor: activePanelTheme.accent,
+                          }
+                        : {
+                            backgroundColor: 'rgba(0,0,0,0.4)',
+                            borderColor: 'rgba(255,255,255,0.12)',
+                          }
+                    }
+                    className="p-1.5 rounded-lg border text-left cursor-pointer hover:border-white/35 transition-all"
+                  >
+                    <div className="text-[10px] font-bold text-white truncate">{agent.name}</div>
+                    <div className="text-[9px] text-zinc-400 truncate">{agent.domain}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 點選要用的功能 ➔ 出現對應專屬面板 */}
+          <div className="space-y-1 pt-1 border-t border-white/10">
+            <div className="text-[9px] font-mono text-zinc-400">
+              2. 點選要使用的功能（開啟對應獨立面板）：
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {[
+                { id: 'notebook' as const, title: '📂 專案與進度庫', sub: '抓各專案進度与主題' },
+                { id: 'composer' as const, title: '✍️ 故事貼文工坊', sub: '主題前後潤飾與預覽' },
+                { id: 'buffer' as const, title: '📅 Buffer 排程日曆', sub: '抓雲端資料與改時段' },
+                { id: 'council' as const, title: '🤝 多 Nono 協作室', sub: 'GrokBot 跨領域互聊' },
+                { id: 'appearance' as const, title: '🎨 外觀與動作', sub: '毛色主題與滾輪縮放' },
+              ].map((item) => {
+                const isOpen = isNonoAwake && activeWindow === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setIsNonoAwake(true);
+                      openSideWindow(item.id);
+                    }}
+                    style={
+                      isOpen
+                        ? {
+                            background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                            borderColor: '#ffffff99',
+                            color: '#fff',
+                          }
+                        : {
+                            backgroundColor: 'rgba(0,0,0,0.45)',
+                            borderColor: 'rgba(255,255,255,0.14)',
+                          }
+                    }
+                    className="p-1.5 rounded-lg border text-left cursor-pointer hover:border-white/40 transition-all"
+                  >
+                    <div className="text-[10px] font-bold text-white truncate">{item.title}</div>
+                    <div className="text-[9px] text-zinc-300 opacity-85 truncate">{item.sub}</div>
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={handleRunMultiSkillPipeline}
+                disabled={isRunningMultiSkill}
+                style={{
+                  backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                  borderColor: activePanelTheme.accentSecondary,
+                  color: activePanelTheme.accentSecondary,
+                }}
+                className="p-1.5 rounded-lg border text-left cursor-pointer hover:brightness-110 transition-all"
+                title="讓同一個 Nono 同時執行：抓專案進度 ➔ 故事化潤飾 ➔ 自動計算最後一篇隔天排程"
+              >
+                <div className="text-[10px] font-bold truncate">
+                  {isRunningMultiSkill ? '⚡ 多功能處理中...' : '⚡ 一鍵多功能連段'}
+                </div>
+                <div className="text-[9px] text-zinc-300 truncate">抓進度+潤飾+排程一次完成</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ==================== RESPONSIVE & DRAGGABLE WORKBENCH DOCK ==================== */}
-      {isNonoAwake && (
+      {isNonoAwake && activeWindow !== null && (
         <div
           style={{
             width: `min(calc(100vw - 1.5rem), ${targetPanelWidthPx}px)`,
@@ -2018,9 +2591,9 @@ export function App() {
                   className="-my-1"
                 />
                 <span className="text-[11px] font-mono font-black tracking-wider flex items-center gap-1">
-                  <span>NONO WORKBENCH</span>
+                  <span>{activeDomainNono.name}</span>
                   <span className="text-[9px] font-normal text-zinc-400 hidden sm:inline">
-                    (按住可拖動視窗)
+                    ({activeProjectName})
                   </span>
                 </span>
                 <button
@@ -2042,7 +2615,24 @@ export function App() {
               </div>
 
               <div className="flex items-center gap-1">
-                {/* 窄版單邊 / 展開雙欄 切換按鈕（所有分頁皆可使用，立即改變面板實際像素寬度！） */}
+                <button
+                  type="button"
+                  onClick={() => setIsNonoHubOpen((prev) => !prev)}
+                  style={{
+                    borderColor: isNonoHubOpen
+                      ? activePanelTheme.accentSecondary
+                      : 'rgba(255,255,255,0.2)',
+                    color: isNonoHubOpen
+                      ? activePanelTheme.accentSecondary
+                      : activePanelTheme.textMain,
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer"
+                  title="開啟或收起右下角 Nono 領域與功能選單環"
+                >
+                  ✨ Nono選單
+                </button>
+
+                {/* 窄版單邊 / 展開雙欄 切換按鈕 */}
                 <button
                   type="button"
                   onClick={handleToggleCompactSingleColumn}
@@ -2055,7 +2645,7 @@ export function App() {
                       : activePanelTheme.textMain,
                   }}
                   className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border cursor-pointer"
-                  title="一鍵收窄為單邊窄版（390px）或展開為雙欄寬版（740px），也可直接拉動面板右邊緣調整"
+                  title="一鍵收窄為單邊窄版（390px）或展開為雙欄寬版（730px），也可直接拉動面板右邊緣調整"
                 >
                   {isSingleColumnLayout ? (
                     <>
@@ -2100,26 +2690,28 @@ export function App() {
                   type="button"
                   onClick={handleMinimizeAll}
                   className="flex items-center gap-1 text-[11px] text-zinc-300 hover:text-white px-2 py-0.5 rounded-md bg-black/40 hover:bg-black/60 border border-white/15 transition-colors cursor-pointer"
-                  title="收起工作台（點一下 3D Nono 或上方控制列即可再次展開）"
+                  title="收起工作台（點一下 3D Nono 即可從功能選單再次打開任何面板）"
                 >
                   <EyeOff className="w-3 h-3" />
-                  <span>收起</span>
+                  <span>收起面板</span>
                 </button>
               </div>
             </div>
 
-            {/* Unified Tab Switcher */}
+            {/* 5 個獨立清爽面板切換列（也可直接點 3D Nono 從右下角選單開啟） */}
             <div
               style={{
                 backgroundColor: activePanelTheme.panelCard,
                 borderColor: `${activePanelTheme.border}38`,
               }}
-              className="px-3 py-2 border-b shrink-0 grid grid-cols-3 gap-1.5"
+              className="px-2.5 py-1.5 border-b shrink-0 grid grid-cols-5 gap-1"
             >
               {[
-                { id: 'notebook' as const, label: '1. 筆記本', icon: BookOpen },
-                { id: 'buffer' as const, label: '2. Buffer 排程', icon: Calendar },
-                { id: 'appearance' as const, label: '3. 外觀與動作', icon: Sparkles },
+                { id: 'notebook' as const, label: '1.專案進度', icon: BookOpen },
+                { id: 'composer' as const, label: '2.故事潤飾', icon: Wand2 },
+                { id: 'buffer' as const, label: '3.Buffer排程', icon: Calendar },
+                { id: 'council' as const, label: '4.多Nono協作', icon: Zap },
+                { id: 'appearance' as const, label: '5.外觀動作', icon: Sparkles },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeWindow === tab.id;
@@ -2142,40 +2734,110 @@ export function App() {
                             color: activePanelTheme.textMain,
                           }
                     }
-                    className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer truncate"
+                    className="flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer truncate"
                   >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <Icon className="w-3 h-3 shrink-0" />
                     <span className="truncate">{tab.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* ==================== TAB 1: NONO NOTEBOOK ==================== */}
+            {/* ==================== PANEL 1: 多專案進度抓取 & 更新主題庫 ==================== */}
             {activeWindow === 'notebook' && (
               <div className="p-3.5 overflow-y-auto space-y-3 flex-1 min-h-0">
+                {/* 區塊 A：跨專案切換與未來新專案進度自動抓取器 */}
                 <div
                   style={{
                     backgroundColor: activePanelTheme.panelCard,
                     borderColor: `${activePanelTheme.border}55`,
                   }}
-                  className="p-2.5 rounded-xl border text-[11px] leading-relaxed flex items-start gap-2"
+                  className="p-3 rounded-xl border space-y-2"
                 >
-                  <PastelAuraStar
-                    size={20}
-                    idSuffix="nb-star"
-                    accentColor={activePanelTheme.accent}
-                    secondaryColor={activePanelTheme.accentSecondary}
-                    coreColor={activePanelTheme.highlightTagBg}
-                    className="shrink-0 mt-0.5"
-                  />
-                  <div>
-                    <strong>嚴格邊界保護 ＋ 各平台自動適配</strong>：Nono 產生社群文案時，
-                    <strong>只會讀取這本筆記本裡的 3 個區塊</strong>
-                    ，並自動為 X (Twitter)、IG、Threads 量身調整字數與標籤！
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold flex items-center gap-1.5">
+                      <span>📂 跨專案進度自動抓取（支援目前與未來任何新專案）</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleScanProjectFolder('', activeProjectName)}
+                      disabled={isScanningProject}
+                      style={{
+                        borderColor: activePanelTheme.accentSecondary,
+                        color: activePanelTheme.accentSecondary,
+                      }}
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/50 hover:bg-white/10 border text-[10px] font-mono cursor-pointer"
+                    >
+                      <RefreshCw className={`w-2.5 h-2.5 ${isScanningProject ? 'animate-spin' : ''}`} />
+                      <span>{isScanningProject ? '掃描中...' : '抓目前專案最新 Git/檔案進度'}</span>
+                    </button>
+                  </div>
+
+                  {/* 已探索到的專案按鈕列 */}
+                  {projectsList.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-zinc-400">切換專案：</span>
+                      {projectsList.map((proj) => {
+                        const isCurrProj = proj.name === activeProjectName;
+                        return (
+                          <button
+                            key={proj.id}
+                            type="button"
+                            onClick={() =>
+                              handleScanProjectFolder(proj.folderPath, proj.name)
+                            }
+                            style={
+                              isCurrProj
+                                ? {
+                                    backgroundColor: `${activePanelTheme.accent}35`,
+                                    borderColor: activePanelTheme.accent,
+                                    color: '#fff',
+                                  }
+                                : undefined
+                            }
+                            className="px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border border-white/15 text-[10px] font-mono text-zinc-200 cursor-pointer"
+                            title={`路徑：${proj.folderPath} (${proj.lastScannedAt})`}
+                          >
+                            {proj.name} ({proj.themes?.length || 0})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 輸入未來任何新專案資料夾路徑，自動抓取進度 */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/10">
+                    <input
+                      type="text"
+                      value={customProjectNameInput}
+                      onChange={(e) => setCustomProjectNameInput(e.target.value)}
+                      placeholder="新專案名稱 (如: Live2D新衣)"
+                      className="w-32 bg-black/50 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-zinc-500"
+                    />
+                    <input
+                      type="text"
+                      value={customProjectPathInput}
+                      onChange={(e) => setCustomProjectPathInput(e.target.value)}
+                      placeholder="貼上電腦上任何專案資料夾路徑 (如 D:\MyGameProject)，自動抓 Git 與修改檔案進度..."
+                      className="flex-1 min-w-[160px] bg-black/50 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleScanProjectFolder()}
+                      disabled={isScanningProject || !customProjectPathInput.trim()}
+                      style={{
+                        backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                        borderColor: activePanelTheme.accentSecondary,
+                        color: activePanelTheme.accentSecondary,
+                      }}
+                      className="px-2.5 py-1 rounded-lg border text-[11px] font-bold hover:brightness-110 disabled:opacity-40 cursor-pointer shrink-0"
+                    >
+                      🔍 抓此專案進度
+                    </button>
                   </div>
                 </div>
 
+                {/* 區塊 B：更新主題庫（點選後自動依主題做前後故事潤飾，絕不直寫 v0.1 / v0.2） */}
                 <div
                   style={{
                     backgroundColor: activePanelTheme.panelCard,
@@ -2185,26 +2847,15 @@ export function App() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <label className="text-xs font-semibold flex items-center gap-1.5">
-                      <span>01. Ave 實際完成的進度紀錄</span>
-                      <span
-                        style={{
-                          backgroundColor: `${activePanelTheme.accentSecondary}24`,
-                          color: activePanelTheme.accentSecondary,
-                          borderColor: `${activePanelTheme.accentSecondary}55`,
-                        }}
-                        className="px-1.5 py-0.5 rounded text-[10px] font-mono border"
-                      >
-                        選填 · 可勾選近期版本
-                      </span>
+                      <span>✨ 01. 點選更新主題（自動轉化為引起觀眾興趣的故事描述）</span>
                     </label>
                     <span className="text-[10px] font-mono text-zinc-400">
-                      極輕量純文字 · 僅 {progressStorageKb} KB ({progressVersions.length}/
-                      {MAX_PROGRESS_VERSIONS}筆)
+                      極輕量 {progressStorageKb} KB · 不直寫生硬版本號
                     </span>
                   </div>
 
-                  {/* 近期各版本進度快速勾選 / 選用 / 更新清單 */}
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {/* 近期各版本主題快速勾選 / 選用 / 更新清單 */}
+                  <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
                     {progressVersions.map((ver) => {
                       const isChecked = selectedVersionIds.includes(ver.id);
                       return (
@@ -2223,7 +2874,7 @@ export function App() {
                           <div
                             onClick={() => handleToggleVersionSelection(ver.id)}
                             className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer"
-                            title="點擊勾選／取消勾選此版本進度（可多選組合）"
+                            title="點擊勾選此主題，Nono 會自動根據主題做好前後故事化潤飾（不寫生硬版本號）"
                           >
                             <input
                               type="checkbox"
@@ -2258,25 +2909,25 @@ export function App() {
                               type="button"
                               onClick={() => handleApplySingleVersion(ver)}
                               className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-zinc-200 cursor-pointer"
-                              title="只單獨選用這個版本的進度"
+                              title="單獨以此主題生成前後潤飾故事貼文"
                             >
-                              單選
+                              單選潤飾
                             </button>
                             <button
                               type="button"
                               onClick={() => handleUpdateVersionWithCurrentText(ver.id)}
                               style={{ color: activePanelTheme.accentSecondary }}
                               className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] cursor-pointer"
-                              title="用下方輸入框目前寫的文字，更新覆蓋這個版本的進度紀錄"
+                              title="用下方輸入框目前寫的文字更新此主題"
                             >
-                              更新此版
+                              更新
                             </button>
                             {progressVersions.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => handleDeleteProgressVersion(ver.id)}
                                 className="p-0.5 rounded text-zinc-400 hover:text-rose-400 cursor-pointer"
-                                title="刪除此筆版本紀錄"
+                                title="刪除此筆主題紀錄"
                               >
                                 <X className="w-3 h-3" />
                               </button>
@@ -2287,32 +2938,39 @@ export function App() {
                     })}
                   </div>
 
-                  {/* 實際進度輸入框（可自由手寫修改，或留空不填） */}
+                  {/* 實際進度主題輸入框（可自由手寫修改，或留空不填） */}
                   <textarea
-                    rows={3}
+                    rows={2}
                     value={notebook.actualProgressLog}
                     onChange={(e) => {
-                      setNotebook((prev) => ({ ...prev, actualProgressLog: e.target.value }));
+                      const val = e.target.value;
+                      setNotebook((prev) => ({ ...prev, actualProgressLog: val }));
+                      const story = buildClientStoryFromThemes(val, activeProjectName);
+                      setBufferConfig((cfg) => ({
+                        ...cfg,
+                        content: story,
+                        platformContents: buildClientPlatformCopies(story),
+                      }));
                     }}
                     style={{ borderColor: `${activePanelTheme.border}55` }}
-                    placeholder="（選填）可從上方勾選近期版本進度、直接手寫修改，或留空改發日常創作陪伴貼文..."
+                    placeholder="（選填）勾選上方主題或手寫今日靈感重點，Nono 會自動幫妳做引起觀眾興趣的前後故事潤飾..."
                     className="w-full bg-black/50 border rounded-xl p-2.5 text-xs text-zinc-100 leading-relaxed focus:outline-none resize-none"
                   />
 
-                  {/* 新增／儲存新版本進度 + 清空選填列 */}
+                  {/* 新增／儲存新主題 + 清空選填列 */}
                   <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                     <input
                       type="text"
                       value={newVersionTag}
                       onChange={(e) => setNewVersionTag(e.target.value)}
-                      placeholder={`版本號(如 v0.${progressVersions.length + 1})`}
-                      className="w-24 bg-black/45 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 font-mono"
+                      placeholder={`分類標籤(如 主題0${progressVersions.length + 1})`}
+                      className="w-28 bg-black/45 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 font-mono"
                     />
                     <input
                       type="text"
                       value={newVersionTitle}
                       onChange={(e) => setNewVersionTitle(e.target.value)}
-                      placeholder="新版本簡短標題 (選填)"
+                      placeholder="更新主題標題 (例如：去背桌面與滾輪互動)"
                       className="flex-1 min-w-[120px] bg-black/45 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-zinc-500"
                     />
                     <button
@@ -2323,9 +2981,8 @@ export function App() {
                         borderColor: activePanelTheme.accent,
                       }}
                       className="px-2.5 py-1 rounded-lg border text-[11px] font-bold text-white hover:brightness-110 cursor-pointer shrink-0"
-                      title="把目前進度框裡的文字存成一筆新的版本紀錄"
                     >
-                      ＋ 存為新版本
+                      ＋ 存為新主題
                     </button>
                     {notebook.actualProgressLog.trim() && (
                       <button
@@ -2333,12 +2990,17 @@ export function App() {
                         onClick={() => {
                           setSelectedVersionIds([]);
                           setNotebook((prev) => ({ ...prev, actualProgressLog: '' }));
-                          setProgressNotice('✓ 已清空進度（選填模式：將自動生成日常創作陪伴貼文）');
+                          const story = buildClientStoryFromThemes('', activeProjectName);
+                          setBufferConfig((cfg) => ({
+                            ...cfg,
+                            content: story,
+                            platformContents: buildClientPlatformCopies(story),
+                          }));
+                          setProgressNotice('✓ 已切換為日常陪伴故事模式（不特定聚焦工程進度）');
                         }}
                         className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] text-zinc-300 cursor-pointer shrink-0"
-                        title="不填具體進度，讓 Nono 產生日常創作陪伴貼文"
                       >
-                        清空(選填不填)
+                        清空(改發日常陪伴)
                       </button>
                     )}
                   </div>
@@ -2350,100 +3012,76 @@ export function App() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold mb-1 flex items-center justify-between">
-                    <span>02. 筆記本指定的文案細節與風格規則</span>
-                    <span
-                      style={{ color: activePanelTheme.accentSecondary }}
-                      className="text-[10px] font-mono"
-                    >
-                      STYLE.RULES
-                    </span>
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={notebook.styleGuidelines}
-                    onChange={(e) =>
-                      setNotebook((prev) => ({ ...prev, styleGuidelines: e.target.value }))
-                    }
-                    style={{ borderColor: `${activePanelTheme.border}55` }}
-                    placeholder="例如：平實自然、不要太科技感、結尾加 #Nono培育觀察日記..."
-                    className="w-full bg-black/50 border rounded-xl p-2.5 text-xs text-zinc-100 leading-relaxed focus:outline-none resize-none"
-                  />
-                </div>
-
+                {/* 即時故事化潤飾預覽卡（讓使用者立刻看到點選主題後不是寫 0.1/0.2，而是吸引觀眾的完整故事） */}
                 <div
                   style={{
                     backgroundColor: activePanelTheme.panelCard,
                     borderColor: `${activePanelTheme.border}44`,
                   }}
-                  className="p-3 rounded-xl border space-y-2"
+                  className="p-3 rounded-xl border space-y-1.5"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-semibold">03. 自訂模仿 Ave 寫作風格</div>
-                      <div
-                        style={{ color: activePanelTheme.textMuted }}
-                        className="text-[11px]"
-                      >
-                        開啟後，Nono 會嚴格模仿下方範例貼文的斷句與語氣
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles
+                        style={{ color: activePanelTheme.accentSecondary }}
+                        className="w-3.5 h-3.5"
+                      />
+                      <span>主題前後潤飾即時預覽（開場鉤子 ➔ 主題體驗 ➔ 觀眾互動）</span>
+                    </span>
                     <button
                       type="button"
-                      onClick={() =>
-                        setNotebook((prev) => ({
-                          ...prev,
-                          useCustomStyleMimic: !prev.useCustomStyleMimic,
-                        }))
-                      }
-                      style={{
-                        background: notebook.useCustomStyleMimic
-                          ? `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`
-                          : '#3f3f46',
+                      onClick={() => {
+                        const fresh = buildClientStoryFromThemes(
+                          notebook.actualProgressLog,
+                          activeProjectName
+                        );
+                        handleUpdateMasterContent(fresh);
                       }}
-                      className="w-11 h-6 rounded-full transition-colors p-0.5 cursor-pointer shrink-0"
+                      className="text-[10px] px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer"
                     >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                          notebook.useCustomStyleMimic ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
+                      重新潤飾
                     </button>
                   </div>
-
-                  {notebook.useCustomStyleMimic && (
-                    <textarea
-                      rows={2}
-                      value={notebook.customSamplePosts}
-                      onChange={(e) =>
-                        setNotebook((prev) => ({ ...prev, customSamplePosts: e.target.value }))
-                      }
-                      placeholder="貼上 1~2 篇 Ave 過去寫過、最喜歡的貼文範例..."
-                      className="w-full bg-black/50 border border-white/15 rounded-lg p-2 text-xs text-zinc-200 leading-relaxed focus:outline-none resize-none"
-                    />
-                  )}
+                  <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap bg-black/45 p-2.5 rounded-lg border border-white/10">
+                    {bufferConfig.content}
+                  </p>
                 </div>
 
-                <button
-                  onClick={handleGenerateFromNotebook}
-                  disabled={isGeneratingDraft}
-                  style={{
-                    background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
-                    boxShadow: `0 8px 25px ${activePanelTheme.glowRgba}`,
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer hover:brightness-110"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  {isGeneratingDraft
-                    ? '正在依筆記本生成各平台專屬貼文...'
-                    : '依筆記本生成各平台貼文（自動適配字數並前往排程）'}
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    onClick={handleGenerateFromNotebook}
+                    disabled={isGeneratingDraft}
+                    style={{
+                      background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                      boxShadow: `0 8px 25px ${activePanelTheme.glowRgba}`,
+                    }}
+                    className="py-2.5 px-3 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer hover:brightness-110"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    {isGeneratingDraft
+                      ? '正在深度潤飾故事貼文...'
+                      : '✍️ 前往「2. 故事貼文工坊」微調與預覽'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openSideWindow('buffer')}
+                    style={{
+                      backgroundColor: `${activePanelTheme.accentSecondary}24`,
+                      borderColor: activePanelTheme.accentSecondary,
+                      color: activePanelTheme.accentSecondary,
+                    }}
+                    className="py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:bg-white/10"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>📅 直接前往「3. Buffer 排程與雲端紀錄」</span>
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* ==================== TAB 2: BUFFER PREVIEW & DIRECT SCHEDULE ==================== */}
-            {activeWindow === 'buffer' && (
+            {/* ==================== TAB 2: COMPOSER (STORY POLISH & PLATFORM PREVIEW) ==================== */}
+            {activeWindow === 'composer' && (
               <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 <div
                   style={{ borderColor: `${activePanelTheme.border}38` }}
@@ -2457,38 +3095,50 @@ export function App() {
                       }}
                       className="px-2 py-0.5 rounded-sm text-[10px] font-mono font-black"
                     >
-                      Free Plan 防呆 ({queuedPosts.length}/10 篇已排程)
+                      ✨ 前後潤飾故事模式（自動隱藏 v0.1 枯燥版號）
                     </span>
                     <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 rounded-sm">
-                      ⚡ 直通排程佇列
+                      Hook 開場 ➔ 主題故事 ➔ 互動提問
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => setShowBufferConnectionModal(!showBufferConnectionModal)}
-                    style={{
-                      borderColor:
-                        bufferApiToken.trim() || bufferWebhookUrl.trim()
-                          ? '#34d399'
-                          : activePanelTheme.border,
-                    }}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/15 border text-[11px] transition-colors cursor-pointer"
-                  >
-                    <KeyRound
-                      style={{
-                        color:
-                          bufferApiToken.trim() || bufferWebhookUrl.trim()
-                            ? '#34d399'
-                            : activePanelTheme.accent,
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const rawSource =
+                          notebook.actualProgressLog.trim() ||
+                          bufferConfig.content ||
+                          '角色細節與互動陪伴優化';
+                        const story = buildClientStoryFromThemes(
+                          rawSource,
+                          activeProjectName || 'Nono'
+                        );
+                        handleUpdateMasterContent(story);
+                        setLastRefinedNotice('✨ 已依主題重新進行前後故事潤飾（無生硬版號）');
                       }}
-                      className="w-3 h-3"
-                    />
-                    <span>
-                      {bufferApiToken.trim() || bufferWebhookUrl.trim()
-                        ? '✓ Buffer API 設定'
-                        : '⚠️ 點此連結 Buffer API'}
-                    </span>
-                  </button>
+                      style={{
+                        borderColor: activePanelTheme.accentSecondary,
+                        color: activePanelTheme.accentSecondary,
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/45 hover:bg-white/10 border text-[11px] font-bold cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>重新前後潤飾故事</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveWindow('buffer')}
+                      style={{
+                        backgroundColor: `${activePanelTheme.accent}33`,
+                        borderColor: activePanelTheme.accent,
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold text-white hover:brightness-110 cursor-pointer"
+                    >
+                      <Calendar className="w-3 h-3" />
+                      <span>前往 3. Buffer 排程 ({sortedScheduledPosts.length})</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div
@@ -2497,109 +3147,6 @@ export function App() {
                   }`}
                 >
                   <div className={`${isSingleColumnLayout ? '' : 'col-span-7'} space-y-3`}>
-                    {showBufferConnectionModal && (
-                      <div
-                        style={{
-                          backgroundColor: activePanelTheme.panelCard,
-                          borderColor: activePanelTheme.border,
-                        }}
-                        className="p-3 rounded-xl border space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold">
-                            Buffer 官方 GraphQL API / Webhook 連線設定
-                          </span>
-                          <button
-                            onClick={() => setShowBufferConnectionModal(false)}
-                            className="text-[11px] text-zinc-400 hover:text-white cursor-pointer"
-                          >
-                            收起
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <input
-                            type="password"
-                            value={bufferApiToken}
-                            onChange={(e) => setBufferApiToken(e.target.value)}
-                            placeholder="1. Buffer API Key (必填)"
-                            className="bg-black/50 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                          />
-                          <input
-                            type="text"
-                            value={bufferProfileId}
-                            onChange={(e) => setBufferProfileId(e.target.value)}
-                            placeholder="2. Channel ID (自動抓取，可留空)"
-                            className="bg-black/50 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                          />
-                        </div>
-                        <input
-                          type="text"
-                          value={bufferWebhookUrl}
-                          onChange={(e) => setBufferWebhookUrl(e.target.value)}
-                          placeholder="或貼上 Make / Zapier Webhook URL (選填)"
-                          className="w-full bg-black/50 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                        />
-
-                        <div className="flex items-center justify-between gap-2 pt-1">
-                          <span className="text-[10px] text-zinc-400">
-                            自動記憶金鑰並直通 Buffer 排程佇列
-                          </span>
-                          <button
-                            type="button"
-                            onClick={handleTestBufferConnection}
-                            disabled={isTestingConnection}
-                            style={{
-                              backgroundColor: `${activePanelTheme.accentSecondary}28`,
-                              borderColor: activePanelTheme.accentSecondary,
-                            }}
-                            className="px-3 py-1 rounded-lg border text-xs font-bold text-white hover:brightness-110 shrink-0 cursor-pointer"
-                          >
-                            {isTestingConnection ? '測試中...' : '🔌 測試連線'}
-                          </button>
-                        </div>
-
-                        {connectionStatusMsg && (
-                          <div
-                            className={`p-2 rounded-lg text-[11px] border ${
-                              connectionStatusMsg.ok
-                                ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-200'
-                                : 'bg-rose-500/15 border-rose-400/40 text-rose-200'
-                            }`}
-                          >
-                            {connectionStatusMsg.text}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {freePlanWarning && (
-                      <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-400/40 text-rose-200 text-xs flex items-start gap-2">
-                        <ShieldAlert className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
-                        <div className="flex-1">{freePlanWarning}</div>
-                        <button
-                          onClick={() => setFreePlanWarning(null)}
-                          className="text-rose-300 hover:text-white cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-
-                    {dispatchSuccessBanner && (
-                      <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/40 text-emerald-200 text-xs flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                          <span>{dispatchSuccessBanner}</span>
-                        </div>
-                        <button
-                          onClick={() => setDispatchSuccessBanner(null)}
-                          className="text-emerald-300 hover:text-white cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-
                     {(isXOverLimit || igHashtagExceeded) && (
                       <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 text-xs flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -2762,7 +3309,7 @@ export function App() {
                       </div>
 
                       <textarea
-                        rows={3}
+                        rows={5}
                         value={activeEditorText}
                         onChange={(e) => {
                           if (editingScope === 'master') {
@@ -2819,27 +3366,42 @@ export function App() {
                       }}
                       className="p-2.5 rounded-xl border space-y-1.5"
                     >
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
                         <span className="text-xs font-semibold flex items-center gap-1.5">
                           <Wand2
                             style={{ color: activePanelTheme.accent }}
                             className="w-3.5 h-3.5"
                           />
-                          請 Nono 微調貼文內容與語氣
+                          請 {activeDomainNono.name} 微調貼文故事與語氣
                         </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleRefinePostWithNono(
-                              undefined,
-                              '幫我把語氣改得更平實自然一點，字數再精簡一些'
-                            )
-                          }
-                          disabled={isRefiningPost}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-white/8 hover:bg-white/15 text-zinc-300 cursor-pointer"
-                        >
-                          一鍵平實精簡
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRefinePostWithNono(
+                                undefined,
+                                '請用更有畫面感的故事開場與收尾提問改寫，不要出現任何版本號碼'
+                              )
+                            }
+                            disabled={isRefiningPost}
+                            className="text-[10px] px-2 py-0.5 rounded-md bg-white/8 hover:bg-white/15 text-emerald-300 cursor-pointer"
+                          >
+                            故事懸念感
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRefinePostWithNono(
+                                undefined,
+                                '幫我把語氣改得更平實自然一點，字數再精簡一些'
+                              )
+                            }
+                            disabled={isRefiningPost}
+                            className="text-[10px] px-2 py-0.5 rounded-md bg-white/8 hover:bg-white/15 text-zinc-300 cursor-pointer"
+                          >
+                            一鍵平實精簡
+                          </button>
+                        </div>
                       </div>
                       <form
                         onSubmit={(e) => handleRefinePostWithNono(e)}
@@ -2869,466 +3431,6 @@ export function App() {
                           {lastRefinedNotice}
                         </div>
                       )}
-                    </div>
-
-                    {/* Buffer 推薦時段與排程（先選日期 -> 顯示推薦時段與自由改時分 + 顯示那天/近期/最後一篇排程） */}
-                    <div
-                      style={{
-                        backgroundColor: activePanelTheme.panelCard,
-                        borderColor: `${activePanelTheme.border}44`,
-                      }}
-                      className="p-3 rounded-xl border space-y-2.5"
-                    >
-                      {/* 頂部標題與目前選定排程狀態 */}
-                      <div className="flex flex-wrap items-center justify-between gap-1.5">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold">
-                          <Calendar
-                            style={{ color: activePanelTheme.accentSecondary }}
-                            className="w-3.5 h-3.5"
-                          />
-                          <span>排程日期與時間設定</span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleSyncCloudScheduledPosts(false)}
-                            disabled={isSyncingSchedule}
-                            style={{
-                              borderColor: `${activePanelTheme.accentSecondary}66`,
-                              color: activePanelTheme.accentSecondary,
-                            }}
-                            className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer transition-all disabled:opacity-40"
-                            title="從 Buffer 雲端同步最新排程紀錄"
-                          >
-                            <RefreshCw className={`w-2.5 h-2.5 ${isSyncingSchedule ? 'animate-spin' : ''}`} />
-                            <span>{isSyncingSchedule ? '同步中...' : '同步雲端排程'}</span>
-                          </button>
-
-                          <span
-                            style={{
-                              backgroundColor: activePanelTheme.highlightTagBg,
-                              color: activePanelTheme.highlightTagText,
-                            }}
-                            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm"
-                          >
-                            {bufferConfig.scheduleMode === 'now'
-                              ? '⚡ 立即發送'
-                              : bufferConfig.scheduleMode === 'queue'
-                                ? '📥 直通下個空檔'
-                                : `📅 ${activeScheduledYmd} ${activeScheduledHm}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 排程現況看板：最後一篇排程 / 那天排程 / 最近幾天排程 */}
-                      <div className="p-2.5 rounded-lg bg-black/45 border border-white/10 space-y-1.5 text-[11px]">
-                        {/* 1. 最後一篇排程是何時 */}
-                        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-white/10">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-bold shrink-0">
-                              最後一篇排程
-                            </span>
-                            {lastScheduledPost ? (
-                              <span className="font-mono text-white font-semibold truncate">
-                                {formatYmdWithWeekday(lastScheduledPost.scheduledIso.slice(0, 10))}{' '}
-                                <span style={{ color: activePanelTheme.accentSecondary }}>
-                                  {lastScheduledPost.scheduledIso.slice(11, 16)}
-                                </span>
-                                <span className="text-zinc-400 text-[10px] ml-1.5">
-                                  ({lastScheduledPost.platforms.map((p) => PLATFORM_META[p]?.badge || p).join('/')} · {lastScheduledPost.text.slice(0, 18)}...)
-                                </span>
-                              </span>
-                            ) : (
-                              <span className="text-zinc-400 text-[10px]">
-                                目前尚無已排程紀錄（送出排程後會自動記錄）
-                              </span>
-                            )}
-                          </div>
-
-                          {lastScheduledPost && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const nextDay = addDaysToYmd(
-                                  lastScheduledPost.scheduledIso.slice(0, 10),
-                                  1
-                                );
-                                handlePickScheduleDate(nextDay);
-                              }}
-                              style={{
-                                backgroundColor: `${activePanelTheme.accent}28`,
-                                borderColor: activePanelTheme.accent,
-                              }}
-                              className="px-2 py-0.5 rounded border text-[10px] font-bold text-white hover:brightness-110 cursor-pointer shrink-0"
-                            >
-                              ➕ 排在最後一篇隔天 ({addDaysToYmd(lastScheduledPost.scheduledIso.slice(0, 10), 1).slice(5)})
-                            </button>
-                          )}
-                        </div>
-
-                        {/* 2. 所選那天 ({activeScheduledYmd}) 的排程 */}
-                        <div className="flex flex-wrap items-center justify-between gap-1">
-                          <span className="text-[10px] text-zinc-300 font-semibold">
-                            📌 所選日期（{formatYmdWithWeekday(activeScheduledYmd)}）排程：
-                          </span>
-                          {postsOnSelectedDate.length === 0 ? (
-                            <span className="text-[10px] text-emerald-300 font-mono">
-                              ✨ 這天尚無排程，全天時段皆空！
-                            </span>
-                          ) : (
-                            <div className="flex flex-wrap items-center gap-1">
-                              {postsOnSelectedDate.map((p) => (
-                                <span
-                                  key={p.id}
-                                  className="px-1.5 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono text-amber-200"
-                                  title={p.text}
-                                >
-                                  {p.scheduledIso.slice(11, 16)} ({p.platforms.map((pl) => PLATFORM_META[pl]?.badge || pl).join('/')})
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* 3. 最近幾天已排程一覽 */}
-                        {recentDaysScheduledPosts.length > 0 && (
-                          <div className="pt-1 border-t border-white/5 flex flex-wrap items-center gap-1">
-                            <span className="text-[10px] text-zinc-400 shrink-0">
-                              🗓️ 最近幾天已排：
-                            </span>
-                            {recentDaysScheduledPosts.slice(0, 5).map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => handlePickScheduleDate(p.scheduledIso.slice(0, 10))}
-                                className="px-1.5 py-0.5 rounded bg-black/50 hover:bg-white/10 border border-white/10 text-[10px] font-mono text-zinc-300 cursor-pointer"
-                                title={`點擊查看 ${p.scheduledIso.slice(0, 10)}：${p.text}`}
-                              >
-                                {p.scheduledIso.slice(5, 10).replace('-', '/')} {p.scheduledIso.slice(11, 16)}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 步驟 1：先選擇排程日期（按鈕直選 + 前後一天 + 日曆選擇器，解決無邊框視窗無法改日期問題） */}
-                      <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center justify-between gap-1">
-                          <span className="text-[11px] font-bold text-white flex items-center gap-1">
-                            <span
-                              style={{ backgroundColor: activePanelTheme.accent }}
-                              className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center text-white font-mono"
-                            >
-                              1
-                            </span>
-                            先選擇排程日期
-                          </span>
-
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handlePickScheduleDate(addDaysToYmd(activeScheduledYmd, -1))
-                              }
-                              className="px-2 py-0.5 rounded bg-black/45 hover:bg-white/15 border border-white/15 text-[10px] text-zinc-200 cursor-pointer"
-                            >
-                              ◀ 前一天
-                            </button>
-                            <input
-                              type="date"
-                              value={activeScheduledYmd}
-                              onChange={(e) => {
-                                if (e.target.value) {
-                                  handlePickScheduleDate(e.target.value);
-                                }
-                              }}
-                              className="bg-black/60 border border-white/20 rounded px-2 py-0.5 text-[11px] font-mono text-white cursor-pointer"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handlePickScheduleDate(addDaysToYmd(activeScheduledYmd, 1))
-                              }
-                              className="px-2 py-0.5 rounded bg-black/45 hover:bg-white/15 border border-white/15 text-[10px] text-zinc-200 cursor-pointer"
-                            >
-                              後一天 ▶
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* 未來 7 天快速日期按鈕 */}
-                        <div className="grid grid-cols-4 sm:grid-cols-7 gap-1">
-                          {upcoming7Days.map((day) => {
-                            const isDaySelected =
-                              hasPickedScheduleDate && activeScheduledYmd === day.ymd;
-                            return (
-                              <button
-                                key={day.ymd}
-                                type="button"
-                                onClick={() => handlePickScheduleDate(day.ymd)}
-                                style={
-                                  isDaySelected
-                                    ? {
-                                        backgroundColor: `${activePanelTheme.accent}38`,
-                                        borderColor: activePanelTheme.accent,
-                                      }
-                                    : {
-                                        backgroundColor: 'rgba(0,0,0,0.38)',
-                                        borderColor: 'rgba(255,255,255,0.12)',
-                                      }
-                                }
-                                className="px-1.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer hover:border-white/35 flex flex-col items-center justify-center"
-                              >
-                                <span className="text-[10px] font-bold text-white leading-tight">
-                                  {day.label}
-                                </span>
-                                <span className="text-[9px] font-mono text-zinc-400">
-                                  {day.ymd.slice(5).replace('-', '/')}
-                                </span>
-                                {day.countOnDay > 0 && (
-                                  <span
-                                    style={{ color: activePanelTheme.accentSecondary }}
-                                    className="text-[9px] font-mono font-bold mt-0.5"
-                                  >
-                                    已排{day.countOnDay}篇
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* 步驟 2：選好日期後，才顯示「該日期的推薦時間」與「自由調整幾點幾分」 */}
-                      {!hasPickedScheduleDate ? (
-                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-dashed border-white/15 flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-zinc-300">
-                            👆 請先點選上方任一「排程日期」，系統就會針對該日期推薦最佳時段並開放微調幾點幾分！
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handlePickScheduleDate(activeScheduledYmd)}
-                            style={{
-                              backgroundColor: `${activePanelTheme.accentSecondary}28`,
-                              borderColor: activePanelTheme.accentSecondary,
-                              color: activePanelTheme.accentSecondary,
-                            }}
-                            className="px-2.5 py-1 rounded-lg border text-[10px] font-bold shrink-0 cursor-pointer hover:brightness-110"
-                          >
-                            直接選今天 ({activeScheduledYmd.slice(5)})
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2 pt-1.5 border-t border-white/10">
-                          <div className="flex flex-wrap items-center justify-between gap-1">
-                            <span className="text-[11px] font-bold text-white flex items-center gap-1">
-                              <span
-                                style={{ backgroundColor: activePanelTheme.accentSecondary, color: '#041714' }}
-                                className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-mono font-bold"
-                              >
-                                2
-                              </span>
-                              <span>
-                                {formatYmdWithWeekday(activeScheduledYmd)} 的推薦時間（點選套用，或下方自由改時分）
-                              </span>
-                            </span>
-
-                            <button
-                              type="button"
-                              onClick={handleRefreshRecommendedSlots}
-                              style={{
-                                borderColor: `${activePanelTheme.accentSecondary}88`,
-                                color: activePanelTheme.accentSecondary,
-                              }}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer transition-all"
-                            >
-                              <RefreshCw className="w-2.5 h-2.5" />
-                              <span>換一批推薦 ({lastSlotRefreshedAt})</span>
-                            </button>
-                          </div>
-
-                          {/* 該日期專屬的 3 個推薦時段 */}
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                            {recommendedSlots.map((slot) => {
-                              const isSelected =
-                                (bufferConfig.scheduleMode === 'recommended_slot' ||
-                                  bufferConfig.scheduleMode === 'custom_time') &&
-                                bufferConfig.scheduledTime === slot.scheduledIso;
-                              return (
-                                <button
-                                  key={slot.id}
-                                  type="button"
-                                  onClick={() => handleSelectRecommendedSlot(slot)}
-                                  style={
-                                    isSelected
-                                      ? {
-                                          backgroundColor: `${activePanelTheme.accentSecondary}28`,
-                                          borderColor: activePanelTheme.accentSecondary,
-                                        }
-                                      : {
-                                          backgroundColor: 'rgba(0,0,0,0.35)',
-                                          borderColor: 'rgba(255,255,255,0.12)',
-                                        }
-                                  }
-                                  className="p-2 rounded-lg border text-left transition-all cursor-pointer hover:border-white/30"
-                                >
-                                  <div className="flex items-center justify-between text-[11px] font-semibold">
-                                    <span className="truncate">{slot.label}</span>
-                                    <span
-                                      style={{ color: activePanelTheme.accentSecondary }}
-                                      className="font-mono shrink-0 ml-1 font-bold"
-                                    >
-                                      {slot.timeString}
-                                    </span>
-                                  </div>
-                                  <div className="text-[10px] text-zinc-400 mt-0.5 truncate">
-                                    {slot.reason}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {/* 直接修改「幾點幾分」（下拉選單 + 常用時間按鈕，不依賴原生彈窗） */}
-                          <div className="p-2 rounded-lg bg-black/40 border border-white/10 flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5">
-                              <Clock
-                                style={{ color: activePanelTheme.accent }}
-                                className="w-3.5 h-3.5 shrink-0"
-                              />
-                              <span className="text-[11px] font-semibold text-zinc-200">
-                                自訂時間：
-                              </span>
-                              <select
-                                value={activeHourStr}
-                                onChange={(e) =>
-                                  handlePickTimeHourMinute(e.target.value, activeMinStr)
-                                }
-                                className="bg-black/75 border border-white/20 rounded px-1.5 py-0.5 text-xs font-mono text-white cursor-pointer"
-                              >
-                                {Array.from({ length: 24 }, (_, h) =>
-                                  String(h).padStart(2, '0')
-                                ).map((hh) => (
-                                  <option key={hh} value={hh} className="bg-zinc-900 text-white">
-                                    {hh} 點
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="text-xs font-mono text-zinc-400">:</span>
-                              <select
-                                value={activeMinStr}
-                                onChange={(e) =>
-                                  handlePickTimeHourMinute(activeHourStr, e.target.value)
-                                }
-                                className="bg-black/75 border border-white/20 rounded px-1.5 py-0.5 text-xs font-mono text-white cursor-pointer"
-                              >
-                                {Array.from(
-                                  new Set([
-                                    '00',
-                                    '05',
-                                    '10',
-                                    '15',
-                                    '20',
-                                    '25',
-                                    '30',
-                                    '35',
-                                    '40',
-                                    '45',
-                                    '50',
-                                    '55',
-                                    activeMinStr,
-                                  ])
-                                )
-                                  .sort()
-                                  .map((mm) => (
-                                    <option key={mm} value={mm} className="bg-zinc-900 text-white">
-                                      {mm} 分
-                                    </option>
-                                  ))}
-                              </select>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-1">
-                              {[
-                                { hh: '12', mm: '30', tag: '12:30 午休' },
-                                { hh: '18', mm: '30', tag: '18:30 下班' },
-                                { hh: '20', mm: '30', tag: '20:30 晚間' },
-                                { hh: '22', mm: '00', tag: '22:00 深夜' },
-                              ].map((preset) => {
-                                const isActiveTime =
-                                  activeHourStr === preset.hh && activeMinStr === preset.mm;
-                                return (
-                                  <button
-                                    key={preset.tag}
-                                    type="button"
-                                    onClick={() =>
-                                      handlePickTimeHourMinute(preset.hh, preset.mm)
-                                    }
-                                    style={
-                                      isActiveTime
-                                        ? {
-                                            backgroundColor: `${activePanelTheme.accent}44`,
-                                            borderColor: activePanelTheme.accent,
-                                            color: '#fff',
-                                          }
-                                        : undefined
-                                    }
-                                    className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 border border-white/10 text-[10px] font-mono text-zinc-300 cursor-pointer"
-                                  >
-                                    {preset.tag}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 發佈模式切換（指定排程時間 / 排入佇列下個空檔 / 立即發佈） */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/10">
-                        {[
-                          {
-                            mode: 'custom_time' as const,
-                            label: `📅 依選定時間排程 (${activeScheduledYmd.slice(5).replace('-', '/')} ${activeScheduledHm})`,
-                          },
-                          { mode: 'queue' as const, label: '📥 直接排入下個空檔' },
-                          { mode: 'now' as const, label: '⚡ 立即發佈' },
-                        ].map((m) => {
-                          const isSelectedMode =
-                            bufferConfig.scheduleMode === m.mode ||
-                            (m.mode === 'custom_time' &&
-                              bufferConfig.scheduleMode === 'recommended_slot');
-                          return (
-                            <button
-                              key={m.mode}
-                              type="button"
-                              onClick={() => {
-                                if (m.mode === 'custom_time') {
-                                  setHasPickedScheduleDate(true);
-                                }
-                                setBufferConfig((prev) => ({
-                                  ...prev,
-                                  scheduleMode: m.mode,
-                                  status: 'ready_to_schedule',
-                                }));
-                              }}
-                              style={
-                                isSelectedMode
-                                  ? {
-                                      backgroundColor: `${activePanelTheme.accent}33`,
-                                      borderColor: activePanelTheme.accent,
-                                      color: '#ffffff',
-                                    }
-                                  : undefined
-                              }
-                              className="px-2.5 py-1 rounded-lg text-[11px] border bg-black/30 border-white/10 text-zinc-300 cursor-pointer"
-                            >
-                              {m.label}
-                            </button>
-                          );
-                        })}
-                      </div>
                     </div>
 
                     {/* 圖片 / 影片素材 */}
@@ -3442,7 +3544,7 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Right Column inside Buffer Tab: Live Platform Preview */}
+                  {/* Right Column inside Composer Tab: Live Platform Preview */}
                   <div
                     className={`${
                       isSingleColumnLayout ? '' : 'col-span-5'
@@ -3640,123 +3742,1164 @@ export function App() {
                           </div>
                         )}
                       </div>
-
-                      {/* 真實已成功排程佇列 */}
-                      <div
-                        style={{
-                          backgroundColor: activePanelTheme.panelCard,
-                          borderColor: `${activePanelTheme.border}38`,
-                        }}
-                        className="p-2.5 rounded-xl border space-y-1.5"
-                      >
-                        <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                          <span>已排程紀錄 ({sortedScheduledPosts.length} 篇)</span>
-                          {queuedPosts.length > 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => setQueuedPosts([])}
-                              className="text-[10px] text-rose-300 hover:text-rose-200 flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <Trash2 className="w-2.5 h-2.5" />
-                              清空紀錄
-                            </button>
-                          ) : (
-                            <span
-                              style={{ color: activePanelTheme.accentSecondary }}
-                              className="font-mono"
-                            >
-                              送出或同步雲端後自動記錄
-                            </span>
-                          )}
-                        </div>
-                        <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
-                          {sortedScheduledPosts.length === 0 ? (
-                            <div className="py-1.5 text-center text-[10px] text-zinc-500">
-                              目前尚無已送出的排程紀錄
-                            </div>
-                          ) : (
-                            sortedScheduledPosts.map((qp, idx) => {
-                              const isLatest = idx === sortedScheduledPosts.length - 1;
-                              return (
-                                <div
-                                  key={qp.id}
-                                  onClick={() => handlePickScheduleDate(qp.scheduledIso.slice(0, 10))}
-                                  className="p-2 rounded-lg bg-black/35 hover:bg-white/5 border border-white/5 text-[10px] space-y-0.5 cursor-pointer transition-colors"
-                                  title="點擊切換檢視該日期的排程"
-                                >
-                                  <div className="flex items-center justify-between gap-1">
-                                    <div className="flex items-center gap-1 min-w-0">
-                                      {isLatest && (
-                                        <span className="px-1 py-0.2 rounded bg-amber-500/25 border border-amber-400/50 text-amber-300 text-[9px] font-bold shrink-0">
-                                          最後一篇
-                                        </span>
-                                      )}
-                                      <span
-                                        style={{ color: activePanelTheme.accentSecondary }}
-                                        className="font-mono font-bold truncate"
-                                      >
-                                        {qp.scheduledIso.slice(0, 16).replace('T', ' ')}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <span
-                                        style={{
-                                          backgroundColor: `${activePanelTheme.accent}33`,
-                                          color: activePanelTheme.textMain,
-                                        }}
-                                        className="px-1.5 py-0.5 rounded-sm font-mono text-[9px]"
-                                      >
-                                        {qp.platforms.map((p) => PLATFORM_META[p]?.badge || p).join('/')}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setQueuedPosts((prev) =>
-                                            prev.filter((item) => item.id !== qp.id)
-                                          );
-                                        }}
-                                        className="text-zinc-500 hover:text-rose-300 px-1 cursor-pointer"
-                                        title="刪除此筆紀錄"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <p className="text-zinc-300 truncate">{qp.text}</p>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
                     </div>
 
-                    <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={handleConfirmBuffer}
-                        disabled={
-                          bufferConfig.platforms.length === 0 ||
-                          !bufferConfig.content.trim() ||
-                          isDispatchingBuffer
-                        }
+                        onClick={() => setActiveWindow('buffer')}
                         style={{
                           background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
                           boxShadow: `0 8px 25px ${activePanelTheme.glowRgba}`,
                         }}
-                        className="w-full py-2.5 px-4 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer hover:brightness-110"
+                        className="w-full py-2.5 px-4 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer hover:brightness-110"
                       >
-                        <Check className="w-4 h-4" />
-                        {isDispatchingBuffer
-                          ? '正在傳送至 Buffer 排程佇列...'
-                          : '確認直接上傳 Buffer 排程'}
+                        <Calendar className="w-4 h-4" />
+                        <span>下一步：選日期與 Buffer 排程</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveWindow('council')}
+                        className="w-full py-2.5 px-3 rounded-xl bg-white/8 hover:bg-white/15 border border-white/15 text-zinc-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>請多領域 Nono 協作潤飾</span>
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
             )}
+
+            {/* ==================== TAB 3: BUFFER SCHEDULE, CLOUD DATA SYNC & FULL HISTORY ==================== */}
+            {activeWindow === 'buffer' && (
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div
+                  style={{ borderColor: `${activePanelTheme.border}38` }}
+                  className="px-3.5 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-2 bg-black/25"
+                >
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      style={{
+                        backgroundColor: activePanelTheme.highlightTagBg,
+                        color: activePanelTheme.highlightTagText,
+                      }}
+                      className="px-2 py-0.5 rounded-sm text-[10px] font-mono font-black"
+                    >
+                      雲端與本機永久排程紀錄 ({sortedScheduledPosts.length} 篇)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSyncCloudScheduledPosts(false)}
+                      disabled={isSyncingSchedule}
+                      style={{
+                        borderColor: `${activePanelTheme.accentSecondary}88`,
+                        color: activePanelTheme.accentSecondary,
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 border text-[10px] font-mono font-bold cursor-pointer transition-all disabled:opacity-40"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isSyncingSchedule ? 'animate-spin' : ''}`} />
+                      <span>
+                        {isSyncingSchedule ? '正在抓取 Buffer 資料...' : '🔄 抓取 Buffer 雲端資料與排程紀錄'}
+                      </span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => setShowBufferConnectionModal(!showBufferConnectionModal)}
+                    style={{
+                      borderColor:
+                        bufferApiToken.trim() || bufferWebhookUrl.trim()
+                          ? '#34d399'
+                          : activePanelTheme.border,
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/15 border text-[11px] transition-colors cursor-pointer"
+                  >
+                    <KeyRound
+                      style={{
+                        color:
+                          bufferApiToken.trim() || bufferWebhookUrl.trim()
+                            ? '#34d399'
+                            : activePanelTheme.accent,
+                      }}
+                      className="w-3 h-3"
+                    />
+                    <span>
+                      {bufferApiToken.trim() || bufferWebhookUrl.trim()
+                        ? '✓ Buffer API 設定'
+                        : '⚠️ 點此連結 Buffer API'}
+                    </span>
+                  </button>
+                </div>
+
+                <div
+                  className={`flex-1 min-h-0 overflow-y-auto p-3.5 grid gap-3.5 ${
+                    isSingleColumnLayout ? 'grid-cols-1' : 'grid-cols-12'
+                  }`}
+                >
+                  {/* Left Column: Schedule Picker & Direct Buffer Upload */}
+                  <div className={`${isSingleColumnLayout ? '' : 'col-span-7'} space-y-3`}>
+                    {showBufferConnectionModal && (
+                      <div
+                        style={{
+                          backgroundColor: activePanelTheme.panelCard,
+                          borderColor: activePanelTheme.border,
+                        }}
+                        className="p-3 rounded-xl border space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold">
+                            Buffer 官方 GraphQL API / Webhook 連線設定
+                          </span>
+                          <button
+                            onClick={() => setShowBufferConnectionModal(false)}
+                            className="text-[11px] text-zinc-400 hover:text-white cursor-pointer"
+                          >
+                            收起
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <input
+                            type="password"
+                            value={bufferApiToken}
+                            onChange={(e) => setBufferApiToken(e.target.value)}
+                            placeholder="1. Buffer API Key (必填)"
+                            className="bg-black/50 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                          />
+                          <input
+                            type="text"
+                            value={bufferProfileId}
+                            onChange={(e) => setBufferProfileId(e.target.value)}
+                            placeholder="2. Channel ID (自動抓取，可留空)"
+                            className="bg-black/50 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={bufferWebhookUrl}
+                          onChange={(e) => setBufferWebhookUrl(e.target.value)}
+                          placeholder="或貼上 Make / Zapier Webhook URL (選填)"
+                          className="w-full bg-black/50 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                        />
+
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                          <span className="text-[10px] text-zinc-400">
+                            自動記憶金鑰並同步 Buffer 雲端排程與歷史紀錄
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleTestBufferConnection}
+                            disabled={isTestingConnection}
+                            style={{
+                              backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                              borderColor: activePanelTheme.accentSecondary,
+                            }}
+                            className="px-3 py-1 rounded-lg border text-xs font-bold text-white hover:brightness-110 shrink-0 cursor-pointer"
+                          >
+                            {isTestingConnection ? '測試中...' : '🔌 測試連線並抓資料'}
+                          </button>
+                        </div>
+
+                        {connectionStatusMsg && (
+                          <div
+                            className={`p-2 rounded-lg text-[11px] border ${
+                              connectionStatusMsg.ok
+                                ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-200'
+                                : 'bg-rose-500/15 border-rose-400/40 text-rose-200'
+                            }`}
+                          >
+                            {connectionStatusMsg.text}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {scheduleSyncNote && (
+                      <div className="p-2 rounded-xl bg-sky-500/15 border border-sky-400/35 text-sky-200 text-[11px] flex items-center justify-between gap-2">
+                        <span>{scheduleSyncNote}</span>
+                        <button
+                          type="button"
+                          onClick={() => setScheduleSyncNote('')}
+                          className="text-sky-300 hover:text-white cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {freePlanWarning && (
+                      <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-400/40 text-rose-200 text-xs flex items-start gap-2">
+                        <ShieldAlert className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+                        <div className="flex-1">{freePlanWarning}</div>
+                        <button
+                          onClick={() => setFreePlanWarning(null)}
+                          className="text-rose-300 hover:text-white cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {dispatchSuccessBanner && (
+                      <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/40 text-emerald-200 text-xs flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                          <span>{dispatchSuccessBanner}</span>
+                        </div>
+                        <button
+                          onClick={() => setDispatchSuccessBanner(null)}
+                          className="text-emerald-300 hover:text-white cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 目前準備排程的貼文摘要卡片（可點選回面板 2 修改） */}
+                    <div
+                      style={{
+                        backgroundColor: activePanelTheme.panelCard,
+                        borderColor: `${activePanelTheme.border}44`,
+                      }}
+                      className="p-3 rounded-xl border space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold flex items-center gap-1.5">
+                          <Sparkles
+                            style={{ color: activePanelTheme.accent }}
+                            className="w-3.5 h-3.5"
+                          />
+                          準備排程發送的貼文內容（發送後完整記錄於右側）
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveWindow('composer')}
+                          className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-white cursor-pointer"
+                        >
+                          ✍️ 返回面板 2 編輯文案
+                        </button>
+                      </div>
+                      <p className="text-xs text-zinc-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-2.5 max-h-28 overflow-y-auto leading-relaxed">
+                        {bufferConfig.content || '（尚未填寫貼文內容）'}
+                      </p>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-400 font-mono">
+                        <span>
+                          發佈平台：
+                          {bufferConfig.platforms.map((p) => PLATFORM_META[p].label).join('、') ||
+                            '未選取'}
+                        </span>
+                        <span>附圖：{bufferConfig.mediaAttachments.length} 張</span>
+                      </div>
+                    </div>
+
+                    {/* Buffer 推薦時段與排程（先選日期 -> 顯示推薦時段與自由改時分 + 顯示那天/近期/最後一篇排程） */}
+                    <div
+                      style={{
+                        backgroundColor: activePanelTheme.panelCard,
+                        borderColor: `${activePanelTheme.border}44`,
+                      }}
+                      className="p-3 rounded-xl border space-y-2.5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold">
+                          <Calendar
+                            style={{ color: activePanelTheme.accentSecondary }}
+                            className="w-3.5 h-3.5"
+                          />
+                          <span>排程日期與時間設定</span>
+                        </div>
+
+                        <span
+                          style={{
+                            backgroundColor: activePanelTheme.highlightTagBg,
+                            color: activePanelTheme.highlightTagText,
+                          }}
+                          className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm"
+                        >
+                          {bufferConfig.scheduleMode === 'now'
+                            ? '⚡ 立即發送'
+                            : bufferConfig.scheduleMode === 'queue'
+                              ? '📥 直通下個空檔'
+                              : `📅 ${activeScheduledYmd} ${activeScheduledHm}`}
+                        </span>
+                      </div>
+
+                      {/* 排程現況看板：最後一篇排程 / 那天排程 / 最近幾天排程 */}
+                      <div className="p-2.5 rounded-lg bg-black/45 border border-white/10 space-y-1.5 text-[11px]">
+                        {/* 1. 最後一篇排程是何時 */}
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-white/10">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-bold shrink-0">
+                              最後一篇排程
+                            </span>
+                            {lastScheduledPost ? (
+                              <span className="font-mono text-white font-semibold truncate">
+                                {formatYmdWithWeekday(lastScheduledPost.scheduledIso.slice(0, 10))}{' '}
+                                <span style={{ color: activePanelTheme.accentSecondary }}>
+                                  {lastScheduledPost.scheduledIso.slice(11, 16)}
+                                </span>
+                                <span className="text-zinc-400 text-[10px] ml-1.5">
+                                  ({lastScheduledPost.platforms.map((p) => PLATFORM_META[p]?.badge || p).join('/')} · {lastScheduledPost.text.slice(0, 22)}...)
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 text-[10px]">
+                                目前尚無已排程紀錄（點上方「抓取 Buffer 雲端資料」或發送後自動記錄）
+                              </span>
+                            )}
+                          </div>
+
+                          {lastScheduledPost && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextDay = addDaysToYmd(
+                                  lastScheduledPost.scheduledIso.slice(0, 10),
+                                  1
+                                );
+                                handlePickScheduleDate(nextDay);
+                              }}
+                              style={{
+                                backgroundColor: `${activePanelTheme.accent}28`,
+                                borderColor: activePanelTheme.accent,
+                              }}
+                              className="px-2 py-0.5 rounded border text-[10px] font-bold text-white hover:brightness-110 cursor-pointer shrink-0"
+                            >
+                              ➕ 排在最後一篇隔天 ({addDaysToYmd(lastScheduledPost.scheduledIso.slice(0, 10), 1).slice(5)})
+                            </button>
+                          )}
+                        </div>
+
+                        {/* 2. 所選那天 ({activeScheduledYmd}) 的排程 */}
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <span className="text-[10px] text-zinc-300 font-semibold">
+                            📌 所選日期（{formatYmdWithWeekday(activeScheduledYmd)}）排程：
+                          </span>
+                          {postsOnSelectedDate.length === 0 ? (
+                            <span className="text-[10px] text-emerald-300 font-mono">
+                              ✨ 這天尚無排程，全天時段皆空！
+                            </span>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-1">
+                              {postsOnSelectedDate.map((p) => (
+                                <span
+                                  key={p.id}
+                                  className="px-1.5 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono text-amber-200"
+                                  title={p.text}
+                                >
+                                  {p.scheduledIso.slice(11, 16)} ({p.platforms.map((pl) => PLATFORM_META[pl]?.badge || pl).join('/')})
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. 最近幾天已排程一覽 */}
+                        {recentDaysScheduledPosts.length > 0 && (
+                          <div className="pt-1 border-t border-white/5 flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] text-zinc-400 shrink-0">
+                              🗓️ 最近幾天已排：
+                            </span>
+                            {recentDaysScheduledPosts.slice(0, 6).map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => handlePickScheduleDate(p.scheduledIso.slice(0, 10))}
+                                className="px-1.5 py-0.5 rounded bg-black/50 hover:bg-white/10 border border-white/10 text-[10px] font-mono text-zinc-300 cursor-pointer"
+                                title={`點擊查看 ${p.scheduledIso.slice(0, 10)}：${p.text}`}
+                              >
+                                {p.scheduledIso.slice(5, 10).replace('-', '/')} {p.scheduledIso.slice(11, 16)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 步驟 1：先選擇排程日期 */}
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <span className="text-[11px] font-bold text-white flex items-center gap-1">
+                            <span
+                              style={{ backgroundColor: activePanelTheme.accent }}
+                              className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center text-white font-mono"
+                            >
+                              1
+                            </span>
+                            先選擇排程日期
+                          </span>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handlePickScheduleDate(addDaysToYmd(activeScheduledYmd, -1))
+                              }
+                              className="px-2 py-0.5 rounded bg-black/45 hover:bg-white/15 border border-white/15 text-[10px] text-zinc-200 cursor-pointer"
+                            >
+                              ◀ 前一天
+                            </button>
+                            <input
+                              type="date"
+                              value={activeScheduledYmd}
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handlePickScheduleDate(e.target.value);
+                                }
+                              }}
+                              className="bg-black/60 border border-white/20 rounded px-2 py-0.5 text-[11px] font-mono text-white cursor-pointer"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handlePickScheduleDate(addDaysToYmd(activeScheduledYmd, 1))
+                              }
+                              className="px-2 py-0.5 rounded bg-black/45 hover:bg-white/15 border border-white/15 text-[10px] text-zinc-200 cursor-pointer"
+                            >
+                              後一天 ▶
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 sm:grid-cols-7 gap-1">
+                          {upcoming7Days.map((day) => {
+                            const isDaySelected =
+                              hasPickedScheduleDate && activeScheduledYmd === day.ymd;
+                            return (
+                              <button
+                                key={day.ymd}
+                                type="button"
+                                onClick={() => handlePickScheduleDate(day.ymd)}
+                                style={
+                                  isDaySelected
+                                    ? {
+                                        backgroundColor: `${activePanelTheme.accent}38`,
+                                        borderColor: activePanelTheme.accent,
+                                      }
+                                    : {
+                                        backgroundColor: 'rgba(0,0,0,0.38)',
+                                        borderColor: 'rgba(255,255,255,0.12)',
+                                      }
+                                }
+                                className="px-1.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer hover:border-white/35 flex flex-col items-center justify-center"
+                              >
+                                <span className="text-[10px] font-bold text-white leading-tight">
+                                  {day.label}
+                                </span>
+                                <span className="text-[9px] font-mono text-zinc-400">
+                                  {day.ymd.slice(5).replace('-', '/')}
+                                </span>
+                                {day.countOnDay > 0 && (
+                                  <span
+                                    style={{ color: activePanelTheme.accentSecondary }}
+                                    className="text-[9px] font-mono font-bold mt-0.5"
+                                  >
+                                    已排{day.countOnDay}篇
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* 步驟 2：選好日期後，才顯示「該日期的推薦時間」與「自由調整幾點幾分」 */}
+                      {!hasPickedScheduleDate ? (
+                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-dashed border-white/15 flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-zinc-300">
+                            👆 請先點選上方任一「排程日期」，系統就會針對該日期推薦最佳時段並開放微調幾點幾分！
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handlePickScheduleDate(activeScheduledYmd)}
+                            style={{
+                              backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                              borderColor: activePanelTheme.accentSecondary,
+                              color: activePanelTheme.accentSecondary,
+                            }}
+                            className="px-2.5 py-1 rounded-lg border text-[10px] font-bold shrink-0 cursor-pointer hover:brightness-110"
+                          >
+                            直接選今天 ({activeScheduledYmd.slice(5)})
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 pt-1.5 border-t border-white/10">
+                          <div className="flex flex-wrap items-center justify-between gap-1">
+                            <span className="text-[11px] font-bold text-white flex items-center gap-1">
+                              <span
+                                style={{ backgroundColor: activePanelTheme.accentSecondary, color: '#041714' }}
+                                className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-mono font-bold"
+                              >
+                                2
+                              </span>
+                              <span>
+                                {formatYmdWithWeekday(activeScheduledYmd)} 的推薦時間（點選套用，或下方自由改時分）
+                              </span>
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={handleRefreshRecommendedSlots}
+                              style={{
+                                borderColor: `${activePanelTheme.accentSecondary}88`,
+                                color: activePanelTheme.accentSecondary,
+                              }}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer transition-all"
+                            >
+                              <RefreshCw className="w-2.5 h-2.5" />
+                              <span>換一批推薦 ({lastSlotRefreshedAt})</span>
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                            {recommendedSlots.map((slot) => {
+                              const isSelected =
+                                (bufferConfig.scheduleMode === 'recommended_slot' ||
+                                  bufferConfig.scheduleMode === 'custom_time') &&
+                                bufferConfig.scheduledTime === slot.scheduledIso;
+                              return (
+                                <button
+                                  key={slot.id}
+                                  type="button"
+                                  onClick={() => handleSelectRecommendedSlot(slot)}
+                                  style={
+                                    isSelected
+                                      ? {
+                                          backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                                          borderColor: activePanelTheme.accentSecondary,
+                                        }
+                                      : {
+                                          backgroundColor: 'rgba(0,0,0,0.35)',
+                                          borderColor: 'rgba(255,255,255,0.12)',
+                                        }
+                                  }
+                                  className="p-2 rounded-lg border text-left transition-all cursor-pointer hover:border-white/30"
+                                >
+                                  <div className="flex items-center justify-between text-[11px] font-semibold">
+                                    <span className="truncate">{slot.label}</span>
+                                    <span
+                                      style={{ color: activePanelTheme.accentSecondary }}
+                                      className="font-mono shrink-0 ml-1 font-bold"
+                                    >
+                                      {slot.timeString}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-zinc-400 mt-0.5 truncate">
+                                    {slot.reason}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="p-2 rounded-lg bg-black/40 border border-white/10 flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <Clock
+                                style={{ color: activePanelTheme.accent }}
+                                className="w-3.5 h-3.5 shrink-0"
+                              />
+                              <span className="text-[11px] font-semibold text-zinc-200">
+                                自訂時間：
+                              </span>
+                              <select
+                                value={activeHourStr}
+                                onChange={(e) =>
+                                  handlePickTimeHourMinute(e.target.value, activeMinStr)
+                                }
+                                className="bg-black/75 border border-white/20 rounded px-1.5 py-0.5 text-xs font-mono text-white cursor-pointer"
+                              >
+                                {Array.from({ length: 24 }, (_, h) =>
+                                  String(h).padStart(2, '0')
+                                ).map((hh) => (
+                                  <option key={hh} value={hh} className="bg-zinc-900 text-white">
+                                    {hh} 點
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="text-xs font-mono text-zinc-400">:</span>
+                              <select
+                                value={activeMinStr}
+                                onChange={(e) =>
+                                  handlePickTimeHourMinute(activeHourStr, e.target.value)
+                                }
+                                className="bg-black/75 border border-white/20 rounded px-1.5 py-0.5 text-xs font-mono text-white cursor-pointer"
+                              >
+                                {Array.from(
+                                  new Set([
+                                    '00',
+                                    '05',
+                                    '10',
+                                    '15',
+                                    '20',
+                                    '25',
+                                    '30',
+                                    '35',
+                                    '40',
+                                    '45',
+                                    '50',
+                                    '55',
+                                    activeMinStr,
+                                  ])
+                                )
+                                  .sort()
+                                  .map((mm) => (
+                                    <option key={mm} value={mm} className="bg-zinc-900 text-white">
+                                      {mm} 分
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-1">
+                              {[
+                                { hh: '12', mm: '30', tag: '12:30 午休' },
+                                { hh: '18', mm: '30', tag: '18:30 下班' },
+                                { hh: '20', mm: '30', tag: '20:30 晚間' },
+                                { hh: '22', mm: '00', tag: '22:00 深夜' },
+                              ].map((preset) => {
+                                const isActiveTime =
+                                  activeHourStr === preset.hh && activeMinStr === preset.mm;
+                                return (
+                                  <button
+                                    key={preset.tag}
+                                    type="button"
+                                    onClick={() =>
+                                      handlePickTimeHourMinute(preset.hh, preset.mm)
+                                    }
+                                    style={
+                                      isActiveTime
+                                        ? {
+                                            backgroundColor: `${activePanelTheme.accent}44`,
+                                            borderColor: activePanelTheme.accent,
+                                            color: '#fff',
+                                          }
+                                        : undefined
+                                    }
+                                    className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 border border-white/10 text-[10px] font-mono text-zinc-300 cursor-pointer"
+                                  >
+                                    {preset.tag}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/10">
+                        {[
+                          {
+                            mode: 'custom_time' as const,
+                            label: `📅 依選定時間排程 (${activeScheduledYmd.slice(5).replace('-', '/')} ${activeScheduledHm})`,
+                          },
+                          { mode: 'queue' as const, label: '📥 直接排入下個空檔' },
+                          { mode: 'now' as const, label: '⚡ 立即發佈' },
+                        ].map((m) => {
+                          const isSelectedMode =
+                            bufferConfig.scheduleMode === m.mode ||
+                            (m.mode === 'custom_time' &&
+                              bufferConfig.scheduleMode === 'recommended_slot');
+                          return (
+                            <button
+                              key={m.mode}
+                              type="button"
+                              onClick={() => {
+                                if (m.mode === 'custom_time') {
+                                  setHasPickedScheduleDate(true);
+                                }
+                                setBufferConfig((prev) => ({
+                                  ...prev,
+                                  scheduleMode: m.mode,
+                                  status: 'ready_to_schedule',
+                                }));
+                              }}
+                              style={
+                                isSelectedMode
+                                  ? {
+                                      backgroundColor: `${activePanelTheme.accent}33`,
+                                      borderColor: activePanelTheme.accent,
+                                      color: '#ffffff',
+                                    }
+                                  : undefined
+                              }
+                              className="px-2.5 py-1 rounded-lg text-[11px] border bg-black/30 border-white/10 text-zinc-300 cursor-pointer"
+                            >
+                              {m.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirmBuffer}
+                      disabled={
+                        bufferConfig.platforms.length === 0 ||
+                        !bufferConfig.content.trim() ||
+                        isDispatchingBuffer
+                      }
+                      style={{
+                        background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                        boxShadow: `0 8px 25px ${activePanelTheme.glowRgba}`,
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer hover:brightness-110"
+                    >
+                      <Check className="w-4 h-4" />
+                      {isDispatchingBuffer
+                        ? '正在傳送至 Buffer 排程佇列並寫入完整紀錄...'
+                        : '🚀 確認直接上傳 Buffer 排程（永久記錄發送內容）'}
+                    </button>
+                  </div>
+
+                  {/* Right Column: Full Scheduled & Sent Posts History (Cloud + Local Persistent Store) */}
+                  <div
+                    className={`${
+                      isSingleColumnLayout ? '' : 'col-span-5'
+                    } flex flex-col justify-between space-y-3`}
+                  >
+                    <div
+                      style={{
+                        backgroundColor: activePanelTheme.panelCard,
+                        borderColor: `${activePanelTheme.border}44`,
+                      }}
+                      className="p-3 rounded-xl border flex flex-col flex-1 min-h-0 space-y-2.5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/10">
+                        <div>
+                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <Sparkles
+                              style={{ color: activePanelTheme.accentSecondary }}
+                              className="w-3.5 h-3.5"
+                            />
+                            <span>📋 已排程與已發送完整內容紀錄 ({sortedScheduledPosts.length} 篇)</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-400 mt-0.5">
+                            自動整合 Buffer 雲端排程與本機發送紀錄，完整保存您發過的每一篇貼文內容
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSyncCloudScheduledPosts(false)}
+                          disabled={isSyncingSchedule}
+                          style={{
+                            backgroundColor: `${activePanelTheme.accentSecondary}24`,
+                            borderColor: activePanelTheme.accentSecondary,
+                            color: activePanelTheme.accentSecondary,
+                          }}
+                          className="px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:brightness-110 shrink-0"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isSyncingSchedule ? 'animate-spin' : ''}`} />
+                          <span>抓 Buffer 資料</span>
+                        </button>
+                      </div>
+
+                      <div className="flex-1 max-h-[420px] overflow-y-auto space-y-2 pr-1">
+                        {sortedScheduledPosts.length === 0 ? (
+                          <div className="py-8 px-4 text-center space-y-2 rounded-xl bg-black/30 border border-dashed border-white/10">
+                            <div className="text-xs text-zinc-300 font-semibold">
+                              目前尚無已排程或已發送的貼文紀錄
+                            </div>
+                            <p className="text-[11px] text-zinc-400 leading-relaxed">
+                              當您點擊左側「確認直接上傳 Buffer 排程」或上方「抓 Buffer 資料」後，所有排程時間與完整貼文內容都會永久顯示在這裡！
+                            </p>
+                          </div>
+                        ) : (
+                          sortedScheduledPosts.map((qp, idx) => {
+                            const isLatest = idx === sortedScheduledPosts.length - 1;
+                            return (
+                              <div
+                                key={qp.id}
+                                onClick={() => handlePickScheduleDate(qp.scheduledIso.slice(0, 10))}
+                                className="p-2.5 rounded-xl bg-black/45 hover:bg-black/65 border border-white/12 text-xs space-y-1.5 cursor-pointer transition-all"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-1">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    {isLatest && (
+                                      <span className="px-1.5 py-0.5 rounded bg-amber-500/25 border border-amber-400/50 text-amber-300 text-[9px] font-bold shrink-0">
+                                        最後一篇排程
+                                      </span>
+                                    )}
+                                    <span
+                                      style={{ color: activePanelTheme.accentSecondary }}
+                                      className="font-mono font-bold text-[11px]"
+                                    >
+                                      📅 {qp.scheduledIso.slice(0, 16).replace('T', ' ')}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span
+                                      style={{
+                                        backgroundColor: `${activePanelTheme.accent}33`,
+                                        color: activePanelTheme.textMain,
+                                      }}
+                                      className="px-1.5 py-0.5 rounded-sm font-mono text-[9px]"
+                                    >
+                                      {qp.platforms.map((p) => PLATFORM_META[p]?.badge || p).join(' / ')}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleUpdateMasterContent(qp.text);
+                                        setActiveWindow('composer');
+                                      }}
+                                      className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[9px] text-zinc-200 cursor-pointer"
+                                      title="將這篇已排程內容載入回編輯器"
+                                    >
+                                      載入編輯
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        setQueuedPosts((prev) =>
+                                          prev.filter((item) => item.id !== qp.id)
+                                        );
+                                        try {
+                                          await fetch('/api/buffer/delete-history-item', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ id: qp.id }),
+                                          });
+                                        } catch {
+                                          // ignore
+                                        }
+                                      }}
+                                      className="text-zinc-500 hover:text-rose-300 px-1 cursor-pointer"
+                                      title="刪除此筆紀錄"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="p-2 rounded-lg bg-black/50 border border-white/8 text-[11px] text-zinc-100 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">
+                                  {qp.text || '（無文字內容）'}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB 4: MULTI-DOMAIN NONO & GROKBOT INTER-AGENT COUNCIL ==================== */}
+            {activeWindow === 'council' && (
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div
+                  style={{ borderColor: `${activePanelTheme.border}38` }}
+                  className="px-3.5 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-2 bg-black/25"
+                >
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      style={{
+                        backgroundColor: activePanelTheme.highlightTagBg,
+                        color: activePanelTheme.highlightTagText,
+                      }}
+                      className="px-2 py-0.5 rounded-sm text-[10px] font-mono font-black"
+                    >
+                      🤝 跨領域 Nono 協作中心（GrokBot 多代理互助模式）
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 rounded-sm">
+                      目前主控：{activeDomainNono.badge} · {activeDomainNono.name}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRunMultiSkillPipeline}
+                    disabled={isRunningMultiSkill}
+                    style={{
+                      backgroundColor: `${activePanelTheme.accentSecondary}24`,
+                      borderColor: activePanelTheme.accentSecondary,
+                      color: activePanelTheme.accentSecondary,
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold cursor-pointer hover:brightness-110 disabled:opacity-40"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>
+                      {isRunningMultiSkill
+                        ? '正在連段執行多功能...'
+                        : `⚡ 讓「${activeDomainNono.name}」單機同時處理多功能`}
+                    </span>
+                  </button>
+                </div>
+
+                <div
+                  className={`flex-1 min-h-0 overflow-y-auto p-3.5 grid gap-3.5 ${
+                    isSingleColumnLayout ? 'grid-cols-1' : 'grid-cols-12'
+                  }`}
+                >
+                  {/* Left Column: 4 Domain Nonos & Single-Nono Multi-Skill Pipeline */}
+                  <div className={`${isSingleColumnLayout ? '' : 'col-span-5'} space-y-3`}>
+                    <div
+                      style={{
+                        backgroundColor: activePanelTheme.panelCard,
+                        borderColor: `${activePanelTheme.border}44`,
+                      }}
+                      className="p-3 rounded-xl border space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white">
+                          1. 選擇掌管不同領域的 Nono（各自具備多專案與多功能）
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2">
+                        {NONO_DOMAIN_AGENTS.map((agent) => {
+                          const isSelected = agent.id === activeNonoAgentId;
+                          return (
+                            <button
+                              key={agent.id}
+                              type="button"
+                              onClick={() => handleSwitchDomainNono(agent)}
+                              style={
+                                isSelected
+                                  ? {
+                                      backgroundColor: `${agent.furPresetColor}26`,
+                                      borderColor: agent.furPresetColor,
+                                    }
+                                  : {
+                                      backgroundColor: 'rgba(0,0,0,0.4)',
+                                      borderColor: 'rgba(255,255,255,0.1)',
+                                    }
+                              }
+                              className="p-2.5 rounded-xl border text-left transition-all cursor-pointer hover:border-white/30 space-y-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                  <span>{agent.name}</span>
+                                  <span
+                                    style={{ color: agent.furPresetColor }}
+                                    className="text-[10px] font-mono"
+                                  >
+                                    [{agent.badge}]
+                                  </span>
+                                </span>
+                                {isSelected && (
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-bold">
+                                    目前值班中
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] font-semibold text-zinc-200">
+                                {agent.domain}
+                              </div>
+                              <p className="text-[10px] text-zinc-400 leading-snug">
+                                {agent.desc}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 同一個 Nono 同時執行多功能流水線紀錄 */}
+                    <div
+                      style={{
+                        backgroundColor: activePanelTheme.panelCard,
+                        borderColor: `${activePanelTheme.border}44`,
+                      }}
+                      className="p-3 rounded-xl border space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <Zap
+                            style={{ color: activePanelTheme.accentSecondary }}
+                            className="w-3.5 h-3.5"
+                          />
+                          單一 Nono 多功能同時處理流水線
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRunMultiSkillPipeline}
+                          disabled={isRunningMultiSkill}
+                          style={{
+                            background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-white cursor-pointer hover:brightness-110 disabled:opacity-40"
+                        >
+                          {isRunningMultiSkill ? '執行中...' : '⚡ 一鍵連段執行'}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-zinc-300 leading-relaxed">
+                        同一個 Nono 會自動串聯：
+                        <strong className="text-white">
+                          「抓目前專案進度 ➔ 去除版本號轉化為故事貼文 ➔ 自動對齊最後一篇排程隔天」
+                        </strong>
+                        一次完成！
+                      </p>
+
+                      {multiSkillSteps.length > 0 && (
+                        <div className="space-y-1.5 pt-1 border-t border-white/10">
+                          {multiSkillSteps.map((st, idx) => (
+                            <div
+                              key={idx}
+                              className="p-2 rounded-lg bg-black/45 border border-white/10 text-[11px] space-y-0.5"
+                            >
+                              <div className="font-bold text-emerald-300 font-mono">{st.title}</div>
+                              <div className="text-zinc-300">{st.detail}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: GrokBot-Style Multi-Nono Inter-Agent Communication Room */}
+                  <div
+                    className={`${
+                      isSingleColumnLayout ? '' : 'col-span-7'
+                    } flex flex-col justify-between space-y-3`}
+                  >
+                    <div
+                      style={{
+                        backgroundColor: activePanelTheme.panelCard,
+                        borderColor: `${activePanelTheme.border}44`,
+                      }}
+                      className="p-3 rounded-xl border flex flex-col flex-1 min-h-0 space-y-2.5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/10">
+                        <div>
+                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <Sparkles
+                              style={{ color: activePanelTheme.accent }}
+                              className="w-3.5 h-3.5"
+                            />
+                            <span>🤖 GrokBot 跨領域 Nono 互相溝通協作室</span>
+                          </div>
+                          <p className="text-[10px] text-zinc-400 mt-0.5">
+                            下達一個跨領域指令，4 位不同領域的 Nono 會互相點名 (@) 討論、接力完成進度解析、故事包裝、視覺建議與排程規劃
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRunGrokBotCouncil()}
+                          disabled={isRunningCouncil}
+                          style={{
+                            background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer hover:brightness-110 disabled:opacity-40 shrink-0"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>
+                            {isRunningCouncil ? '多 Nono 正在對話協作...' : '🚀 啟動四領域 Nono 互相溝通'}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* 跨領域指令輸入框 */}
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleRunGrokBotCouncil();
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <input
+                          type="text"
+                          value={councilCommandInput}
+                          onChange={(e) => setCouncilCommandInput(e.target.value)}
+                          placeholder="輸入跨領域任務（例如：把最新專案進度包裝成引起觀眾好奇的故事並安排最佳排程）..."
+                          className="flex-1 bg-black/55 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isRunningCouncil}
+                          style={{
+                            backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                            borderColor: activePanelTheme.accentSecondary,
+                            color: activePanelTheme.accentSecondary,
+                          }}
+                          className="px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer hover:brightness-110 shrink-0"
+                        >
+                          發起協作
+                        </button>
+                      </form>
+
+                      {/* 多 Nono 對話紀錄區 */}
+                      <div className="flex-1 max-h-[340px] overflow-y-auto space-y-2 pr-1">
+                        {councilMessages.length === 0 ? (
+                          <div className="py-8 px-4 text-center space-y-2 rounded-xl bg-black/30 border border-dashed border-white/10">
+                            <div className="text-xs text-zinc-200 font-semibold">
+                              點擊上方「🚀 啟動四領域 Nono 互相溝通」開始跨領域協作
+                            </div>
+                            <p className="text-[11px] text-zinc-400 leading-relaxed">
+                              🛠️ 研發觀察 Nono ➔ ✨ 敘事企劃 Nono ➔ 🎨 視覺展演 Nono ➔ 📊 排程策略 Nono
+                              將像 GrokBot 多代理一樣互相對話，直接產出潤飾好的故事貼文並對齊排程時間！
+                            </p>
+                          </div>
+                        ) : (
+                          councilMessages.map((turn, idx) => (
+                            <div
+                              key={idx}
+                              className="p-2.5 rounded-xl bg-black/50 border border-white/12 space-y-1"
+                            >
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="font-bold text-white flex items-center gap-1.5">
+                                  <span style={{ color: turn.color || activePanelTheme.accent }}>
+                                    {turn.agentName}
+                                  </span>
+                                  <span
+                                    style={{ color: activePanelTheme.accentSecondary }}
+                                    className="text-[10px] font-mono"
+                                  >
+                                    [{turn.domain}]
+                                  </span>
+                                </span>
+                                <span className="text-[9px] font-mono text-zinc-500">
+                                  Turn #{idx + 1}
+                                </span>
+                              </div>
+                              <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                                {turn.message}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {councilMessages.length > 0 && (
+                        <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[11px] text-emerald-300 font-mono">
+                            ✓ 多 Nono 協作產出的故事貼文已自動同步至編輯器與排程日期！
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveWindow('composer')}
+                              className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white cursor-pointer"
+                            >
+                              ✍️ 查看故事貼文
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveWindow('buffer')}
+                              style={{
+                                backgroundColor: `${activePanelTheme.accent}38`,
+                                borderColor: activePanelTheme.accent,
+                              }}
+                              className="px-2.5 py-1 rounded-lg border text-[11px] font-bold text-white cursor-pointer"
+                            >
+                              📅 前往確認排程
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
 
             {/* ==================== TAB 3: APPEARANCE & IDLE ACTIONS ==================== */}
             {activeWindow === 'appearance' && (

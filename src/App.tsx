@@ -161,52 +161,113 @@ const PLATFORM_META: Record<
 };
 
 const SLOT_CANDIDATE_POOL = [
-  { label: '晚間黃金互動時段', hh: 20, mm: 30, reason: '創作者社群下班後活躍度最高' },
-  { label: '深夜創作者共鳴時段', hh: 22, mm: 15, reason: '獨立開發者與夜貓族高互動率' },
   { label: '晨間通勤早鳥時段', hh: 8, mm: 30, reason: '早晨滑手機高觸及率' },
   { label: '午休用餐流量時段', hh: 12, mm: 30, reason: '午間休息穩定曝光與轉發' },
   { label: '午後茶敘放鬆時段', hh: 15, mm: 45, reason: '下午工作空檔瀏覽高峰' },
   { label: '傍晚下班通勤時段', hh: 18, mm: 20, reason: '通勤尖峰即時曝光高' },
+  { label: '晚間黃金互動時段', hh: 20, mm: 30, reason: '創作者社群下班後活躍度最高' },
+  { label: '深夜創作者共鳴時段', hh: 22, mm: 15, reason: '獨立開發者與夜貓族高互動率' },
   { label: '睡前滑手機高峰', hh: 23, mm: 10, reason: '睡前長文閱讀與收藏率高' },
 ];
+
+const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
 function toLocalIsoString(date: Date): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
 
-function generateDynamicRecommendedSlots(refreshBatch = 0): RecommendedTimeSlot[] {
+function getTodayYmd(): string {
+  return toLocalIsoString(new Date()).slice(0, 10);
+}
+
+function addDaysToYmd(ymd: string, deltaDays: number): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const dt = new Date(y, (m || 1) - 1, (d || 1) + deltaDays, 12, 0, 0);
+  return toLocalIsoString(dt).slice(0, 10);
+}
+
+function formatYmdWithWeekday(ymd: string): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  if (!y || !m || !d) return ymd;
+  const dt = new Date(y, m - 1, d);
+  const wk = WEEKDAY_NAMES[dt.getDay()] || '';
+  const today = getTodayYmd();
+  const tomorrow = addDaysToYmd(today, 1);
+  const dayAfter = addDaysToYmd(today, 2);
+  const prefix =
+    ymd === today ? '今天 ' : ymd === tomorrow ? '明天 ' : ymd === dayAfter ? '後天 ' : '';
+  return `${prefix}${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}(${wk})`;
+}
+
+function generateDynamicRecommendedSlots(
+  refreshBatch = 0,
+  targetDateYmd?: string
+): RecommendedTimeSlot[] {
   const now = new Date();
-  const futureSlots: RecommendedTimeSlot[] = [];
+  const chosenYmd = targetDateYmd || getTodayYmd();
+  const [y, m, d] = chosenYmd.split('-').map(Number);
+  const dayLabel = formatYmdWithWeekday(chosenYmd);
 
-  for (let dayOffset = 0; dayOffset <= 2; dayOffset++) {
-    for (const item of SLOT_CANDIDATE_POOL) {
-      const candidate = new Date(now);
-      candidate.setDate(now.getDate() + dayOffset);
-      candidate.setHours(item.hh, item.mm, 0, 0);
+  const slotsForChosenDate: RecommendedTimeSlot[] = [];
 
-      if (candidate.getTime() > now.getTime() + 10 * 60 * 1000) {
-        const dayPrefix = dayOffset === 0 ? '今日' : dayOffset === 1 ? '明日' : '後天';
-        const hhStr = String(item.hh).padStart(2, '0');
-        const mmStr = String(item.mm).padStart(2, '0');
-        const timeString = `${hhStr}:${mmStr}`;
-        futureSlots.push({
-          id: `slot-${dayOffset}-${hhStr}${mmStr}`,
-          label: `${dayPrefix} · ${item.label}`,
-          timeString,
-          dayPrefix,
-          scheduledIso: toLocalIsoString(candidate),
-          reason: item.reason,
-        });
-      }
+  for (const item of SLOT_CANDIDATE_POOL) {
+    const candidate = new Date(y, (m || 1) - 1, d || 1, item.hh, item.mm, 0, 0);
+    // 若選的是今天，只推薦未來至少 5 分鐘後的時段；若選的是未來日期，全天時段皆可推薦
+    if (candidate.getTime() > now.getTime() + 5 * 60 * 1000) {
+      const hhStr = String(item.hh).padStart(2, '0');
+      const mmStr = String(item.mm).padStart(2, '0');
+      const timeString = `${hhStr}:${mmStr}`;
+      slotsForChosenDate.push({
+        id: `slot-${chosenYmd}-${hhStr}${mmStr}`,
+        label: `${dayLabel} · ${item.label}`,
+        timeString,
+        dayPrefix: dayLabel,
+        scheduledIso: `${chosenYmd}T${timeString}`,
+        reason: item.reason,
+      });
     }
   }
 
-  const startIdx = (refreshBatch * 2) % Math.max(1, futureSlots.length - 2);
-  const picked = futureSlots.slice(startIdx, startIdx + 3);
-  if (picked.length < 3) {
-    return futureSlots.slice(0, 3);
+  // 如果今天已經很晚（例如超過 23:10），自動補一個今天 20 分鐘後的即時推薦時段 + 深夜時段
+  if (slotsForChosenDate.length === 0) {
+    const soon = new Date(now.getTime() + 25 * 60 * 1000);
+    const soonIso = toLocalIsoString(soon);
+    const soonTime = soonIso.slice(11, 16);
+    slotsForChosenDate.push({
+      id: `slot-${chosenYmd}-${soonTime.replace(':', '')}`,
+      label: `${dayLabel} · 近期最佳空檔`,
+      timeString: soonTime,
+      dayPrefix: dayLabel,
+      scheduledIso: `${chosenYmd}T${soonTime}`,
+      reason: '距離現在約 25 分鐘後的快速排程時段',
+    });
+    for (const item of [
+      { label: '晚間黃金互動時段', hh: 20, mm: 30, reason: '創作者社群下班後活躍度最高' },
+      { label: '深夜創作者共鳴時段', hh: 22, mm: 15, reason: '獨立開發者與夜貓族高互動率' },
+    ]) {
+      const hhStr = String(item.hh).padStart(2, '0');
+      const mmStr = String(item.mm).padStart(2, '0');
+      slotsForChosenDate.push({
+        id: `slot-${chosenYmd}-alt-${hhStr}${mmStr}`,
+        label: `${dayLabel} · ${item.label}`,
+        timeString: `${hhStr}:${mmStr}`,
+        dayPrefix: dayLabel,
+        scheduledIso: `${chosenYmd}T${hhStr}:${mmStr}`,
+        reason: item.reason,
+      });
+    }
   }
-  return picked;
+
+  if (slotsForChosenDate.length <= 3) {
+    return slotsForChosenDate;
+  }
+
+  const rotated: RecommendedTimeSlot[] = [];
+  const startIdx = (refreshBatch * 2) % slotsForChosenDate.length;
+  for (let i = 0; i < 3; i++) {
+    rotated.push(slotsForChosenDate[(startIdx + i) % slotsForChosenDate.length]);
+  }
+  return rotated;
 }
 
 function getXWeightedLength(text: string): number {
@@ -571,10 +632,14 @@ export function App() {
   const [newVersionTitle, setNewVersionTitle] = useState<string>('');
   const [progressNotice, setProgressNotice] = useState<string | null>(null);
 
-  // Recommended Time Slots
+  // Date-First Scheduling & Recommended Time Slots (選好日期後才浮現該日期的推薦時段！)
+  const [selectedScheduleDate, setSelectedScheduleDate] = useState<string>(() =>
+    addDaysToYmd(getTodayYmd(), 1)
+  );
+  const [hasPickedScheduleDate, setHasPickedScheduleDate] = useState<boolean>(false);
   const [slotRefreshCount, setSlotRefreshCount] = useState<number>(0);
   const [recommendedSlots, setRecommendedSlots] = useState<RecommendedTimeSlot[]>(() =>
-    generateDynamicRecommendedSlots(0)
+    generateDynamicRecommendedSlots(0, addDaysToYmd(getTodayYmd(), 1))
   );
   const [lastSlotRefreshedAt, setLastSlotRefreshedAt] = useState<string>(() =>
     new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
@@ -582,7 +647,8 @@ export function App() {
 
   // Buffer Post Config
   const [bufferConfig, setBufferConfig] = useState<BufferPostConfig>(() => {
-    const initialSlots = generateDynamicRecommendedSlots(0);
+    const tomorrowYmd = addDaysToYmd(getTodayYmd(), 1);
+    const initialSlots = generateDynamicRecommendedSlots(0, tomorrowYmd);
     const firstSlot = initialSlots[0];
     return {
       content: INITIAL_BASE_COPY,
@@ -604,10 +670,29 @@ export function App() {
   const [isRefiningPost, setIsRefiningPost] = useState(false);
   const [lastRefinedNotice, setLastRefinedNotice] = useState<string | null>(null);
 
-  // Buffer Real Connection & Queue State
+  // Buffer Real Connection & Persistent Scheduled Queue State (記錄那天、最近幾天與最後一篇排程時間)
   const [queuedPosts, setQueuedPosts] = useState<
-    { id: string; text: string; platforms: BufferPlatform[]; time: string; modeLabel: string }[]
-  >([]);
+    {
+      id: string;
+      text: string;
+      platforms: BufferPlatform[];
+      time: string;
+      scheduledIso: string;
+      modeLabel: string;
+    }[]
+  >(() => {
+    try {
+      const saved = localStorage.getItem('nono_scheduled_posts_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+  const [isSyncingSchedule, setIsSyncingSchedule] = useState<boolean>(false);
 
   const [cloudMediaUrlInput, setCloudMediaUrlInput] = useState('');
   const [cloudMediaType] = useState<'image' | 'video'>('image');
@@ -677,6 +762,75 @@ export function App() {
       // ignore quota error
     }
   }, [progressVersions]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nono_scheduled_posts_v2', JSON.stringify(queuedPosts.slice(0, 30)));
+    } catch {
+      // ignore
+    }
+  }, [queuedPosts]);
+
+  // 同步 Buffer 雲端已排程貼文（讓使用者能清楚看到那天、最近幾天與最後一篇排程是何時）
+  const handleSyncCloudScheduledPosts = async (silent = false) => {
+    const token = bufferApiToken.trim();
+    if (!token) return;
+    if (!silent) setIsSyncingSchedule(true);
+    try {
+      const res = await fetch('/api/buffer/scheduled-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bufferApiToken: token }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && Array.isArray(data?.scheduledPosts) && data.scheduledPosts.length > 0) {
+        setQueuedPosts((prev) => {
+          const map = new Map<string, (typeof prev)[number]>();
+          for (const item of prev) {
+            map.set(`${item.scheduledIso}-${item.text.slice(0, 18)}`, item);
+          }
+          for (const cloud of data.scheduledPosts) {
+            if (!cloud.dueAt) continue;
+            const localIso = toLocalIsoString(new Date(cloud.dueAt));
+            const key = `${localIso}-${(cloud.text || '').slice(0, 18)}`;
+            const plat = (['threads', 'x', 'instagram', 'facebook'].includes(cloud.platform)
+              ? cloud.platform
+              : 'threads') as BufferPlatform;
+            const existing = map.get(key);
+            if (existing) {
+              if (!existing.platforms.includes(plat)) {
+                existing.platforms = [...existing.platforms, plat];
+              }
+            } else {
+              const ymd = localIso.slice(0, 10);
+              const hm = localIso.slice(11, 16);
+              map.set(key, {
+                id: cloud.id || `cloud-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                text: cloud.text || '(已排程貼文)',
+                platforms: [plat],
+                scheduledIso: localIso,
+                time: `${formatYmdWithWeekday(ymd)} ${hm}`,
+                modeLabel: '雲端已排程',
+              });
+            }
+          }
+          return Array.from(map.values()).sort((a, b) =>
+            (a.scheduledIso || '').localeCompare(b.scheduledIso || '')
+          );
+        });
+      }
+    } catch {
+      // ignore network error
+    } finally {
+      if (!silent) setIsSyncingSchedule(false);
+    }
+  };
+
+  useEffect(() => {
+    if (bufferApiToken.trim()) {
+      handleSyncCloudScheduledPosts(true);
+    }
+  }, []);
 
   const progressStorageKb = (
     new Blob([JSON.stringify(progressVersions)]).size / 1024
@@ -1010,10 +1164,67 @@ export function App() {
     setIsNonoAwake(false);
   };
 
+  // 先選擇排程日期 ➔ 自動計算並浮現「該日期的推薦排程時段」
+  const handlePickScheduleDate = (dateYmd: string) => {
+    if (!dateYmd) return;
+    setSelectedScheduleDate(dateYmd);
+    setHasPickedScheduleDate(true);
+    const freshSlots = generateDynamicRecommendedSlots(slotRefreshCount, dateYmd);
+    setRecommendedSlots(freshSlots);
+    const nowStr = new Date().toLocaleTimeString('zh-TW', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    setLastSlotRefreshedAt(nowStr);
+
+    // 保留使用者原本選的時分（若為今天且已過期，則自動帶入該日期第一個推薦時段）
+    const currentHm = bufferConfig.scheduledTime?.slice(11, 16) || '20:30';
+    const candidateIso = `${dateYmd}T${currentHm}`;
+    const candidateDate = new Date(`${dateYmd}T${currentHm}:00`);
+    const isFutureEnough = candidateDate.getTime() > Date.now() + 5 * 60 * 1000;
+
+    if (isFutureEnough && bufferConfig.scheduleMode === 'custom_time') {
+      setBufferConfig((prev) => ({
+        ...prev,
+        scheduledTime: candidateIso,
+        selectedSlotLabel: `${formatYmdWithWeekday(dateYmd)} ${currentHm}`,
+        status: 'ready_to_schedule',
+      }));
+    } else if (freshSlots.length > 0) {
+      const topSlot = freshSlots[0];
+      setBufferConfig((prev) => ({
+        ...prev,
+        scheduleMode: 'recommended_slot',
+        selectedSlotLabel: `${topSlot.label} ${topSlot.timeString}`,
+        scheduledTime: topSlot.scheduledIso,
+        status: 'ready_to_schedule',
+      }));
+    }
+  };
+
+  // 直接調整指定日期的幾點幾分（時 / 分）
+  const handlePickTimeHourMinute = (nextHour: string, nextMinute: string) => {
+    const ymd = selectedScheduleDate || bufferConfig.scheduledTime?.slice(0, 10) || getTodayYmd();
+    const hh = nextHour.padStart(2, '0');
+    const mm = nextMinute.padStart(2, '0');
+    const nextIso = `${ymd}T${hh}:${mm}`;
+    setSelectedScheduleDate(ymd);
+    setHasPickedScheduleDate(true);
+    setBufferConfig((prev) => ({
+      ...prev,
+      scheduleMode: 'custom_time',
+      scheduledTime: nextIso,
+      selectedSlotLabel: `${formatYmdWithWeekday(ymd)} ${hh}:${mm}`,
+      status: 'ready_to_schedule',
+    }));
+  };
+
   const handleRefreshRecommendedSlots = () => {
     const nextBatch = slotRefreshCount + 1;
     setSlotRefreshCount(nextBatch);
-    const freshSlots = generateDynamicRecommendedSlots(nextBatch);
+    const targetYmd = selectedScheduleDate || getTodayYmd();
+    setHasPickedScheduleDate(true);
+    const freshSlots = generateDynamicRecommendedSlots(nextBatch, targetYmd);
     setRecommendedSlots(freshSlots);
     const nowStr = new Date().toLocaleTimeString('zh-TW', {
       hour: '2-digit',
@@ -1035,7 +1246,7 @@ export function App() {
     setIsBubbleOpen(true);
     setCareBadgeText('TIME · 推薦時段已刷新');
     setNonoSpeech(
-      `Ave！我已經根據現在最新時間（${nowStr}）幫妳重新刷新了 3 個未來高互動推薦時段。\n\n點選喜歡的時段後按確認上傳，就會直接排進 Buffer 正式佇列囉糖糖。`
+      `Ave！我已經針對妳選的日期「${formatYmdWithWeekday(targetYmd)}」刷新了 3 個高互動推薦時段（${nowStr}）。\n\n妳可以直接點選推薦時段，或在下方自由調整幾點幾分喔糖糖。`
     );
   };
 
@@ -1377,6 +1588,7 @@ export function App() {
         setBufferProfileId(autoIds);
       }
 
+      handleSyncCloudScheduledPosts(true);
       setConnectionStatusMsg({ ok: true, text: data.message || '連線測試成功！' });
       setIsNonoAwake(true);
       setIsBubbleOpen(true);
@@ -1481,12 +1693,27 @@ export function App() {
         return;
       }
 
+      const serverDueAt = data?.bufferResult?.[0]?.dueAt;
+      const recordedIso = serverDueAt
+        ? toLocalIsoString(new Date(serverDueAt))
+        : bufferConfig.scheduleMode === 'now'
+          ? toLocalIsoString(new Date())
+          : bufferConfig.scheduledTime || `${selectedScheduleDate}T20:30`;
+
+      const recordedYmd = recordedIso.slice(0, 10);
+      const recordedHm = recordedIso.slice(11, 16);
+      const formattedTime =
+        bufferConfig.scheduleMode === 'now'
+          ? `立即發佈 (${recordedHm})`
+          : `${formatYmdWithWeekday(recordedYmd)} ${recordedHm}`;
+
       setQueuedPosts((prev) => [
         {
           id: `q-${Date.now()}`,
           text: primaryOutgoingText,
           platforms: bufferConfig.platforms,
-          time: timeDisplay,
+          time: formattedTime,
+          scheduledIso: recordedIso,
           modeLabel: modeBadge,
         },
         ...prev,
@@ -1543,6 +1770,45 @@ export function App() {
 
   const previewCharCount = currentPreviewText.length;
   const previewHashtagCount = countHashtags(currentPreviewText);
+
+  // ==================== 排程進度統計（那天 / 最近幾天 / 最後一篇排程是何時） ====================
+  const activeScheduledYmd =
+    selectedScheduleDate || bufferConfig.scheduledTime?.slice(0, 10) || getTodayYmd();
+  const activeScheduledHm = bufferConfig.scheduledTime?.slice(11, 16) || '20:30';
+  const [activeHourStr, activeMinStr] = activeScheduledHm.split(':');
+
+  const sortedScheduledPosts = [...queuedPosts].sort((a, b) =>
+    (a.scheduledIso || '').localeCompare(b.scheduledIso || '')
+  );
+  // 最後一篇排程（時間最晚的一篇）
+  const lastScheduledPost =
+    sortedScheduledPosts.length > 0
+      ? sortedScheduledPosts[sortedScheduledPosts.length - 1]
+      : null;
+
+  // 所選日期（那天）已排程的貼文
+  const postsOnSelectedDate = sortedScheduledPosts.filter(
+    (p) => (p.scheduledIso || '').slice(0, 10) === activeScheduledYmd
+  );
+
+  // 最近幾天／未來幾天的排程清單
+  const todayYmd = getTodayYmd();
+  const recentDaysScheduledPosts = sortedScheduledPosts.filter(
+    (p) => (p.scheduledIso || '').slice(0, 10) >= addDaysToYmd(todayYmd, -2)
+  );
+
+  // 未來 7 天快速日期選擇器資料
+  const upcoming7Days = Array.from({ length: 7 }, (_, idx) => {
+    const ymd = addDaysToYmd(todayYmd, idx);
+    const countOnDay = sortedScheduledPosts.filter(
+      (p) => (p.scheduledIso || '').slice(0, 10) === ymd
+    ).length;
+    return {
+      ymd,
+      label: formatYmdWithWeekday(ymd),
+      countOnDay,
+    };
+  });
 
   // 計算面板明確像素寬度（保證點「窄版單欄 / 展開雙欄」或拖拉面板右邊界時 100% 立即生效！）
   const targetPanelWidthPx =
@@ -2605,139 +2871,463 @@ export function App() {
                       )}
                     </div>
 
-                    {/* Buffer 推薦時段與排程 */}
+                    {/* Buffer 推薦時段與排程（先選日期 -> 顯示推薦時段與自由改時分 + 顯示那天/近期/最後一篇排程） */}
                     <div
                       style={{
                         backgroundColor: activePanelTheme.panelCard,
                         borderColor: `${activePanelTheme.border}44`,
                       }}
-                      className="p-3 rounded-xl border space-y-2"
+                      className="p-3 rounded-xl border space-y-2.5"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-1">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold">
-                            <Clock
-                              style={{ color: activePanelTheme.accentSecondary }}
-                              className="w-3.5 h-3.5"
-                            />
-                            推薦排程時段
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleRefreshRecommendedSlots}
-                            style={{
-                              borderColor: `${activePanelTheme.accentSecondary}88`,
-                              color: activePanelTheme.accentSecondary,
-                            }}
-                            className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer transition-all"
-                          >
-                            <RefreshCw className="w-2.5 h-2.5" />
-                            <span>刷新時間 ({lastSlotRefreshedAt})</span>
-                          </button>
+                      {/* 頂部標題與目前選定排程狀態 */}
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold">
+                          <Calendar
+                            style={{ color: activePanelTheme.accentSecondary }}
+                            className="w-3.5 h-3.5"
+                          />
+                          <span>排程日期與時間設定</span>
                         </div>
 
-                        <span
-                          style={{
-                            backgroundColor: activePanelTheme.highlightTagBg,
-                            color: activePanelTheme.highlightTagText,
-                          }}
-                          className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm"
-                        >
-                          {bufferConfig.scheduleMode === 'recommended_slot'
-                            ? bufferConfig.selectedSlotLabel
-                            : bufferConfig.scheduleMode === 'now'
-                              ? '立即發送'
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSyncCloudScheduledPosts(false)}
+                            disabled={isSyncingSchedule}
+                            style={{
+                              borderColor: `${activePanelTheme.accentSecondary}66`,
+                              color: activePanelTheme.accentSecondary,
+                            }}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer transition-all disabled:opacity-40"
+                            title="從 Buffer 雲端同步最新排程紀錄"
+                          >
+                            <RefreshCw className={`w-2.5 h-2.5 ${isSyncingSchedule ? 'animate-spin' : ''}`} />
+                            <span>{isSyncingSchedule ? '同步中...' : '同步雲端排程'}</span>
+                          </button>
+
+                          <span
+                            style={{
+                              backgroundColor: activePanelTheme.highlightTagBg,
+                              color: activePanelTheme.highlightTagText,
+                            }}
+                            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm"
+                          >
+                            {bufferConfig.scheduleMode === 'now'
+                              ? '⚡ 立即發送'
                               : bufferConfig.scheduleMode === 'queue'
-                                ? '直通下個空檔'
-                                : bufferConfig.scheduledTime.replace('T', ' ')}
-                        </span>
+                                ? '📥 直通下個空檔'
+                                : `📅 ${activeScheduledYmd} ${activeScheduledHm}`}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                        {recommendedSlots.map((slot) => {
-                          const isSelected =
-                            bufferConfig.scheduleMode === 'recommended_slot' &&
-                            bufferConfig.selectedSlotLabel === `${slot.label} ${slot.timeString}`;
+                      {/* 排程現況看板：最後一篇排程 / 那天排程 / 最近幾天排程 */}
+                      <div className="p-2.5 rounded-lg bg-black/45 border border-white/10 space-y-1.5 text-[11px]">
+                        {/* 1. 最後一篇排程是何時 */}
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1.5 border-b border-white/10">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-bold shrink-0">
+                              最後一篇排程
+                            </span>
+                            {lastScheduledPost ? (
+                              <span className="font-mono text-white font-semibold truncate">
+                                {formatYmdWithWeekday(lastScheduledPost.scheduledIso.slice(0, 10))}{' '}
+                                <span style={{ color: activePanelTheme.accentSecondary }}>
+                                  {lastScheduledPost.scheduledIso.slice(11, 16)}
+                                </span>
+                                <span className="text-zinc-400 text-[10px] ml-1.5">
+                                  ({lastScheduledPost.platforms.map((p) => PLATFORM_META[p]?.badge || p).join('/')} · {lastScheduledPost.text.slice(0, 18)}...)
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 text-[10px]">
+                                目前尚無已排程紀錄（送出排程後會自動記錄）
+                              </span>
+                            )}
+                          </div>
+
+                          {lastScheduledPost && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextDay = addDaysToYmd(
+                                  lastScheduledPost.scheduledIso.slice(0, 10),
+                                  1
+                                );
+                                handlePickScheduleDate(nextDay);
+                              }}
+                              style={{
+                                backgroundColor: `${activePanelTheme.accent}28`,
+                                borderColor: activePanelTheme.accent,
+                              }}
+                              className="px-2 py-0.5 rounded border text-[10px] font-bold text-white hover:brightness-110 cursor-pointer shrink-0"
+                            >
+                              ➕ 排在最後一篇隔天 ({addDaysToYmd(lastScheduledPost.scheduledIso.slice(0, 10), 1).slice(5)})
+                            </button>
+                          )}
+                        </div>
+
+                        {/* 2. 所選那天 ({activeScheduledYmd}) 的排程 */}
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <span className="text-[10px] text-zinc-300 font-semibold">
+                            📌 所選日期（{formatYmdWithWeekday(activeScheduledYmd)}）排程：
+                          </span>
+                          {postsOnSelectedDate.length === 0 ? (
+                            <span className="text-[10px] text-emerald-300 font-mono">
+                              ✨ 這天尚無排程，全天時段皆空！
+                            </span>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-1">
+                              {postsOnSelectedDate.map((p) => (
+                                <span
+                                  key={p.id}
+                                  className="px-1.5 py-0.5 rounded bg-white/10 border border-white/15 text-[10px] font-mono text-amber-200"
+                                  title={p.text}
+                                >
+                                  {p.scheduledIso.slice(11, 16)} ({p.platforms.map((pl) => PLATFORM_META[pl]?.badge || pl).join('/')})
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. 最近幾天已排程一覽 */}
+                        {recentDaysScheduledPosts.length > 0 && (
+                          <div className="pt-1 border-t border-white/5 flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] text-zinc-400 shrink-0">
+                              🗓️ 最近幾天已排：
+                            </span>
+                            {recentDaysScheduledPosts.slice(0, 5).map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => handlePickScheduleDate(p.scheduledIso.slice(0, 10))}
+                                className="px-1.5 py-0.5 rounded bg-black/50 hover:bg-white/10 border border-white/10 text-[10px] font-mono text-zinc-300 cursor-pointer"
+                                title={`點擊查看 ${p.scheduledIso.slice(0, 10)}：${p.text}`}
+                              >
+                                {p.scheduledIso.slice(5, 10).replace('-', '/')} {p.scheduledIso.slice(11, 16)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 步驟 1：先選擇排程日期（按鈕直選 + 前後一天 + 日曆選擇器，解決無邊框視窗無法改日期問題） */}
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <span className="text-[11px] font-bold text-white flex items-center gap-1">
+                            <span
+                              style={{ backgroundColor: activePanelTheme.accent }}
+                              className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center text-white font-mono"
+                            >
+                              1
+                            </span>
+                            先選擇排程日期
+                          </span>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handlePickScheduleDate(addDaysToYmd(activeScheduledYmd, -1))
+                              }
+                              className="px-2 py-0.5 rounded bg-black/45 hover:bg-white/15 border border-white/15 text-[10px] text-zinc-200 cursor-pointer"
+                            >
+                              ◀ 前一天
+                            </button>
+                            <input
+                              type="date"
+                              value={activeScheduledYmd}
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handlePickScheduleDate(e.target.value);
+                                }
+                              }}
+                              className="bg-black/60 border border-white/20 rounded px-2 py-0.5 text-[11px] font-mono text-white cursor-pointer"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handlePickScheduleDate(addDaysToYmd(activeScheduledYmd, 1))
+                              }
+                              className="px-2 py-0.5 rounded bg-black/45 hover:bg-white/15 border border-white/15 text-[10px] text-zinc-200 cursor-pointer"
+                            >
+                              後一天 ▶
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 未來 7 天快速日期按鈕 */}
+                        <div className="grid grid-cols-4 sm:grid-cols-7 gap-1">
+                          {upcoming7Days.map((day) => {
+                            const isDaySelected =
+                              hasPickedScheduleDate && activeScheduledYmd === day.ymd;
+                            return (
+                              <button
+                                key={day.ymd}
+                                type="button"
+                                onClick={() => handlePickScheduleDate(day.ymd)}
+                                style={
+                                  isDaySelected
+                                    ? {
+                                        backgroundColor: `${activePanelTheme.accent}38`,
+                                        borderColor: activePanelTheme.accent,
+                                      }
+                                    : {
+                                        backgroundColor: 'rgba(0,0,0,0.38)',
+                                        borderColor: 'rgba(255,255,255,0.12)',
+                                      }
+                                }
+                                className="px-1.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer hover:border-white/35 flex flex-col items-center justify-center"
+                              >
+                                <span className="text-[10px] font-bold text-white leading-tight">
+                                  {day.label}
+                                </span>
+                                <span className="text-[9px] font-mono text-zinc-400">
+                                  {day.ymd.slice(5).replace('-', '/')}
+                                </span>
+                                {day.countOnDay > 0 && (
+                                  <span
+                                    style={{ color: activePanelTheme.accentSecondary }}
+                                    className="text-[9px] font-mono font-bold mt-0.5"
+                                  >
+                                    已排{day.countOnDay}篇
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* 步驟 2：選好日期後，才顯示「該日期的推薦時間」與「自由調整幾點幾分」 */}
+                      {!hasPickedScheduleDate ? (
+                        <div className="p-2.5 rounded-lg bg-white/[0.03] border border-dashed border-white/15 flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-zinc-300">
+                            👆 請先點選上方任一「排程日期」，系統就會針對該日期推薦最佳時段並開放微調幾點幾分！
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handlePickScheduleDate(activeScheduledYmd)}
+                            style={{
+                              backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                              borderColor: activePanelTheme.accentSecondary,
+                              color: activePanelTheme.accentSecondary,
+                            }}
+                            className="px-2.5 py-1 rounded-lg border text-[10px] font-bold shrink-0 cursor-pointer hover:brightness-110"
+                          >
+                            直接選今天 ({activeScheduledYmd.slice(5)})
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 pt-1.5 border-t border-white/10">
+                          <div className="flex flex-wrap items-center justify-between gap-1">
+                            <span className="text-[11px] font-bold text-white flex items-center gap-1">
+                              <span
+                                style={{ backgroundColor: activePanelTheme.accentSecondary, color: '#041714' }}
+                                className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-mono font-bold"
+                              >
+                                2
+                              </span>
+                              <span>
+                                {formatYmdWithWeekday(activeScheduledYmd)} 的推薦時間（點選套用，或下方自由改時分）
+                              </span>
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={handleRefreshRecommendedSlots}
+                              style={{
+                                borderColor: `${activePanelTheme.accentSecondary}88`,
+                                color: activePanelTheme.accentSecondary,
+                              }}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer transition-all"
+                            >
+                              <RefreshCw className="w-2.5 h-2.5" />
+                              <span>換一批推薦 ({lastSlotRefreshedAt})</span>
+                            </button>
+                          </div>
+
+                          {/* 該日期專屬的 3 個推薦時段 */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                            {recommendedSlots.map((slot) => {
+                              const isSelected =
+                                (bufferConfig.scheduleMode === 'recommended_slot' ||
+                                  bufferConfig.scheduleMode === 'custom_time') &&
+                                bufferConfig.scheduledTime === slot.scheduledIso;
+                              return (
+                                <button
+                                  key={slot.id}
+                                  type="button"
+                                  onClick={() => handleSelectRecommendedSlot(slot)}
+                                  style={
+                                    isSelected
+                                      ? {
+                                          backgroundColor: `${activePanelTheme.accentSecondary}28`,
+                                          borderColor: activePanelTheme.accentSecondary,
+                                        }
+                                      : {
+                                          backgroundColor: 'rgba(0,0,0,0.35)',
+                                          borderColor: 'rgba(255,255,255,0.12)',
+                                        }
+                                  }
+                                  className="p-2 rounded-lg border text-left transition-all cursor-pointer hover:border-white/30"
+                                >
+                                  <div className="flex items-center justify-between text-[11px] font-semibold">
+                                    <span className="truncate">{slot.label}</span>
+                                    <span
+                                      style={{ color: activePanelTheme.accentSecondary }}
+                                      className="font-mono shrink-0 ml-1 font-bold"
+                                    >
+                                      {slot.timeString}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-zinc-400 mt-0.5 truncate">
+                                    {slot.reason}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* 直接修改「幾點幾分」（下拉選單 + 常用時間按鈕，不依賴原生彈窗） */}
+                          <div className="p-2 rounded-lg bg-black/40 border border-white/10 flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <Clock
+                                style={{ color: activePanelTheme.accent }}
+                                className="w-3.5 h-3.5 shrink-0"
+                              />
+                              <span className="text-[11px] font-semibold text-zinc-200">
+                                自訂時間：
+                              </span>
+                              <select
+                                value={activeHourStr}
+                                onChange={(e) =>
+                                  handlePickTimeHourMinute(e.target.value, activeMinStr)
+                                }
+                                className="bg-black/75 border border-white/20 rounded px-1.5 py-0.5 text-xs font-mono text-white cursor-pointer"
+                              >
+                                {Array.from({ length: 24 }, (_, h) =>
+                                  String(h).padStart(2, '0')
+                                ).map((hh) => (
+                                  <option key={hh} value={hh} className="bg-zinc-900 text-white">
+                                    {hh} 點
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="text-xs font-mono text-zinc-400">:</span>
+                              <select
+                                value={activeMinStr}
+                                onChange={(e) =>
+                                  handlePickTimeHourMinute(activeHourStr, e.target.value)
+                                }
+                                className="bg-black/75 border border-white/20 rounded px-1.5 py-0.5 text-xs font-mono text-white cursor-pointer"
+                              >
+                                {Array.from(
+                                  new Set([
+                                    '00',
+                                    '05',
+                                    '10',
+                                    '15',
+                                    '20',
+                                    '25',
+                                    '30',
+                                    '35',
+                                    '40',
+                                    '45',
+                                    '50',
+                                    '55',
+                                    activeMinStr,
+                                  ])
+                                )
+                                  .sort()
+                                  .map((mm) => (
+                                    <option key={mm} value={mm} className="bg-zinc-900 text-white">
+                                      {mm} 分
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-1">
+                              {[
+                                { hh: '12', mm: '30', tag: '12:30 午休' },
+                                { hh: '18', mm: '30', tag: '18:30 下班' },
+                                { hh: '20', mm: '30', tag: '20:30 晚間' },
+                                { hh: '22', mm: '00', tag: '22:00 深夜' },
+                              ].map((preset) => {
+                                const isActiveTime =
+                                  activeHourStr === preset.hh && activeMinStr === preset.mm;
+                                return (
+                                  <button
+                                    key={preset.tag}
+                                    type="button"
+                                    onClick={() =>
+                                      handlePickTimeHourMinute(preset.hh, preset.mm)
+                                    }
+                                    style={
+                                      isActiveTime
+                                        ? {
+                                            backgroundColor: `${activePanelTheme.accent}44`,
+                                            borderColor: activePanelTheme.accent,
+                                            color: '#fff',
+                                          }
+                                        : undefined
+                                    }
+                                    className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 border border-white/10 text-[10px] font-mono text-zinc-300 cursor-pointer"
+                                  >
+                                    {preset.tag}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 發佈模式切換（指定排程時間 / 排入佇列下個空檔 / 立即發佈） */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/10">
+                        {[
+                          {
+                            mode: 'custom_time' as const,
+                            label: `📅 依選定時間排程 (${activeScheduledYmd.slice(5).replace('-', '/')} ${activeScheduledHm})`,
+                          },
+                          { mode: 'queue' as const, label: '📥 直接排入下個空檔' },
+                          { mode: 'now' as const, label: '⚡ 立即發佈' },
+                        ].map((m) => {
+                          const isSelectedMode =
+                            bufferConfig.scheduleMode === m.mode ||
+                            (m.mode === 'custom_time' &&
+                              bufferConfig.scheduleMode === 'recommended_slot');
                           return (
                             <button
-                              key={slot.id}
+                              key={m.mode}
                               type="button"
-                              onClick={() => handleSelectRecommendedSlot(slot)}
+                              onClick={() => {
+                                if (m.mode === 'custom_time') {
+                                  setHasPickedScheduleDate(true);
+                                }
+                                setBufferConfig((prev) => ({
+                                  ...prev,
+                                  scheduleMode: m.mode,
+                                  status: 'ready_to_schedule',
+                                }));
+                              }}
                               style={
-                                isSelected
+                                isSelectedMode
                                   ? {
-                                      backgroundColor: `${activePanelTheme.accentSecondary}28`,
-                                      borderColor: activePanelTheme.accentSecondary,
+                                      backgroundColor: `${activePanelTheme.accent}33`,
+                                      borderColor: activePanelTheme.accent,
+                                      color: '#ffffff',
                                     }
-                                  : {
-                                      backgroundColor: 'rgba(0,0,0,0.35)',
-                                      borderColor: 'rgba(255,255,255,0.12)',
-                                    }
+                                  : undefined
                               }
-                              className="p-2 rounded-lg border text-left transition-all cursor-pointer hover:border-white/30"
+                              className="px-2.5 py-1 rounded-lg text-[11px] border bg-black/30 border-white/10 text-zinc-300 cursor-pointer"
                             >
-                              <div className="flex items-center justify-between text-[11px] font-semibold">
-                                <span className="truncate">{slot.label}</span>
-                                <span
-                                  style={{ color: activePanelTheme.accentSecondary }}
-                                  className="font-mono shrink-0 ml-1"
-                                >
-                                  {slot.timeString}
-                                </span>
-                              </div>
-                              <div className="text-[10px] text-zinc-400 mt-0.5 truncate">
-                                {slot.reason}
-                              </div>
+                              {m.label}
                             </button>
                           );
                         })}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/10">
-                        {[
-                          { mode: 'queue' as const, label: '直接排入下個空檔' },
-                          { mode: 'custom_time' as const, label: '自訂排程時間' },
-                          { mode: 'now' as const, label: '立即發佈' },
-                        ].map((m) => (
-                          <button
-                            key={m.mode}
-                            type="button"
-                            onClick={() =>
-                              setBufferConfig((prev) => ({
-                                ...prev,
-                                scheduleMode: m.mode,
-                                status: 'ready_to_schedule',
-                              }))
-                            }
-                            style={
-                              bufferConfig.scheduleMode === m.mode
-                                ? {
-                                    backgroundColor: `${activePanelTheme.accent}33`,
-                                    borderColor: activePanelTheme.accent,
-                                    color: '#ffffff',
-                                  }
-                                : undefined
-                            }
-                            className="px-2.5 py-1 rounded-lg text-[11px] border bg-black/30 border-white/10 text-zinc-300 cursor-pointer"
-                          >
-                            {m.label}
-                          </button>
-                        ))}
-
-                        {bufferConfig.scheduleMode === 'custom_time' && (
-                          <input
-                            type="datetime-local"
-                            value={bufferConfig.scheduledTime}
-                            onChange={(e) =>
-                              setBufferConfig((prev) => ({
-                                ...prev,
-                                scheduledTime: e.target.value,
-                                status: 'ready_to_schedule',
-                              }))
-                            }
-                            className="bg-black/45 border border-white/15 rounded-lg px-2 py-1 text-[11px] font-mono text-white"
-                          />
-                        )}
                       </div>
                     </div>
 
@@ -3060,7 +3650,7 @@ export function App() {
                         className="p-2.5 rounded-xl border space-y-1.5"
                       >
                         <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                          <span>已成功送出之排程佇列 ({queuedPosts.length}/10)</span>
+                          <span>已排程紀錄 ({sortedScheduledPosts.length} 篇)</span>
                           {queuedPosts.length > 0 ? (
                             <button
                               type="button"
@@ -3075,41 +3665,68 @@ export function App() {
                               style={{ color: activePanelTheme.accentSecondary }}
                               className="font-mono"
                             >
-                              僅在真實發送成功後記錄
+                              送出或同步雲端後自動記錄
                             </span>
                           )}
                         </div>
-                        <div className="max-h-24 overflow-y-auto space-y-1 pr-1">
-                          {queuedPosts.length === 0 ? (
+                        <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                          {sortedScheduledPosts.length === 0 ? (
                             <div className="py-1.5 text-center text-[10px] text-zinc-500">
                               目前尚無已送出的排程紀錄
                             </div>
                           ) : (
-                            queuedPosts.map((qp) => (
-                              <div
-                                key={qp.id}
-                                className="p-2 rounded-lg bg-black/35 border border-white/5 text-[10px] space-y-0.5"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span
-                                    style={{ color: activePanelTheme.accentSecondary }}
-                                    className="font-mono"
-                                  >
-                                    {qp.time}
-                                  </span>
-                                  <span
-                                    style={{
-                                      backgroundColor: `${activePanelTheme.accent}33`,
-                                      color: activePanelTheme.textMain,
-                                    }}
-                                    className="px-1.5 py-0.5 rounded-sm"
-                                  >
-                                    {qp.modeLabel}
-                                  </span>
+                            sortedScheduledPosts.map((qp, idx) => {
+                              const isLatest = idx === sortedScheduledPosts.length - 1;
+                              return (
+                                <div
+                                  key={qp.id}
+                                  onClick={() => handlePickScheduleDate(qp.scheduledIso.slice(0, 10))}
+                                  className="p-2 rounded-lg bg-black/35 hover:bg-white/5 border border-white/5 text-[10px] space-y-0.5 cursor-pointer transition-colors"
+                                  title="點擊切換檢視該日期的排程"
+                                >
+                                  <div className="flex items-center justify-between gap-1">
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      {isLatest && (
+                                        <span className="px-1 py-0.2 rounded bg-amber-500/25 border border-amber-400/50 text-amber-300 text-[9px] font-bold shrink-0">
+                                          最後一篇
+                                        </span>
+                                      )}
+                                      <span
+                                        style={{ color: activePanelTheme.accentSecondary }}
+                                        className="font-mono font-bold truncate"
+                                      >
+                                        {qp.scheduledIso.slice(0, 16).replace('T', ' ')}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <span
+                                        style={{
+                                          backgroundColor: `${activePanelTheme.accent}33`,
+                                          color: activePanelTheme.textMain,
+                                        }}
+                                        className="px-1.5 py-0.5 rounded-sm font-mono text-[9px]"
+                                      >
+                                        {qp.platforms.map((p) => PLATFORM_META[p]?.badge || p).join('/')}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setQueuedPosts((prev) =>
+                                            prev.filter((item) => item.id !== qp.id)
+                                          );
+                                        }}
+                                        className="text-zinc-500 hover:text-rose-300 px-1 cursor-pointer"
+                                        title="刪除此筆紀錄"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <p className="text-zinc-300 truncate">{qp.text}</p>
                                 </div>
-                                <p className="text-zinc-300 truncate">{qp.text}</p>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
                       </div>

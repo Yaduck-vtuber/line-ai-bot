@@ -1148,8 +1148,8 @@ export const NonoStage3D: React.FC<NonoStage3DProps> = ({
         // ANCHOR SPEECH BUBBLE & ZZZ BUBBLE OUTSIDE NONO'S SILHOUETTE (NEVER OVERLAPS NONO!)
         // =====================================================================
         if (bubbleOverlayRef.current) {
-          const viewW = container.clientWidth || window.innerWidth;
-          const viewH = container.clientHeight || window.innerHeight;
+          const viewW = container?.clientWidth || window.innerWidth;
+          const viewH = container?.clientHeight || window.innerHeight;
 
           // 1. Project Nono's 3D body center
           _headWorldPos.set(

@@ -468,6 +468,76 @@ function mapServiceToPlatformKey(serviceName: string): string {
   return s;
 }
 
+// 查詢 Buffer 後台目前已排程 (scheduled) 的貼文清單，讓前端能顯示「那天/最近幾天/最後一篇排程是何時」
+async function fetchBufferScheduledPosts(token: string): Promise<
+  Array<{
+    id: string;
+    text: string;
+    dueAt: string;
+    platform: string;
+    channelName: string;
+  }>
+> {
+  const orgRes = await executeBufferGraphQL(
+    token,
+    `query { account { organizations { id name } } }`
+  );
+  const organizations: Array<{ id: string; name: string }> =
+    orgRes.data?.account?.organizations || [];
+  if (organizations.length === 0) return [];
+
+  const results: Array<{
+    id: string;
+    text: string;
+    dueAt: string;
+    platform: string;
+    channelName: string;
+  }> = [];
+
+  for (const org of organizations) {
+    const chRes = await executeBufferGraphQL(
+      token,
+      `query { channels(input: { organizationId: ${JSON.stringify(org.id)} }) { id name displayName service } }`
+    );
+    const channels: BufferChannelInfo[] = chRes.data?.channels || [];
+    const channelMap = new Map<string, BufferChannelInfo>();
+    for (const c of channels) {
+      channelMap.set(c.id, c);
+    }
+
+    // 嘗試查詢該組織下 status: [scheduled] 或 status: scheduled 的貼文
+    const queriesToTry = [
+      `query { posts(input: { organizationId: ${JSON.stringify(org.id)}, filter: { status: [scheduled] } }) { edges { node { id text status dueAt channelId } } } }`,
+      `query { posts(input: { organizationId: ${JSON.stringify(org.id)}, filter: { status: scheduled } }) { edges { node { id text status dueAt channelId } } } }`,
+      `query { posts(input: { organizationId: ${JSON.stringify(org.id)} }) { edges { node { id text status dueAt channelId } } } }`,
+    ];
+
+    for (const q of queriesToTry) {
+      const pRes = await executeBufferGraphQL(token, q);
+      const edges = pRes.data?.posts?.edges;
+      if (pRes.ok && Array.isArray(edges)) {
+        for (const edge of edges) {
+          const node = edge?.node;
+          if (!node || !node.dueAt) continue;
+          const st = String(node.status || '').toLowerCase();
+          if (st && st !== 'scheduled' && st !== 'buffer') continue;
+          const ch = channelMap.get(node.channelId);
+          results.push({
+            id: node.id,
+            text: node.text || '',
+            dueAt: node.dueAt,
+            platform: ch ? mapServiceToPlatformKey(ch.service) : 'threads',
+            channelName: ch ? ch.displayName || ch.name : 'Buffer 頻道',
+          });
+        }
+        break;
+      }
+    }
+  }
+
+  return results;
+}
+
 async function generateWithFallback(
   ai: GoogleGenAI,
   preferredModel: string,
@@ -823,6 +893,21 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
     });
   });
 
+  // 5a-0. 同步查詢 Buffer 雲端目前已排程貼文清單
+  app.post('/api/buffer/scheduled-posts', async (req, res) => {
+    try {
+      const { bufferApiToken } = req.body as { bufferApiToken?: string };
+      const token = (bufferApiToken || process.env.BUFFER_API_KEY || '').trim();
+      if (!token) {
+        return res.json({ ok: true, scheduledPosts: [] });
+      }
+      const scheduledPosts = await fetchBufferScheduledPosts(token);
+      return res.json({ ok: true, scheduledPosts });
+    } catch {
+      return res.json({ ok: true, scheduledPosts: [] });
+    }
+  });
+
   // 5a. Buffer Connection Test Endpoint (Official Buffer GraphQL API https://api.buffer.com)
   app.post('/api/buffer/test-connection', async (req, res) => {
     try {
@@ -956,17 +1041,35 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         });
       }
 
-      // 確保排程時間為未來有效 UTC ISO 時間
+      // 確保排程時間為未來有效 UTC ISO 時間（支援 YYYY-MM-DDTHH:mm 本地時間精確解析）
       let effectiveScheduledIso: string | undefined;
       let effectiveScheduledUnix: number | undefined;
       if (
         (scheduleMode === 'custom_time' || scheduleMode === 'recommended_slot') &&
         scheduledTime
       ) {
-        let parsedDate = new Date(scheduledTime);
-        const minFuture = new Date(Date.now() + 3 * 60 * 1000);
+        let parsedDate: Date;
+        const localMatch = scheduledTime.match(
+          /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
+        );
+        if (localMatch && !scheduledTime.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(scheduledTime)) {
+          const [, y, m, d, hh, mm] = localMatch;
+          parsedDate = new Date(
+            Number(y),
+            Number(m) - 1,
+            Number(d),
+            Number(hh),
+            Number(mm),
+            0,
+            0
+          );
+        } else {
+          parsedDate = new Date(scheduledTime);
+        }
+
+        const minFuture = new Date(Date.now() + 2 * 60 * 1000);
         if (Number.isNaN(parsedDate.getTime()) || parsedDate < minFuture) {
-          parsedDate = new Date(Date.now() + 30 * 60 * 1000);
+          parsedDate = new Date(Date.now() + 15 * 60 * 1000);
         }
         effectiveScheduledIso = parsedDate.toISOString();
         effectiveScheduledUnix = Math.floor(parsedDate.getTime() / 1000);

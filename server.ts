@@ -14,10 +14,6 @@ const __dirname = path.dirname(__filename);
 
 const BUFFER_GRAPHQL_ENDPOINT = 'https://api.buffer.com';
 
-// 當發送到 Instagram 但使用者未附圖時，使用的預設公開創作封面圖（Instagram API 強制要求貼文必須附帶至少一張公開圖片）
-const DEFAULT_IG_FALLBACK_IMAGE_URL =
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1080&q=85';
-
 const TANGTANG_PERSONA_INSTRUCTION = `你是 Nono，住在獨立創作者「糖糖」（Ave）電腦桌面上的 AI 數位小夥伴。
 語氣與格式規則（極重要，必須 100% 遵守）：
 1. 稱呼規範：請稱呼使用者為「糖糖」。
@@ -1125,21 +1121,19 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         `;
 
         const createdPosts: any[] = [];
-        const channelErrors: string[] = [...missingPlatformWarnings];
+        const channelErrors: string[] = [];
 
         for (const target of targetChannels) {
           const isIgChannel = target.platformKey === 'instagram';
           const postTextForChannel =
             tailoredMap[target.platformKey as keyof typeof tailoredMap] || content || '';
 
-          // Instagram 強制需要至少一張公開圖片＋ metadata.instagram: { type: 'post', shouldShareToFeed: true }
-          const mediaForChannel =
-            resolvedPublicMedia.length > 0
-              ? resolvedPublicMedia
-              : isIgChannel
-                ? [{ type: 'image' as const, url: DEFAULT_IG_FALLBACK_IMAGE_URL }]
-                : [];
+          // 若是 Instagram 但沒有附圖，直接略過 IG 不發送（不影響 Threads / X 發送）
+          if (isIgChannel && resolvedPublicMedia.length === 0) {
+            continue;
+          }
 
+          const mediaForChannel = resolvedPublicMedia;
           const hasVideoAsset = mediaForChannel.some((m) => m.type === 'video');
 
           const buildInput = (includeAssets: boolean, includeIgMetadata: boolean) => {
@@ -1190,9 +1184,9 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
               channel: target.label,
               postId: createResult.post.id,
               dueAt: createResult.post.dueAt,
-              usedFallbackCover: isIgChannel && resolvedPublicMedia.length === 0,
             });
-          } else {
+          } else if (!isIgChannel) {
+            // 若是 IG 失敗則靜默略過，不影響其他平台成功狀態
             const errDetail =
               createResult?.message ||
               mutRes.errorMessage ||
@@ -1204,24 +1198,20 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         if (createdPosts.length === 0) {
           return res.status(400).json({
             ok: false,
-            message: `Buffer 排程未成功：${channelErrors.join(' ｜ ')}`,
+            message:
+              channelErrors.length > 0
+                ? `Buffer 排程未成功：${channelErrors.join(' ｜ ')}`
+                : '本次僅勾選 Instagram 但未附上圖片，因此已略過發送（IG 需附圖才能發佈）。',
           });
         }
 
         const successChannelsStr = createdPosts.map((c) => c.channel).join('、');
-        const usedIgFallback = createdPosts.some((c) => c.usedFallbackCover);
-        const warningSuffix =
-          channelErrors.length > 0 ? `（提醒：${channelErrors.join('；')}）` : '';
-        const igCoverNote = usedIgFallback
-          ? '（因 IG 強制要求附圖，已自動幫妳附上預設創作封面圖）'
-          : '';
 
         return res.json({
           ok: true,
           mode: 'buffer_graphql',
-          message: `已成功將貼文直接送入【${successChannelsStr}】正式排程佇列！${igCoverNote}${warningSuffix}`,
+          message: `已成功將貼文直接送入【${successChannelsStr}】正式排程佇列！`,
           bufferResult: createdPosts,
-          partialWarnings: channelErrors.length > 0 ? channelErrors : undefined,
         });
       }
     } catch (err: any) {

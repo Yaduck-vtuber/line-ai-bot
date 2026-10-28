@@ -507,7 +507,7 @@ export function App() {
       content: INITIAL_BASE_COPY,
       platformContents: buildClientPlatformCopies(INITIAL_BASE_COPY),
       usePerPlatformCopy: true,
-      platforms: ['threads', 'x', 'instagram'],
+      platforms: ['threads', 'x'],
       scheduleMode: 'recommended_slot',
       scheduledTime: firstSlot.scheduledIso,
       selectedSlotLabel: `${firstSlot.label} ${firstSlot.timeString}`,
@@ -517,7 +517,7 @@ export function App() {
     };
   });
 
-  const [previewPlatform, setPreviewPlatform] = useState<BufferPlatform>('instagram');
+  const [previewPlatform, setPreviewPlatform] = useState<BufferPlatform>('threads');
   const [editingScope, setEditingScope] = useState<'master' | BufferPlatform>('master');
   const [refineInput, setRefineInput] = useState('');
   const [isRefiningPost, setIsRefiningPost] = useState(false);
@@ -2356,7 +2356,7 @@ export function App() {
                                 className="w-4 h-4 mb-1"
                               />
                               <span className="text-[10px] text-zinc-300">
-                                IG 必須附圖（若未上傳圖片，發送時會自動補上預設創作封面圖）
+                                IG 貼文需附圖（若未附圖會自動略過 IG，只發送其他平台）
                               </span>
                             </div>
                           )

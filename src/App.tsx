@@ -475,11 +475,11 @@ export function App() {
   );
   const [careBadgeText, setCareBadgeText] = useState<string>('CARE · 貼心陪伴中');
 
-  // Nono 3D Appearance, Unified Panel Theme & Transparent Desktop Mode
+  // Nono 3D Appearance, Unified Panel Theme & Transparent Desktop Mode (Default true for complete background removal!)
   const [furColor, setFurColor] = useState<string>('#ff1e7a');
   const [panelThemeId, setPanelThemeId] = useState<string>('neon_berry_cyan');
   const [syncPanelWithFur, setSyncPanelWithFur] = useState<boolean>(true);
-  const [isTransparentDesktop, setIsTransparentDesktop] = useState<boolean>(false);
+  const [isTransparentDesktop, setIsTransparentDesktop] = useState<boolean>(true);
   const [customModelUrl, setCustomModelUrl] = useState<string | null>(null);
   const [customModelName, setCustomModelName] = useState<string | null>(null);
 
@@ -1234,6 +1234,46 @@ export function App() {
       }}
       className="relative w-screen h-screen overflow-hidden select-none font-sans transition-colors duration-300"
     >
+      {/* 滑鼠移到最上方才會浮現的無邊框視窗控制列（平時完全透明隱藏，無頂部框框！） */}
+      <div className="fixed top-0 left-0 right-0 h-11 z-50 group flex items-start justify-end px-4 pt-2 pointer-events-auto">
+        <div
+          style={{
+            backgroundColor: activePanelTheme.panelBg,
+            borderColor: activePanelTheme.border,
+            boxShadow: `0 4px 20px ${activePanelTheme.glowRgba}`,
+          }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 px-3 py-1 rounded-full border-2 backdrop-blur-md"
+        >
+          <div
+            style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+            className="text-[11px] font-mono text-zinc-200 px-2 py-0.5 cursor-move flex items-center gap-1"
+            title="按住此處可拖曳整個桌面視窗位置"
+          >
+            <span>✥ 按住拖曳視窗</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsNonoAwake((prev) => !prev)}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[11px] text-zinc-200 cursor-pointer"
+          >
+            {isNonoAwake ? '隱藏工作台' : '展開工作台'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.close()}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/85 hover:bg-rose-500 text-white text-[11px] font-bold cursor-pointer transition-colors"
+            title="關閉 Nono 桌面視窗"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>關閉視窗</span>
+          </button>
+        </div>
+      </div>
+
       {/* Optional Dark Ambient Wallpaper */}
       {!isTransparentDesktop && (
         <>

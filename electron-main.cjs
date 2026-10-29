@@ -1,3 +1,17 @@
+const fs = require('fs');
+const path = require('path');
+const logFile = path.join(__dirname, 'electron-debug.log');
+function log(msg) {
+  try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${msg}\n`); } catch {}
+}
+log('Starting electron-main.cjs');
+process.on('uncaughtException', (err) => {
+  log('uncaughtException: ' + (err?.stack || err));
+});
+process.on('unhandledRejection', (err) => {
+  log('unhandledRejection: ' + (err?.stack || err));
+});
+
 const {
   app,
   BrowserWindow,
@@ -8,7 +22,6 @@ const {
   globalShortcut,
   nativeImage,
 } = require('electron');
-const path = require('path');
 
 // 確保透明視窗在 Windows 上穩定渲染
 app.commandLine.appendSwitch('enable-transparent-visuals');
@@ -179,16 +192,49 @@ function createWindow() {
   });
 
   mainWindow.setMenuBarVisibility(false);
-  mainWindow.loadURL('http://localhost:3000');
+
+  let retryTimer = null;
+  const loadTarget = 'http://localhost:3000';
+
+  const tryLoadApp = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    log('Attempting to load: ' + loadTarget);
+    mainWindow.loadURL(loadTarget);
+  };
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    log(`did-fail-load (${errorCode}: ${errorDescription}), retrying in 1.5s...`);
+    if (retryTimer) clearTimeout(retryTimer);
+    retryTimer = setTimeout(() => {
+      tryLoadApp();
+    }, 1500);
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    log('did-finish-load success!');
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  tryLoadApp();
 
   mainWindow.on('closed', () => {
+    if (retryTimer) clearTimeout(retryTimer);
     mainWindow = null;
   });
 }
 
 // 單一實例鎖定：如果 Nono 已經在背景或被壓在下面，再次點擊桌面捷徑會直接把 Nono 喚出到最前面！
 const gotTheLock = app.requestSingleInstanceLock();
+log('requestSingleInstanceLock result: ' + gotTheLock);
 if (!gotTheLock) {
+  log('Could not get single instance lock, quitting');
   app.quit();
 } else {
   app.on('second-instance', () => {

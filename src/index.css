@@ -46,3 +46,18 @@ body,
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(168, 85, 247, 0.6);
 }
+
+/* ===== 可讀性與分層辨識度（Nono 面板） ===== */
+.nono-readable .text-\[9px\] { font-size: 11px; }
+.nono-readable .text-\[10px\] { font-size: 12px; }
+.nono-readable .text-\[11px\] { font-size: 13px; }
+.nono-readable .text-xs { font-size: 13.5px; line-height: 1.6; }
+/* 工作台內每個區塊卡片左側加粗色條，一眼分出「這是一個獨立區塊」 */
+.nono-workbench .rounded-xl.border:not(button):not(.border-2) {
+  border-left-width: 4px;
+  border-left-color: var(--nono-accent);
+}
+.nono-workbench .space-y-3 > .rounded-xl,
+.nono-workbench .space-y-3\.5 > .rounded-xl {
+  margin-bottom: 2px;
+}

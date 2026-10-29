@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
@@ -270,6 +271,97 @@ function smartLocalRefinePost(
 }
 
 // ==================== 將電腦本地上傳的 Base64 / 二進位 圖片與影片自動轉為公開 HTTPS 網址（供 Buffer & IG 抓取） ====================
+// 媒體託管紀錄：記住每個公開網址對應的暫存檔與已嘗試過的圖床，Buffer 讀不到時可自動換圖床重傳
+const mediaHostCache = new Map<
+  string,
+  { file: string; mime: string; name: string; triedHosts: string[] }
+>();
+
+const MEDIA_HOSTS = ['uguu', 'catbox', 'tmpfiles'] as const;
+
+// 確認網址真的是公開、可直接讀取的圖片／影片檔（Buffer 抓不到時最常見的原因是拿到網頁而不是檔案）
+async function verifyPublicMediaUrl(url: string, expectKind: 'video' | 'image'): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { Range: 'bytes=0-1023', 'User-Agent': 'Mozilla/5.0 (compatible; BufferBot/1.0)' },
+      redirect: 'follow',
+    });
+    if (!(res.status === 200 || res.status === 206)) return false;
+    const ctype = (res.headers.get('content-type') || '').toLowerCase();
+    try {
+      await res.body?.cancel();
+    } catch {
+      // ignore
+    }
+    return ctype.startsWith(`${expectKind}/`) || ctype.includes('octet-stream');
+  } catch {
+    return false;
+  }
+}
+
+async function uploadBufferToHost(
+  host: (typeof MEDIA_HOSTS)[number],
+  blob: Blob,
+  fileName: string
+): Promise<string | null> {
+  try {
+    if (host === 'uguu') {
+      const form = new FormData();
+      form.append('files[]', blob, fileName);
+      const res = await fetch('https://uguu.se/upload', {
+        method: 'POST',
+        body: form,
+      });
+      if (!res.ok) return null;
+      const json: any = await res.json().catch(() => null);
+      const fileUrl = json?.files?.[0]?.url;
+      return typeof fileUrl === 'string' && fileUrl.startsWith('https://') ? fileUrl : null;
+    }
+    if (host === 'catbox') {
+      const form = new FormData();
+      form.append('reqtype', 'fileupload');
+      form.append('fileToUpload', blob, fileName);
+      const res = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: form });
+      if (!res.ok) return null;
+      const text = (await res.text()).trim();
+      return text.startsWith('https://') ? text : null;
+    }
+    const form = new FormData();
+    form.append('file', blob, fileName);
+    const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: form });
+    if (!res.ok) return null;
+    const json: any = await res.json();
+    const page: string = json?.data?.url || '';
+    if (!page.includes('tmpfiles.org/')) return null;
+    return page.replace('http://', 'https://').replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+  } catch {
+    return null;
+  }
+}
+
+// 依序嘗試各圖床，並實際驗證網址可讀取後才回傳
+async function hostMediaFile(
+  file: string,
+  mime: string,
+  fileName: string,
+  triedHosts: string[] = []
+): Promise<{ url: string; triedHosts: string[] } | null> {
+  const blob = new Blob([fs.readFileSync(file)], { type: mime });
+  const kind: 'video' | 'image' = mime.startsWith('video/') ? 'video' : 'image';
+  const tried = [...triedHosts];
+  for (const host of MEDIA_HOSTS) {
+    if (tried.includes(host)) continue;
+    tried.push(host);
+    const url = await uploadBufferToHost(host, blob, fileName);
+    if (url && (await verifyPublicMediaUrl(url, kind))) {
+      return { url, triedHosts: tried };
+    }
+  }
+  return null;
+}
+
+// ==================== 將電腦本地上傳的 Base64 / 二進位 圖片與影片自動轉為公開 HTTPS 網址（供 Buffer & IG 抓取） ====================
 async function uploadBase64MediaToPublicUrl(
   dataUrl: string,
   fileName = 'nono-media.mp4'
@@ -278,79 +370,44 @@ async function uploadBase64MediaToPublicUrl(
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (!match) return null;
     const mimeType = match[1];
-    const base64Data = match[2];
-    const buffer = Buffer.from(base64Data, 'base64');
-    const blob = new Blob([buffer], { type: mimeType });
+    const buffer = Buffer.from(match[2], 'base64');
 
     const ext = mimeType.includes('video')
-      ? (mimeType.includes('quicktime') ? 'mov' : 'mp4')
-      : (mimeType.includes('png') ? 'png' : mimeType.includes('gif') ? 'gif' : 'jpg');
+      ? mimeType.includes('quicktime')
+        ? 'mov'
+        : 'mp4'
+      : mimeType.includes('png')
+        ? 'png'
+        : mimeType.includes('gif')
+          ? 'gif'
+          : 'jpg';
     const safeFileName = fileName.endsWith(`.${ext}`) ? fileName : `nono-upload-${Date.now()}.${ext}`;
 
-    // 1. 優先嘗試 Catbox (支援影片與圖片，直連 HTTPS)
-    try {
-      const form = new FormData();
-      form.append('reqtype', 'fileupload');
-      form.append('fileToUpload', blob, safeFileName);
-      const res = await fetch('https://catbox.moe/user/api.php', {
-        method: 'POST',
-        body: form,
-      });
-      if (res.ok) {
-        const textUrl = (await res.text()).trim();
-        if (textUrl.startsWith('https://')) {
-          return textUrl;
-        }
-      }
-    } catch {
-      // try backup
-    }
+    const tmpFile = path.join(os.tmpdir(), `nono-media-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`);
+    fs.writeFileSync(tmpFile, buffer);
 
-    // 2. 備援：Litterbox (Catbox 官方臨時檔案託管，支援至 1GB 影片與素材)
-    try {
-      const formLit = new FormData();
-      formLit.append('reqtype', 'fileupload');
-      formLit.append('time', '72h');
-      formLit.append('fileToUpload', blob, safeFileName);
-      const resLit = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-        method: 'POST',
-        body: formLit,
-      });
-      if (resLit.ok) {
-        const textUrl = (await resLit.text()).trim();
-        if (textUrl.startsWith('https://')) {
-          return textUrl;
-        }
-      }
-    } catch {
-      // try backup
-    }
-
-    // 3. 備援：tmpfiles.org 公開 API
-    try {
-      const form2 = new FormData();
-      form2.append('file', blob, safeFileName);
-      const res2 = await fetch('https://tmpfiles.org/api/v1/upload', {
-        method: 'POST',
-        body: form2,
-      });
-      if (res2.ok) {
-        const json2: any = await res2.json();
-        const rawPageUrl: string = json2?.data?.url || '';
-        if (rawPageUrl.includes('tmpfiles.org/')) {
-          return rawPageUrl
-            .replace('http://', 'https://')
-            .replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    return null;
+    const hosted = await hostMediaFile(tmpFile, mimeType, safeFileName);
+    if (!hosted) return null;
+    mediaHostCache.set(hosted.url, {
+      file: tmpFile,
+      mime: mimeType,
+      name: safeFileName,
+      triedHosts: hosted.triedHosts,
+    });
+    return hosted.url;
   } catch {
     return null;
   }
+}
+
+// Buffer 讀不到影片網址時，換下一個圖床重新託管（回傳新網址；沒有可換的就回傳 null）
+async function rehostMediaForBuffer(oldUrl: string): Promise<string | null> {
+  const entry = mediaHostCache.get(oldUrl);
+  if (!entry || !fs.existsSync(entry.file)) return null;
+  const hosted = await hostMediaFile(entry.file, entry.mime, entry.name, entry.triedHosts);
+  if (!hosted) return null;
+  mediaHostCache.set(hosted.url, { ...entry, triedHosts: hosted.triedHosts });
+  return hosted.url;
 }
 
 // ==================== Buffer Public GraphQL API (https://api.buffer.com) Helpers ====================
@@ -1910,17 +1967,25 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
         const createdPosts: any[] = [];
         const channelErrors: string[] = [];
 
+        const hadVideoAttached = resolvedPublicMedia.some((m) => m.type === 'video');
+        // 依使用者指示：「不用上傳影片了，我再去 Buffer app 上傳就好」
+        // 因此不將本地影片網址送交 Buffer API，避免觸發 Buffer 讀取第三方暫存網址的 400 錯誤；純文字與圖片直接穩定排程
+        const imageMediaForChannel = resolvedPublicMedia.filter((m) => m.type === 'image');
+
         for (const target of targetChannels) {
           const isIgChannel = target.platformKey === 'instagram';
           const postTextForChannel =
             tailoredMap[target.platformKey as keyof typeof tailoredMap] || content || '';
 
-          if (isIgChannel && resolvedPublicMedia.length === 0) {
+          // Instagram 官方規定必須有圖片或影片；若使用者僅附影片（稍後至 App 補傳），則提示使用者至 App 發布
+          if (isIgChannel && imageMediaForChannel.length === 0) {
+            channelErrors.push(
+              `${target.label}: Instagram 官方限制發布必須附帶圖片或影片。文案已就緒，請直接打開 Buffer App 貼上文案並選取手機/電腦影片發布！`
+            );
             continue;
           }
 
-          const mediaForChannel = resolvedPublicMedia;
-          const hasVideoAsset = mediaForChannel.some((m) => m.type === 'video');
+          const mediaForChannel = imageMediaForChannel;
 
           const buildInput = (includeAssets: boolean, includeIgMetadata: boolean) => {
             const inputObj: Record<string, any> = {
@@ -1933,14 +1998,12 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
               inputObj.dueAt = effectiveScheduledIso;
             }
             if (includeAssets && mediaForChannel.length > 0) {
-              inputObj.assets = mediaForChannel.map((m) =>
-                m.type === 'video' ? { video: { url: m.url } } : { image: { url: m.url } }
-              );
+              inputObj.assets = mediaForChannel.map((m) => ({ image: { url: m.url } }));
             }
             if (isIgChannel && includeIgMetadata) {
               inputObj.metadata = {
                 instagram: {
-                  type: hasVideoAsset ? 'reel' : 'post',
+                  type: 'post',
                   shouldShareToFeed: true,
                 },
               };
@@ -1953,11 +2016,7 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
           });
           let createResult = mutRes.data?.createPost;
 
-          if (
-            (!mutRes.ok || createResult?.__typename === 'MutationError') &&
-            !isIgChannel &&
-            mediaForChannel.length > 0
-          ) {
+          if ((!mutRes.ok || createResult?.__typename === 'MutationError') && !isIgChannel && mediaForChannel.length > 0) {
             mutRes = await executeBufferGraphQL(cleanToken, createPostMutation, {
               input: buildInput(false, false),
             });
@@ -2023,10 +2082,18 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
 
         const updatedStore = loadServerStore();
 
+        const videoTip = hadVideoAttached
+          ? '（🎬 影片依指示已略過 API 上傳，請直接打開 Buffer App 即可一鍵補掛影片發布！）'
+          : '';
+
         return res.json({
           ok: true,
           mode: 'buffer_graphql',
-          message: `已成功將貼文直接送入【${successChannelsStr}】正式排程佇列！`,
+          message: `已成功將貼文直接送入【${successChannelsStr}】正式排程佇列！${videoTip}`,
+          hadVideoAttached,
+          videoTip: hadVideoAttached
+            ? '文案與標籤已成功排程！依您的指示，影片請直接至 Buffer App 內補上掛載 🎬'
+            : undefined,
           bufferResult: createdPosts,
           scheduledPosts: updatedStore.scheduledPosts,
         });

@@ -3,13 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron-main.cjs",
   "scripts": {
     "dev": "tsx server.ts",
     "start": "node server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "electron": "electron ."
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

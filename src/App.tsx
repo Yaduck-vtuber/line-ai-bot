@@ -179,6 +179,162 @@ const NONO_DOMAIN_AGENTS: NonoDomainAgent[] = [
   },
 ];
 
+// ==================== 專屬領域 Nono 高質感向量插畫圖卡（以圖片為核心，保持首頁乾淨視覺） ====================
+interface NonoCardGraphicProps {
+  domainId: 'social' | 'replier' | 'inbox' | 'planner' | 'life' | 'vision';
+  color: string;
+  accentSecondary?: string;
+  compact?: boolean;
+}
+
+const NonoCardGraphic: React.FC<NonoCardGraphicProps> = ({ domainId, color, compact }) => {
+  const gradId = `ng-${domainId}-${compact ? 'c' : 'f'}`;
+  const auraId = `na-${domainId}-${compact ? 'c' : 'f'}`;
+
+  const renderAccessory = () => {
+    switch (domainId) {
+      case 'social':
+        return (
+          <g transform="translate(136, 16)">
+            {/* Sparkle star 1 */}
+            <path d="M-40,8 Q-32,8 -32,0 Q-32,8 -24,8 Q-32,8 -32,16 Q-32,8 -40,8 Z" fill="#00f5d4" opacity="0.9" />
+            {/* Sparkle star 2 */}
+            <path d="M20,-10 Q26,-10 26,-16 Q26,-10 32,-10 Q26,-10 26,-4 Q26,-10 20,-10 Z" fill="#ffe600" opacity="0.9" />
+            {/* Megaphone body */}
+            <path d="M0,18 L18,8 L18,28 L0,18 Z" fill="#00f5d4" stroke="#ffffff" strokeWidth="1.2" />
+            <path d="M-8,14 L0,14 L0,22 L-8,22 Z" fill="#ff1e7a" />
+            <circle cx="18" cy="18" r="4" fill="#ffffff" />
+            {/* Sound waves */}
+            <path d="M24,12 A8,8 0 0,1 24,24" fill="none" stroke="#00f5d4" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M28,8 A14,14 0 0,1 28,28" fill="none" stroke="#ffe600" strokeWidth="1.5" strokeLinecap="round" />
+          </g>
+        );
+      case 'replier':
+        return (
+          <g transform="translate(132, 22)">
+            {/* Envelope body */}
+            <rect x="-14" y="0" width="28" height="18" rx="3" fill="#ffffff" stroke="#fbbf24" strokeWidth="1.5" />
+            <path d="M-14,0 L0,10 L14,0" fill="none" stroke="#fbbf24" strokeWidth="1.5" strokeLinejoin="round" />
+            {/* Little wings */}
+            <path d="M-14,6 C-24,2 -26,14 -14,14" fill="#fde68a" opacity="0.85" />
+            <path d="M14,6 C24,2 26,14 14,14" fill="#fde68a" opacity="0.85" />
+            <circle cx="0" cy="-6" r="2.5" fill="#fbbf24" />
+          </g>
+        );
+      case 'inbox':
+        return (
+          <g transform="translate(132, 18)">
+            {/* Back chat bubble */}
+            <rect x="-18" y="-4" width="22" height="15" rx="5" fill="#0284c7" opacity="0.8" />
+            {/* Front chat bubble */}
+            <rect x="-6" y="6" width="24" height="16" rx="5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.2" />
+            {/* Dots inside bubble */}
+            <circle cx="-1" cy="14" r="1.5" fill="#ffffff" />
+            <circle cx="5" cy="14" r="1.5" fill="#ffffff" />
+            <circle cx="11" cy="14" r="1.5" fill="#ffffff" />
+          </g>
+        );
+      case 'planner':
+        return (
+          <g transform="translate(132, 20)">
+            {/* Clock ring */}
+            <circle cx="0" cy="8" r="14" fill="rgba(168,85,247,0.25)" stroke="#c084fc" strokeWidth="1.8" />
+            {/* Clock hands */}
+            <line x1="0" y1="8" x2="0" y2="0" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
+            <line x1="0" y1="8" x2="6" y2="8" stroke="#f472b6" strokeWidth="1.8" strokeLinecap="round" />
+            <circle cx="0" cy="8" r="2" fill="#ffffff" />
+            {/* Orbit dots */}
+            <circle cx="-16" cy="-2" r="1.5" fill="#e879f9" />
+            <circle cx="16" cy="18" r="1.5" fill="#e879f9" />
+          </g>
+        );
+      case 'life':
+        return (
+          <g transform="translate(132, 14)">
+            {/* Sprout on head */}
+            <path d="M-8,-2 C-8,-14 0,-14 0,-2" fill="#4ade80" />
+            <path d="M0,-2 C0,-16 8,-12 4,-2" fill="#22c55e" />
+            {/* Pulse Heart */}
+            <path d="M12,12 C12,8 16,6 18,8 C20,6 24,8 24,12 C24,16 18,20 18,20 C18,20 12,16 12,12 Z" fill="#ef4444" />
+          </g>
+        );
+      case 'vision':
+        return (
+          <g transform="translate(100, 54)">
+            {/* AR Visor band across eyes */}
+            <rect x="-34" y="-8" width="68" height="15" rx="7.5" fill="rgba(236,72,153,0.3)" stroke="#f43f5e" strokeWidth="1.5" />
+            {/* HUD reticle and line */}
+            <line x1="-28" y1="0" x2="-18" y2="0" stroke="#00f5d4" strokeWidth="1.5" />
+            <line x1="18" y1="0" x2="28" y2="0" stroke="#00f5d4" strokeWidth="1.5" />
+            <circle cx="0" cy="0" r="4.5" fill="none" stroke="#00f5d4" strokeWidth="1.2" />
+            <circle cx="0" cy="0" r="1.5" fill="#00f5d4" />
+          </g>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <svg viewBox="0 0 200 110" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id={auraId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.5" />
+          <stop offset="60%" stopColor={color} stopOpacity="0.15" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={gradId} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+          <stop offset="25%" stopColor={color} stopOpacity="0.95" />
+          <stop offset="100%" stopColor={color} stopOpacity="1" />
+        </radialGradient>
+        <filter id={`shadow-${gradId}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="6" stdDeviation="5" floodColor={color} floodOpacity="0.35" />
+        </filter>
+      </defs>
+
+      {/* Ambient glowing backdrop */}
+      <ellipse cx="100" cy="58" rx="85" ry="45" fill={`url(#${auraId})`} />
+
+      {/* Ground soft shadow */}
+      <ellipse cx="100" cy="96" rx="52" ry="7" fill="rgba(0,0,0,0.35)" />
+
+      {/* Organic Nono 3D Jelly Mochi Body */}
+      <g filter={`url(#shadow-${gradId})`}>
+        <path
+          d="M 64,88 C 46,88 44,58 54,42 C 64,26 84,20 100,20 C 116,20 136,26 146,42 C 156,58 154,88 136,88 C 122,88 114,86 100,86 C 86,86 78,88 64,88 Z"
+          fill={`url(#${gradId})`}
+        />
+        {/* Top Gloss Highlight */}
+        <ellipse cx="86" cy="34" rx="16" ry="7" fill="#ffffff" opacity="0.35" transform="rotate(-18 86 34)" />
+      </g>
+
+      {/* Facial Features (Adorable Nono Eyes & Cheeks) */}
+      <g>
+        {/* Left Eye */}
+        <circle cx="84" cy="54" r="5.2" fill="#18181b" />
+        <circle cx="82.5" cy="52" r="2" fill="#ffffff" />
+        <circle cx="86" cy="56" r="1" fill="#ffffff" />
+
+        {/* Right Eye */}
+        <circle cx="116" cy="54" r="5.2" fill="#18181b" />
+        <circle cx="114.5" cy="52" r="2" fill="#ffffff" />
+        <circle cx="118" cy="56" r="1" fill="#ffffff" />
+
+        {/* Rosy Cheeks */}
+        <ellipse cx="74" cy="62" rx="4.5" ry="2.5" fill="#ff4d8d" opacity="0.55" />
+        <ellipse cx="126" cy="62" rx="4.5" ry="2.5" fill="#ff4d8d" opacity="0.55" />
+
+        {/* Cute Smile */}
+        <path d="M 96,62 Q 100,66 104,62" fill="none" stroke="#27272a" strokeWidth="1.8" strokeLinecap="round" />
+      </g>
+
+      {/* Domain-specific accessory */}
+      {renderAccessory()}
+    </svg>
+  );
+};
+
 // 依照更新主題做前後故事化潤飾（絕不直接寫出 v0.1 / v0.2 等生硬版本號，而是引起觀眾好奇與共鳴）
 function buildClientStoryFromThemes(
   rawProgressText: string,
@@ -1265,7 +1421,7 @@ export function App() {
     new Blob([JSON.stringify(progressVersions)]).size / 1024
   ).toFixed(1);
 
-  // 點選或勾選更新主題時，絕不直接塞入生硬的 v0.1 / v0.2，而是提取主題並立即做前後故事化潤飾！
+  // 點選或勾選更新主題：只整理成乾淨的主題清單，不自動改寫貼文（文案由「下一步：生成文案」產生）
   const handleToggleVersionSelection = (id: string) => {
     setProgressNotice(null);
     setSelectedVersionIds((prev) => {
@@ -1282,18 +1438,7 @@ export function App() {
         .filter(Boolean)
         .join('\n');
       setNotebook((nb) => ({ ...nb, actualProgressLog: cleanThemeLines }));
-
-      const storyCopy = buildClientStoryFromThemes(cleanThemeLines, activeProjectName);
-      setBufferConfig((cfg) => ({
-        ...cfg,
-        content: storyCopy,
-        platformContents: buildClientPlatformCopies(storyCopy),
-        usePerPlatformCopy: true,
-        status: 'ready_to_schedule',
-      }));
-      setProgressNotice(
-        `✓ 已組合 ${selectedEntries.length} 個更新主題，並自動完成「引發好奇開場 ➔ 主題故事 ➔ 互動收尾」潤飾（不含生硬版本號）！`
-      );
+      setProgressNotice(`✓ 已選 ${selectedEntries.length} 個主題`);
       return nextIds;
     });
   };
@@ -1308,17 +1453,7 @@ export function App() {
       ...nb,
       actualProgressLog: `${entry.title}：${cleanTheme}`,
     }));
-    const storyCopy = buildClientStoryFromThemes(`${entry.title}：${cleanTheme}`, activeProjectName);
-    setBufferConfig((cfg) => ({
-      ...cfg,
-      content: storyCopy,
-      platformContents: buildClientPlatformCopies(storyCopy),
-      usePerPlatformCopy: true,
-      status: 'ready_to_schedule',
-    }));
-    setProgressNotice(
-      `✓ 已依主題「${entry.title}」做好前後故事化潤飾並同步至貼文工坊！`
-    );
+    setProgressNotice(`✓ 已選主題「${entry.title}」`);
   };
 
   const handleUpdateVersionWithCurrentText = (id: string) => {
@@ -1373,14 +1508,7 @@ export function App() {
     setSelectedVersionIds([newEntry.id]);
     setNewVersionTag('');
     setNewVersionTitle('');
-    const storyCopy = buildClientStoryFromThemes(rawContent, activeProjectName);
-    setBufferConfig((cfg) => ({
-      ...cfg,
-      content: storyCopy,
-      platformContents: buildClientPlatformCopies(storyCopy),
-      usePerPlatformCopy: true,
-    }));
-    setProgressNotice(`✓ 已新增主題「${title}」並完成前後故事化潤飾！`);
+    setProgressNotice(`✓ 已新增主題「${title}」`);
   };
 
   const handleDeleteProgressVersion = (id: string) => {
@@ -2128,6 +2256,13 @@ export function App() {
       return;
     }
 
+    if (bufferConfig.mediaAttachments.some((m) => m.url.startsWith('blob:'))) {
+      setFreePlanWarning(
+        '影片或圖片還在上傳到雲端中（需要先轉成公開網址 Buffer 才讀得到），請等預覽卡上的素材上傳完成後再按一次。'
+      );
+      return;
+    }
+
     setIsDispatchingBuffer(true);
     const platformNames = bufferConfig.platforms.map((p) => PLATFORM_META[p].label).join('、');
 
@@ -2479,7 +2614,7 @@ export function App() {
       {isNonoAwake && (
         <div
           style={{
-            width: `min(calc(100vw - 1.5rem), ${targetPanelWidthPx}px)`,
+            width: `min(calc(100vw - 1.5rem), ${viewLayer === 'hub' ? Math.max(targetPanelWidthPx, 840) : targetPanelWidthPx}px)`,
           }}
           className="fixed top-3 left-3 z-30 flex flex-col max-h-[calc(100vh-1.5rem)] transition-[width] duration-150"
         >
@@ -2488,8 +2623,9 @@ export function App() {
               backgroundColor: activePanelTheme.panelBg,
               borderColor: activePanelTheme.border,
               boxShadow: `0 22px 64px rgba(4, 2, 10, 0.92), 0 0 36px ${activePanelTheme.glowRgba}`,
+              ['--nono-accent' as string]: activePanelTheme.accent,
             }}
-            className="relative backdrop-blur-xl border-2 rounded-2xl flex flex-col max-h-full overflow-hidden transition-colors duration-300"
+            className={`nono-readable ${viewLayer === 'workbench' ? 'nono-workbench' : ''} relative backdrop-blur-xl border-2 rounded-2xl flex flex-col max-h-full overflow-hidden transition-colors duration-300`}
           >
             {/* 面板右側邊緣自由拉寬／收窄拖曳條 */}
             <div
@@ -2529,10 +2665,7 @@ export function App() {
                     className="-my-1"
                   />
                   <span className="text-[11px] font-mono font-black tracking-wider flex items-center gap-1">
-                    <span>✦ Nono 領域指揮大廳 (Domain Hub)</span>
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-bold">
-                    GrokBot 雙層架構
+                    <span>✦ Nono 領域中心</span>
                   </span>
                 </div>
 
@@ -2719,255 +2852,159 @@ export function App() {
               </div>
             )}
 
-            {/* LEVEL 1: GROKBOT-STYLE 領域大廳內容區 (當 viewLayer === 'hub') */}
+            {/* LEVEL 1: 領域首頁大廳 (當 viewLayer === 'hub') */}
             {viewLayer === 'hub' && (
               <div className="p-3.5 overflow-y-auto space-y-3.5 flex-1 min-h-0">
-                {/* 歡迎與分層導航提示 */}
+                {/* 頂部整合看板：將 Nono 角色、狀態與核心操作完全包在首頁版面內 */}
                 <div
                   style={{
-                    backgroundColor: activePanelTheme.panelCard,
-                    borderColor: `${activePanelTheme.border}55`,
+                    background: `linear-gradient(135deg, ${activePanelTheme.accent}20, ${activePanelTheme.accentSecondary}12)`,
+                    borderColor: `${activePanelTheme.border}60`,
+                    boxShadow: `0 8px 24px rgba(0,0,0,0.35)`,
                   }}
-                  className="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2"
+                  className="p-3 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3"
                 >
-                  <div className="space-y-0.5">
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-                      <span>歡迎來到 Nono 領域指揮大廳（GrokBot 雙層領域模組化設計）</span>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 shrink-0 rounded-2xl bg-black/50 border border-white/20 flex items-center justify-center overflow-hidden shadow-inner">
+                      <NonoCardGraphic
+                        domainId="social"
+                        color={activePanelTheme.accent}
+                        accentSecondary={activePanelTheme.accentSecondary}
+                        compact
+                      />
+                      <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                      </span>
                     </div>
-                    <p className="text-[10px] text-zinc-300">
-                      首頁展示各領域 Nono 分工，點選欲指派的 Nono 即可開啟專屬工作台；目前社群發文為主力領域已完整啟用。
-                    </p>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-white tracking-wide">Nono 領域指揮大廳</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                          全領域已連線
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-300">
+                        點選下方任意 Nono 圖卡即可進入專屬領域面板
+                      </p>
+                    </div>
                   </div>
+
                   <button
                     type="button"
                     onClick={handleRunMultiSkillPipeline}
                     disabled={isRunningMultiSkill}
                     style={{
                       background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                      boxShadow: `0 4px 18px ${activePanelTheme.glowRgba}`,
                     }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white cursor-pointer hover:brightness-110 disabled:opacity-40 flex items-center gap-1.5 shadow"
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer hover:brightness-110 active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2 shadow transition-all shrink-0"
                   >
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>{isRunningMultiSkill ? '執行中...' : '⚡ 一鍵連段自動跑（抓進度+潤飾+排程）'}</span>
+                    <Zap className="w-4 h-4" />
+                    <span>{isRunningMultiSkill ? '執行中...' : '⚡ 一鍵連段（抓進度+故事潤飾+排程）'}</span>
                   </button>
                 </div>
 
-                {/* 6 大領域 Nono 卡片網格 (2 欄響應式佈局) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  {/* 卡片 1: 📣 社群發文總管 Nono (主力領域) */}
-                  <div
-                    style={{
-                      backgroundColor: `${activePanelTheme.accent}12`,
-                      borderColor: activePanelTheme.accent,
-                      boxShadow: `0 0 16px ${activePanelTheme.accent}22`,
-                    }}
-                    className="p-3 rounded-xl border-2 space-y-2 flex flex-col justify-between"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span className="text-sm">📣</span>
-                          <span>社群發文總管 Nono</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[9px] font-bold">
-                          🟢 目前主力領域 · 完整啟用
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-semibold text-pink-300">
-                        進度抓取 · 故事潤飾 · Buffer 排程
-                      </div>
-                      <p className="text-[10px] text-zinc-300 leading-relaxed">
-                        負責跨專案自動掃描檔案與 Git 提交，去除生硬版本號潤飾為引發好奇的故事貼文，並透過 Buffer 一鍵上傳雲端排程。
-                      </p>
-                    </div>
+                {/* 6 大領域 Nono 圖卡矩陣：圖片為主、乾淨極簡 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {NONO_DOMAIN_AGENTS.map((agent) => {
+                    const isSocial = agent.id === 'social';
+                    const isReplier = agent.id === 'replier';
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setViewLayer('workbench');
-                        setActiveWindow('notebook');
-                      }}
-                      style={{
-                        background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
-                        boxShadow: `0 4px 16px ${activePanelTheme.glowRgba}`,
-                      }}
-                      className="w-full py-2 px-3 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:brightness-110 transition-all mt-1"
-                    >
-                      <span>👉 進入「社群發文」3 步極簡工作台 ▶</span>
-                    </button>
-                  </div>
+                    return (
+                      <div
+                        key={agent.id}
+                        style={{
+                          backgroundColor: isSocial ? `${activePanelTheme.accent}14` : activePanelTheme.panelCard,
+                          borderColor: isSocial ? activePanelTheme.accent : 'rgba(255,255,255,0.12)',
+                          boxShadow: isSocial ? `0 0 20px ${activePanelTheme.accent}25` : 'none',
+                        }}
+                        className="group relative rounded-2xl border-2 p-3 flex flex-col justify-between transition-all duration-200 hover:border-white/40 hover:scale-[1.01]"
+                      >
+                        {/* 卡片上半部：大尺寸精美專屬 Nono 角色圖 */}
+                        <div className="relative w-full h-28 rounded-xl overflow-hidden mb-2.5 bg-black/40 border border-white/10 flex items-center justify-center">
+                          <NonoCardGraphic
+                            domainId={agent.id}
+                            color={agent.furPresetColor}
+                            accentSecondary={activePanelTheme.accentSecondary}
+                          />
+                          {/* 右上角狀態膠囊 */}
+                          <div className="absolute top-2 right-2">
+                            {isSocial ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400 text-emerald-300 text-[10px] font-bold shadow-sm">
+                                ● 已就緒
+                              </span>
+                            ) : isReplier ? (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-500/25 border border-amber-400 text-amber-300 text-[10px] font-bold shadow-sm">
+                                ● 共同員工
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-zinc-400 text-[10px] font-mono">
+                                ○ 預留擴充
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                  {/* 卡片 2: ✉️ 智慧回信共同員工 Nono */}
-                  <div
-                    style={{
-                      backgroundColor: activePanelTheme.panelCard,
-                      borderColor: 'rgba(251, 191, 36, 0.4)',
-                    }}
-                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span className="text-sm">✉️</span>
-                          <span>智慧回信共同員工 Nono</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[9px] font-bold">
-                          🤝 雙部門共同員工槽
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-semibold text-amber-300">
-                        【📣 社群發文 ＋ 📬 社交訊息】共同員工
-                      </div>
-                      <p className="text-[10px] text-zinc-400 leading-relaxed">
-                        收到想回覆的指示後，代為擬稿並透過通用橋接回信給對方；同時也是社群發文與訊息整合兩隻 Nono 的共同幫手。
-                      </p>
-                    </div>
+                        {/* 卡片下半部：純粹俐落的標題與單行簡述 */}
+                        <div className="space-y-1 mb-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                              {agent.name}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-zinc-300 font-medium line-clamp-1">
+                            {isSocial
+                              ? '專案進度轉故事 · 自動排程發佈'
+                              : isReplier
+                                ? '社群與信件跨部門自動代回'
+                                : agent.id === 'inbox'
+                                  ? 'Gmail · LINE · SNS 集中整理'
+                                  : agent.id === 'planner'
+                                    ? '一日時間表與社群排程智慧串聯'
+                                    : agent.id === 'life'
+                                      ? '飲食熱量把關 · 喝水健康陪伴'
+                                      : 'AE 軟體操作螢幕即時視覺引導'}
+                          </p>
+                        </div>
 
-                    <div className="p-1.5 rounded-lg bg-black/40 border border-amber-400/20 text-center text-[10px] text-amber-300/80 font-mono">
-                      🤝 預留槽已建立 · 等待訊息部門合併時即刻啟用
-                    </div>
-                  </div>
-
-                  {/* 卡片 3: 📬 社交訊息整合 Nono */}
-                  <div
-                    style={{
-                      backgroundColor: activePanelTheme.panelCard,
-                      borderColor: 'rgba(56, 189, 248, 0.3)',
-                    }}
-                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span className="text-sm">📬</span>
-                          <span>社交訊息整合 Nono</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-400/40 text-sky-300 text-[9px] font-mono">
-                          🔌 未來擴充預留槽
-                        </span>
+                        {/* 操作按鈕 */}
+                        {isSocial ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setViewLayer('workbench');
+                              setActiveWindow('notebook');
+                            }}
+                            style={{
+                              background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                              boxShadow: `0 4px 14px ${activePanelTheme.glowRgba}`,
+                            }}
+                            className="w-full py-2 px-3 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95 transition-all shadow"
+                          >
+                            <span>進入發文工作台 ▶</span>
+                          </button>
+                        ) : (
+                          <div className="w-full py-1.5 px-3 rounded-xl bg-white/5 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
+                            {isReplier ? '共同員工待命 · 發文與訊息共同調度' : '預留擴充槽 · 待單一領域完善後掛載'}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-[10px] font-semibold text-sky-300">
-                        Gmail · LINE · SNS 訊息集中彙整
-                      </div>
-                      <p className="text-[10px] text-zinc-400 leading-relaxed">
-                        不用個別手動開啟軟體，自動整理所有即時通訊軟體與信箱的未讀通知與重要代辦事項。
-                      </p>
-                    </div>
-
-                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
-                      🔌 獨立模組插槽 · 待單一領域完善後掛載
-                    </div>
-                  </div>
-
-                  {/* 卡片 4: 🗓️ 全日時程管理 Nono */}
-                  <div
-                    style={{
-                      backgroundColor: activePanelTheme.panelCard,
-                      borderColor: 'rgba(167, 139, 250, 0.3)',
-                    }}
-                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span className="text-sm">🗓️</span>
-                          <span>全日時程管理 Nono</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/40 text-purple-300 text-[9px] font-mono">
-                          🔌 未來擴充預留槽
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-semibold text-purple-300">
-                        全日行程規劃 · 時間區塊最佳化
-                      </div>
-                      <p className="text-[10px] text-zinc-400 leading-relaxed">
-                        依您當天想做的事情與預定行程，智慧規劃最流暢的每日時段，提醒進度並隨時彈性調整。
-                      </p>
-                    </div>
-
-                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
-                      🔌 獨立模組插槽 · 待單一領域完善後掛載
-                    </div>
-                  </div>
-
-                  {/* 卡片 5: 🥗 日常生活管家 Nono */}
-                  <div
-                    style={{
-                      backgroundColor: activePanelTheme.panelCard,
-                      borderColor: 'rgba(52, 211, 153, 0.3)',
-                    }}
-                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span className="text-sm">🥗</span>
-                          <span>日常生活管家 Nono</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[9px] font-mono">
-                          🔌 未來擴充預留槽
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-semibold text-emerald-300">
-                        飲食熱量守門員 · 運動陪伴 · 語言練習
-                      </div>
-                      <p className="text-[10px] text-zinc-400 leading-relaxed">
-                        生活健康與飲食熱量守護者，提醒喝水與伸展，並在日常中以對話陪伴練習外語。
-                      </p>
-                    </div>
-
-                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
-                      🔌 獨立模組插槽 · 待單一領域完善後掛載
-                    </div>
-                  </div>
-
-                  {/* 卡片 6: 👁️ 螢幕視覺助理 Nono */}
-                  <div
-                    style={{
-                      backgroundColor: activePanelTheme.panelCard,
-                      borderColor: 'rgba(236, 72, 153, 0.3)',
-                    }}
-                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span className="text-sm">👁️</span>
-                          <span>螢幕視覺助理 Nono</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-pink-500/15 border border-pink-400/40 text-pink-300 text-[9px] font-mono">
-                          🔌 Screen Overlay Vision
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-semibold text-pink-300">
-                        AE 等軟體螢幕覆蓋型點擊引導
-                      </div>
-                      <p className="text-[10px] text-zinc-400 leading-relaxed">
-                        操作 After Effects 等軟體時，直接在畫面上覆蓋指示游標標明點擊位置與操作步驟。
-                      </p>
-                    </div>
-
-                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
-                      🔌 獨立模組插槽 · 待單一領域完善後掛載
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
 
-                {/* 通用訊息匯流排與跨軟體橋接狀態提示 */}
+                {/* 底部狀態列 */}
                 <div
                   style={{
                     backgroundColor: activePanelTheme.panelCard,
-                    borderColor: `${activePanelTheme.border}44`,
+                    borderColor: `${activePanelTheme.border}40`,
                   }}
-                  className="p-2.5 rounded-xl border flex items-center justify-between gap-2 text-[10px] text-zinc-400 font-mono"
+                  className="p-2.5 rounded-xl border flex items-center justify-between text-[11px] text-zinc-300 font-mono"
                 >
-                  <span className="flex items-center gap-1">
-                    <span className="text-emerald-400">●</span>
-                    <span>Inter-Nono 協作匯流排就緒 · 隨時可連線各軟體完成跨領域指令</span>
-                  </span>
-                  <span className="text-zinc-500">
-                    單一領域完善後即可一鍵掛載
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>跨領域協作架構已連線 · 支援跨軟體與共同員工調度</span>
                   </span>
                 </div>
               </div>
@@ -2990,7 +3027,7 @@ export function App() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-xs font-bold flex items-center gap-1.5">
-                      <span>📂 跨專案進度自動抓取（支援目前與未來任何新專案）</span>
+                      <span>📂 專案進度自動抓取</span>
                     </span>
                     <button
                       type="button"
@@ -3003,7 +3040,7 @@ export function App() {
                       className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/50 hover:bg-white/10 border text-[10px] font-mono cursor-pointer"
                     >
                       <RefreshCw className={`w-2.5 h-2.5 ${isScanningProject ? 'animate-spin' : ''}`} />
-                      <span>{isScanningProject ? '掃描中...' : '抓目前專案最新 Git/檔案進度'}</span>
+                      <span>{isScanningProject ? '掃描中...' : '抓最新進度'}</span>
                     </button>
                   </div>
 
@@ -3081,11 +3118,8 @@ export function App() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <label className="text-xs font-semibold flex items-center gap-1.5">
-                      <span>✨ 01. 點選更新主題（自動轉化為引起觀眾興趣的故事描述）</span>
+                      <span>✨ 01. 點選更新主題</span>
                     </label>
-                    <span className="text-[10px] font-mono text-zinc-400">
-                      極輕量 {progressStorageKb} KB · 不直寫生硬版本號
-                    </span>
                   </div>
 
                   {/* 近期各版本主題快速勾選 / 選用 / 更新清單 */}
@@ -3172,7 +3206,7 @@ export function App() {
                     })}
                   </div>
 
-                  {/* 實際進度主題輸入框（可自由手寫修改，或留空不填） */}
+                  {/* 實際進度主題輸入框 */}
                   <textarea
                     rows={2}
                     value={notebook.actualProgressLog}
@@ -3187,7 +3221,7 @@ export function App() {
                       }));
                     }}
                     style={{ borderColor: `${activePanelTheme.border}55` }}
-                    placeholder="（選填）勾選上方主題或手寫今日靈感重點，Nono 會自動幫妳做引起觀眾興趣的前後故事潤飾..."
+                    placeholder="勾選上方主題或輸入這次的進度重點..."
                     className="w-full bg-black/50 border rounded-xl p-2.5 text-xs text-zinc-100 leading-relaxed focus:outline-none resize-none"
                   />
 
@@ -3246,41 +3280,6 @@ export function App() {
                   )}
                 </div>
 
-                {/* 即時故事化潤飾預覽卡（讓使用者立刻看到點選主題後不是寫 0.1/0.2，而是吸引觀眾的完整故事） */}
-                <div
-                  style={{
-                    backgroundColor: activePanelTheme.panelCard,
-                    borderColor: `${activePanelTheme.border}44`,
-                  }}
-                  className="p-3 rounded-xl border space-y-1.5"
-                >
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles
-                        style={{ color: activePanelTheme.accentSecondary }}
-                        className="w-3.5 h-3.5"
-                      />
-                      <span>主題前後潤飾即時預覽（開場鉤子 ➔ 主題體驗 ➔ 觀眾互動）</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const fresh = buildClientStoryFromThemes(
-                          notebook.actualProgressLog,
-                          activeProjectName
-                        );
-                        handleUpdateMasterContent(fresh);
-                      }}
-                      className="text-[10px] px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer"
-                    >
-                      重新潤飾
-                    </button>
-                  </div>
-                  <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap bg-black/45 p-2.5 rounded-lg border border-white/10">
-                    {bufferConfig.content}
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-white/10">
                   <button
                     onClick={handleGenerateFromNotebook}
@@ -3322,18 +3321,10 @@ export function App() {
                   className="px-3.5 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-2 bg-black/25"
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span
-                      style={{
-                        backgroundColor: activePanelTheme.highlightTagBg,
-                        color: activePanelTheme.highlightTagText,
-                      }}
-                      className="px-2 py-0.5 rounded-sm text-[10px] font-mono font-black"
-                    >
-                      ✨ 前後潤飾故事模式（自動隱藏 v0.1 枯燥版號）
+                    <span className="text-xs font-bold text-white">
+                      ② 編輯文案與配圖
                     </span>
-                    <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 rounded-sm">
-                      Hook 開場 ➔ 主題故事 ➔ 互動提問
-                    </span>
+                    <span className="text-[10px] text-zinc-400">左邊編輯，右邊即時預覽</span>
                   </div>
 
                   <div className="flex items-center gap-1.5">
@@ -3786,29 +3777,7 @@ export function App() {
                   >
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold">各平台排版即時預覽</span>
-                        <div className="flex items-center gap-1 bg-black/45 p-0.5 rounded-lg border border-white/15">
-                          {(['threads', 'x', 'instagram', 'facebook'] as BufferPlatform[]).map(
-                            (p) => (
-                              <button
-                                key={p}
-                                type="button"
-                                onClick={() => setPreviewPlatform(p)}
-                                style={
-                                  previewPlatform === p
-                                    ? {
-                                        background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
-                                        color: '#ffffff',
-                                      }
-                                    : undefined
-                                }
-                                className="px-2 py-1 rounded-md text-[10px] font-bold transition-colors text-zinc-400 hover:text-zinc-200 cursor-pointer"
-                              >
-                                {PLATFORM_META[p].badge}
-                              </button>
-                            )
-                          )}
-                        </div>
+                        <span className="text-xs font-semibold">排版預覽</span>
                       </div>
 
                       <div
@@ -4190,41 +4159,29 @@ export function App() {
                       </div>
                     )}
 
-                    {/* 目前準備排程的貼文摘要卡片（可點選回面板 2 修改） */}
+                    {/* 排程摘要：只顯示發送對象，完整文案與預覽統一在步驟 ② 查看 */}
                     <div
                       style={{
                         backgroundColor: activePanelTheme.panelCard,
                         borderColor: `${activePanelTheme.border}44`,
                       }}
-                      className="p-3 rounded-xl border space-y-1.5"
+                      className="p-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-[11px]"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold flex items-center gap-1.5">
-                          <Sparkles
-                            style={{ color: activePanelTheme.accent }}
-                            className="w-3.5 h-3.5"
-                          />
-                          準備排程發送的貼文內容（發送後完整記錄於右側）
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveWindow('composer')}
-                          className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-white cursor-pointer"
-                        >
-                          ✍️ 返回面板 2 編輯文案
-                        </button>
-                      </div>
-                      <p className="text-xs text-zinc-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-2.5 max-h-28 overflow-y-auto leading-relaxed">
-                        {bufferConfig.content || '（尚未填寫貼文內容）'}
-                      </p>
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-400 font-mono">
-                        <span>
-                          發佈平台：
+                      <span className="text-zinc-300">
+                        將發送到：
+                        <strong className="text-white">
                           {bufferConfig.platforms.map((p) => PLATFORM_META[p].label).join('、') ||
                             '未選取'}
-                        </span>
-                        <span>附圖：{bufferConfig.mediaAttachments.length} 張</span>
-                      </div>
+                        </strong>
+                        {`　附件 ${bufferConfig.mediaAttachments.length} 個`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveWindow('composer')}
+                        className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-white cursor-pointer"
+                      >
+                        ← 回步驟 ② 修改文案
+                      </button>
                     </div>
 
                     {/* Buffer 推薦時段與排程（先選日期 -> 顯示推薦時段與自由改時分 + 顯示那天/近期/最後一篇排程） */}

@@ -1422,10 +1422,10 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
     });
   });
 
-  // 8. 多領域 Nono 跨領域互相溝通議會 (GrokBot-Style Multi-Nono Inter-Agent Communication)
+  // 8. 多領域 Nono 內部通訊匯流排與未來模組預演 (Modular Inter-Nono Bus & Shared-Staff Simulation)
   app.post('/api/nono/council', async (req, res) => {
     const {
-      command = '請各領域 Nono 一起把目前的專案更新包裝成最能吸引觀眾討論的社群企劃與排程方案',
+      command = '請社群發文 Nono 與未來各領域 Nono 預演跨領域協作與回信派工流程',
       projectName = 'Nono 3D 數位夥伴',
       progressText = '',
       lastScheduledTime = '尚無排程',
@@ -1446,42 +1446,42 @@ ${isXIncluded ? '注意：目前包含 X (Twitter) 平台，請務必讓文句�
     const defaultStory = buildStorytellingPostFromThemes(cleanTheme, projectName);
     const defaultPlatformCopies = buildPlatformTailoredCopies(defaultStory);
 
-    // 預設 4 隻不同領域的 Nono 像 GrokBot 一樣互相對話、接力完成跨領域任務
+    // 預演「社群發文總管 Nono」與未來可插拔合併的各領域 Nono（時程管理、訊息整合、共同員工回信、日常管家、螢幕視覺助理）互相通訊
     const fallbackDiscussion = [
       {
-        agentId: 'dev-nono',
-        agentName: '🛠️ 研發觀察 Nono',
-        domain: '多專案掃描與技術提煉',
-        color: '#22d3ee',
-        message: `@敘事企劃 Nono 我剛掃描完「${projectName}」的最新實作，核心亮點在於「${cleanTheme.slice(0, 56) || '去背桌面陪伴、多面板模組化與跨專案自動化'}」。千萬別直接寫更新 0.1、0.2，那樣太像工程日誌了，交給妳用故事包裝！`,
+        agentId: 'social-nono',
+        agentName: '📣 社群發文總管 Nono（目前主力領域）',
+        domain: '專案進度 · 故事潤飾 · 社群排程總管',
+        color: '#ff1e7a',
+        message: `我已經獨立把「${projectName}」的最新主題（${cleanTheme.slice(0, 48) || '桌面陪伴與排程體驗'}）完成前後故事潤飾與各平台字數適配！@全日時程管理 Nono 幫我確認一下最後一篇排程（${lastScheduledTime}）之後的空檔？`,
       },
       {
-        agentId: 'story-nono',
-        agentName: '✨ 敘事企劃 Nono',
-        domain: '主題前後潤飾與觀眾鉤子',
-        color: '#f472b6',
-        message: `收到 @研發觀察 Nono！我把開場改成「創作者盯著螢幕時渴望有個不擋畫面又懂默契的小生物」來勾起觀眾好奇，中段把技術融入日常陪伴體驗，結尾再用開放式提問邀請大家留言。@視覺展演 Nono 幫我看一下各平台閱讀節奏？`,
-      },
-      {
-        agentId: 'art-nono',
-        agentName: '🎨 視覺展演 Nono',
-        domain: '3D 舞台氛圍與平台視覺適配',
-        color: '#a855f7',
-        message: `@敘事企劃 Nono 這個故事感超棒！我已經同步把 X 版本濃縮在 140 中文字內、IG 控制在 5 個標籤內，建議配上一張 Nono 在桌面角落散發霓虹星光的截圖或短片。@排程策略 Nono 請決定最佳發佈時段！`,
-      },
-      {
-        agentId: 'schedule-nono',
-        agentName: '📊 排程策略 Nono',
-        domain: 'Buffer 雲端排程與流量空檔',
+        agentId: 'planner-nono',
+        agentName: '🗓️ 全日時程管理 Nono（未來模組預留槽）',
+        domain: '全天想做的事與預定行程動態排程',
         color: '#34d399',
-        message: `@全體 Nono 我查過 Buffer 排程紀錄（最後一篇為：${lastScheduledTime}），建議直接排在最後一篇的隔天晚間 20:30 創作者互動最高峰！我已經把大家共同完成的文案與時段同步到工作台囉！`,
+        message: `@社群發文總管 Nono 收到！比對全天待辦與排程紀錄後，把發文排在最後一篇的隔天晚間 20:30 最不會打擾創作時段。另外 @社交訊息整合 Nono 若貼文發佈後有各軟體留言或來信請幫忙彙整！`,
+      },
+      {
+        agentId: 'inbox-nono',
+        agentName: '📬 社交訊息整合 Nono（未來模組預留槽）',
+        domain: 'Gmail / LINE / SNS 免開軟體訊息彙整',
+        color: '#38bdf8',
+        message: `@社群發文總管 Nono 沒問題！我這邊會統一監聽各個通訊與社群軟體的訊息，讓主人不用逐一開軟體；一旦主人決定要回什麼，我就跟妳一起調度我們的共同員工 @智慧回信共同員工 Nono！`,
+      },
+      {
+        agentId: 'replier-nono',
+        agentName: '✉️ 智慧回信共同員工 Nono（發文＋訊息共同員工槽）',
+        domain: '隸屬【社群發文＋訊息整合】共同員工 · 自動代回信件與留言',
+        color: '#fbbf24',
+        message: `收到兩位主管（@社群發文總管 Nono 與 @社交訊息整合 Nono）的派工！只要收到主人的回覆意圖，我就會透過通用軟體橋接器直接幫主人回信給對方。若主人在操作 AE 或其他軟體遇到疑問，也能隨時呼叫 @螢幕覆蓋視覺助理 Nono 支援！`,
       },
     ];
 
     try {
       const ai = getAiClient();
-      const prompt = `現在有 4 隻掌管不同領域的 Nono 正在像 GrokBot 多代理一樣互相溝通，共同完成糖糖下達的跨領域指令：
-【跨領域指令】：${command}
+      const prompt = `「📣 社群發文總管 Nono」正在處理糖糖的專案「${projectName}」並與其他領域 Nono 協同確認排程：
+【任務指令】：${command}
 【目標專案】：${projectName}
 【專案進度素材】：${cleanTheme || '桌面陪伴體驗與多面板升級'}
 【目前最後一篇排程時間】：${lastScheduledTime}

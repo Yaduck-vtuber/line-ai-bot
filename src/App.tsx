@@ -79,11 +79,14 @@ interface ProjectRecord {
 }
 
 interface NonoDomainAgent {
-  id: 'dev' | 'story' | 'art' | 'schedule';
+  id: 'social' | 'life' | 'planner' | 'inbox' | 'replier' | 'vision';
   name: string;
   badge: string;
   domain: string;
   desc: string;
+  status: 'active' | 'shared_staff_slot' | 'reserved_slot';
+  sharedManagers?: string[];
+  connectedAppsHint: string;
   furPresetColor: string;
   themeId: string;
   defaultTab: ActiveWindowId;
@@ -102,44 +105,77 @@ const PROGRESS_STORAGE_KEY = 'nono_progress_versions_v1';
 
 const NONO_DOMAIN_AGENTS: NonoDomainAgent[] = [
   {
-    id: 'dev',
-    name: '🛠️ 研發觀察 Nono',
-    badge: 'DEV · 多專案進度',
-    domain: '掌管跨專案進度掃描與技術提煉',
-    desc: '自動抓取目前或未來其他專案的 Git 與檔案進度，提煉核心亮點',
-    furPresetColor: '#38bdf8',
-    themeId: 'neon_turquoise',
+    id: 'social',
+    name: '📣 社群發文總管 Nono',
+    badge: 'ACTIVE · 目前主力領域',
+    domain: '一手包辦社群發文的所有事項（多專案進度、故事潤飾、多平台排版、排程發佈）',
+    desc: '目前已完整啟用！可自動抓各專案進度、做主題故事前後潤飾、同步 Buffer 資料並排程，也能與訊息 Nono 共同調度回信員工。',
+    status: 'active',
+    connectedAppsHint: 'Buffer / Threads / X / IG / FB / Git / 任意 Webhook 軟體',
+    furPresetColor: '#ff1e7a',
+    themeId: 'neon_berry_cyan',
     defaultTab: 'notebook',
   },
   {
-    id: 'story',
-    name: '✨ 敘事企劃 Nono',
-    badge: 'STORY · 主題故事潤飾',
-    domain: '掌管更新主題前後潤飾與觀眾鉤子',
-    desc: '不直寫生硬版本號，將進度轉化為能引起觀眾好奇與互動的故事貼文',
-    furPresetColor: '#ff1e7a',
-    themeId: 'neon_berry_cyan',
-    defaultTab: 'composer',
+    id: 'replier',
+    name: '✉️ 智慧回信共同員工 Nono',
+    badge: 'SHARED STAFF · 雙部門共同員工槽',
+    domain: '隸屬【社群發文 Nono ＋ 社交訊息整合 Nono】共同員工 · 自動代回訊息與信件',
+    desc: '未來模組預留槽：當妳在訊息整合或社群看到想回的訊息，只要告訴它回覆意圖，就會自動幫妳回信給對方。',
+    status: 'shared_staff_slot',
+    sharedManagers: ['📣 社群發文總管 Nono', '📬 社交訊息整合 Nono'],
+    connectedAppsHint: 'Gmail / LINE / Discord / IG / Threads / 各通訊軟體 API',
+    furPresetColor: '#fbbf24',
+    themeId: 'neon_turquoise',
+    defaultTab: 'council',
   },
   {
-    id: 'art',
-    name: '🎨 視覺展演 Nono',
-    badge: 'ART · 舞台與排版',
-    domain: '掌管 3D 舞台氛圍與各平台視覺適配',
-    desc: '負責貼文配圖構圖、3D 軟糖外觀主題與 IG/X/Threads 排版呈現',
-    furPresetColor: '#b845ff',
-    themeId: 'neon_violet',
-    defaultTab: 'appearance',
+    id: 'inbox',
+    name: '📬 社交訊息整合 Nono',
+    badge: 'SLOT · 未來擴充預留',
+    domain: '統整 Gmail、LINE、SNS 等所有社交軟體來訊（免逐一開軟體）',
+    desc: '未來模組預留槽：幫妳把散落在各個軟體的重要訊息集中整理，並將妳想回的內容交給「智慧回信共同員工 Nono」發送。',
+    status: 'reserved_slot',
+    connectedAppsHint: 'Gmail / LINE / Messenger / X / Discord / 通用 IMAP 與 Webhook',
+    furPresetColor: '#38bdf8',
+    themeId: 'neon_turquoise',
+    defaultTab: 'council',
   },
   {
-    id: 'schedule',
-    name: '📊 排程策略 Nono',
-    badge: 'SCHED · 雲端排程官',
-    domain: '掌管 Buffer 資料抓取與黃金時段排程',
-    desc: '同步 Buffer 雲端排程紀錄、分析最後一篇時間並安排最佳發佈日曆',
+    id: 'planner',
+    name: '🗓️ 全日時程管理 Nono',
+    badge: 'SLOT · 未來擴充預留',
+    domain: '依照整天想做的事與預定行程，動態排定一整天的時間表',
+    desc: '未來模組預留槽：根據妳每天想完成的創作、休息與預定行程，自動規劃最舒適的一日時間軸，並與社群排程時段互相同步。',
+    status: 'reserved_slot',
+    connectedAppsHint: 'Google Calendar / Notion / 本機行事曆 / 任意待辦軟體',
     furPresetColor: '#34d399',
     themeId: 'neon_lime',
-    defaultTab: 'buffer',
+    defaultTab: 'council',
+  },
+  {
+    id: 'life',
+    name: '🥗 日常生活管家 Nono',
+    badge: 'SLOT · 未來擴充預留',
+    domain: '飲食與熱量守門員、運動陪伴、語言學習等日常健康習慣',
+    desc: '未來模組預留槽：負責每日飲食熱量估算與把關、運動計時陪伴、以及日常外語單字與對話練習。',
+    status: 'reserved_slot',
+    connectedAppsHint: '健康紀錄 / 語音練習 / 計時器 / 任意生活工具',
+    furPresetColor: '#a3e635',
+    themeId: 'neon_lime',
+    defaultTab: 'council',
+  },
+  {
+    id: 'vision',
+    name: '👁️ 螢幕覆蓋視覺助理 Nono',
+    badge: 'SLOT · Screen Overlay Vision AI',
+    domain: '操作 AE、Blender 等任何軟體遇疑問時，從網路找資料並直接在螢幕指出點哪邊',
+    desc: '未來模組預留槽（Screen Overlay Vision AI）：即時讀取當前操作的軟體畫面並聯網查解法，直接在透明覆蓋層標示該點擊的按鈕位置。',
+    status: 'reserved_slot',
+    connectedAppsHint: 'After Effects / Blender / Premiere / 桌面上任何開啟中的軟體視窗',
+    furPresetColor: '#b845ff',
+    themeId: 'neon_violet',
+    defaultTab: 'council',
   },
 ];
 
@@ -703,28 +739,28 @@ export function App() {
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState<boolean>(false);
   const lastOpenWindowRef = useRef<ActiveWindowId>('notebook');
 
-  // 多領域 Nono 與 GrokBot 跨領域互聊狀態
-  const [activeNonoAgentId, setActiveNonoAgentId] = useState<NonoDomainAgent['id']>('story');
+  // 多領域 Nono 生態系與未來模組擴充槽狀態（目前主力完善：📣 社群發文總管 Nono）
+  const [activeNonoAgentId, setActiveNonoAgentId] = useState<NonoDomainAgent['id']>('social');
   const activeDomainNono =
-    NONO_DOMAIN_AGENTS.find((a) => a.id === activeNonoAgentId) || NONO_DOMAIN_AGENTS[1];
+    NONO_DOMAIN_AGENTS.find((a) => a.id === activeNonoAgentId) || NONO_DOMAIN_AGENTS[0];
   const [councilCommandInput, setCouncilCommandInput] = useState<string>('');
   const [isRunningCouncil, setIsRunningCouncil] = useState<boolean>(false);
   const [councilMessages, setCouncilMessages] = useState<CouncilChatTurn[]>([
     {
-      agentId: 'dev-nono',
-      agentName: '🛠️ 研發觀察 Nono',
-      domain: '多專案掃描與技術提煉',
-      color: '#22d3ee',
+      agentId: 'social-nono',
+      agentName: '📣 社群發文總管 Nono（目前主力領域 · 已啟用）',
+      domain: '一手包辦：專案進度掃描 · 主題故事潤飾 · 各平台排版 · Buffer 排程',
+      color: '#ff1e7a',
       message:
-        '@敘事企劃 Nono 我已經準備好隨時掃描目前或未來的其他專案資料夾進度了！抓到進度後會交給妳做故事化包裝，不再直接寫生硬的 0.1、0.2 版本號。',
+        '目前社群發文的所有流程（抓各專案進度、做前後故事潤飾、排版預覽與 Buffer 排程）都由我一位總管獨立完成！同時我也預留好通用訊息匯流排，等未來其他領域的 Nono 完善後就能直接插拔合併。',
     },
     {
-      agentId: 'story-nono',
-      agentName: '✨ 敘事企劃 Nono',
-      domain: '主題前後潤飾與觀眾鉤子',
-      color: '#f472b6',
+      agentId: 'replier-nono',
+      agentName: '✉️ 智慧回信共同員工 Nono（雙部門共同員工預留槽）',
+      domain: '隸屬【📣 社群發文 Nono ＋ 📬 社交訊息整合 Nono】共同員工',
+      color: '#fbbf24',
       message:
-        '沒問題 @研發觀察 Nono！只要點選任何更新主題，我都會用「引發好奇的開場 ➔ 主題體驗故事 ➔ 互動提問收尾」幫糖糖潤飾成吸引人的貼文，再交給 @排程策略 Nono 安排最佳時段！',
+        '我是「社群發文 Nono」與「社交訊息整合 Nono」的共同員工預留槽！未來當訊息整合 Nono 幫妳把 Gmail、LINE、SNS 訊息整理好，只要妳決定想回什麼，兩位主管就會派我直接幫妳回信給對方！',
     },
   ]);
   const [multiSkillSteps, setMultiSkillSteps] = useState<
@@ -2439,14 +2475,14 @@ export function App() {
             </button>
           </div>
 
-          {/* 切換不同領域的 Nono */}
+          {/* 目前主力領域與未來擴充領域插槽快速預覽 */}
           <div className="space-y-1">
             <div className="text-[9px] font-mono text-zinc-400 flex items-center justify-between">
-              <span>1. 切換掌管不同領域的 Nono：</span>
-              <span style={{ color: activePanelTheme.accentSecondary }}>同 Nono 可跨專案多工</span>
+              <span>目前值班：📣 社群發文總管 Nono</span>
+              <span style={{ color: activePanelTheme.accentSecondary }}>未來領域可隨時合併</span>
             </div>
             <div className="grid grid-cols-2 gap-1">
-              {NONO_DOMAIN_AGENTS.map((agent) => {
+              {NONO_DOMAIN_AGENTS.slice(0, 4).map((agent) => {
                 const isCurr = agent.id === activeNonoAgentId;
                 return (
                   <button
@@ -2467,7 +2503,13 @@ export function App() {
                     className="p-1.5 rounded-lg border text-left cursor-pointer hover:border-white/35 transition-all"
                   >
                     <div className="text-[10px] font-bold text-white truncate">{agent.name}</div>
-                    <div className="text-[9px] text-zinc-400 truncate">{agent.domain}</div>
+                    <div className="text-[9px] text-zinc-400 truncate">
+                      {agent.status === 'active'
+                        ? '✓ 目前完整啟用'
+                        : agent.status === 'shared_staff_slot'
+                          ? '🤝 發文+訊息共同員工槽'
+                          : '🔌 未來擴充預留槽'}
+                    </div>
                   </button>
                 );
               })}
@@ -2477,15 +2519,15 @@ export function App() {
           {/* 點選要用的功能 ➔ 出現對應專屬面板 */}
           <div className="space-y-1 pt-1 border-t border-white/10">
             <div className="text-[9px] font-mono text-zinc-400">
-              2. 點選要使用的功能（開啟對應獨立面板）：
+              點選要使用的功能（開啟對應獨立面板）：
             </div>
             <div className="grid grid-cols-2 gap-1">
               {[
-                { id: 'notebook' as const, title: '📂 專案與進度庫', sub: '抓各專案進度与主題' },
-                { id: 'composer' as const, title: '✍️ 故事貼文工坊', sub: '主題前後潤飾與預覽' },
-                { id: 'buffer' as const, title: '📅 Buffer 排程日曆', sub: '抓雲端資料與改時段' },
-                { id: 'council' as const, title: '🤝 多 Nono 協作室', sub: 'GrokBot 跨領域互聊' },
-                { id: 'appearance' as const, title: '🎨 外觀與動作', sub: '毛色主題與滾輪縮放' },
+                { id: 'notebook' as const, title: '📂 1. 專案進度庫', sub: '抓各專案進度與主題' },
+                { id: 'composer' as const, title: '✍️ 2. 故事潤飾坊', sub: '主題前後潤飾與預覽' },
+                { id: 'buffer' as const, title: '📅 3. Buffer 排程', sub: '抓雲端資料與改時段' },
+                { id: 'council' as const, title: '🔌 4. 未來領域插槽', sub: '多Nono互聯與軟體橋接' },
+                { id: 'appearance' as const, title: '🎨 5. 外觀與動作', sub: '毛色主題與滾輪縮放' },
               ].map((item) => {
                 const isOpen = isNonoAwake && activeWindow === item.id;
                 return (
@@ -2710,7 +2752,7 @@ export function App() {
                 { id: 'notebook' as const, label: '1.專案進度', icon: BookOpen },
                 { id: 'composer' as const, label: '2.故事潤飾', icon: Wand2 },
                 { id: 'buffer' as const, label: '3.Buffer排程', icon: Calendar },
-                { id: 'council' as const, label: '4.多Nono協作', icon: Zap },
+                { id: 'council' as const, label: '4.未來擴充槽', icon: Zap },
                 { id: 'appearance' as const, label: '5.外觀動作', icon: Sparkles },
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -4590,7 +4632,7 @@ export function App() {
               </div>
             )}
 
-            {/* ==================== TAB 4: MULTI-DOMAIN NONO & GROKBOT INTER-AGENT COUNCIL ==================== */}
+            {/* ==================== TAB 4: MODULAR NONO ECOSYSTEM SLOTS & UNIVERSAL APP BRIDGE ==================== */}
             {activeWindow === 'council' && (
               <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 <div
@@ -4605,10 +4647,10 @@ export function App() {
                       }}
                       className="px-2 py-0.5 rounded-sm text-[10px] font-mono font-black"
                     >
-                      🤝 跨領域 Nono 協作中心（GrokBot 多代理互助模式）
+                      🔌 Nono 未來多領域插拔架構 & 通用各軟體橋接中心
                     </span>
                     <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 rounded-sm">
-                      目前主控：{activeDomainNono.badge} · {activeDomainNono.name}
+                      目前主力完善：📣 社群發文總管 Nono（其他領域預留插槽，未來完善後一鍵合併）
                     </span>
                   </div>
 
@@ -4626,8 +4668,8 @@ export function App() {
                     <Zap className="w-3.5 h-3.5" />
                     <span>
                       {isRunningMultiSkill
-                        ? '正在連段執行多功能...'
-                        : `⚡ 讓「${activeDomainNono.name}」單機同時處理多功能`}
+                        ? '正在連段執行社群發文所有步驟...'
+                        : '⚡ 讓「📣 社群發文總管 Nono」一次包辦：抓進度+潤飾+排程'}
                     </span>
                   </button>
                 </div>
@@ -4637,8 +4679,8 @@ export function App() {
                     isSingleColumnLayout ? 'grid-cols-1' : 'grid-cols-12'
                   }`}
                 >
-                  {/* Left Column: 4 Domain Nonos & Single-Nono Multi-Skill Pipeline */}
-                  <div className={`${isSingleColumnLayout ? '' : 'col-span-5'} space-y-3`}>
+                  {/* Left Column: 6 Modular Domain Nonos (1 Active Social Nono + 1 Shared Employee + 4 Reserved Slots) */}
+                  <div className={`${isSingleColumnLayout ? '' : 'col-span-6'} space-y-3`}>
                     <div
                       style={{
                         backgroundColor: activePanelTheme.panelCard,
@@ -4646,13 +4688,16 @@ export function App() {
                       }}
                       className="p-3 rounded-xl border space-y-2"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-white">
-                          1. 選擇掌管不同領域的 Nono（各自具備多專案與多功能）
+                          1. Nono 多領域模組插槽（單一領域完善後即可直接掛載合併）
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-300">
+                          模組化插拔架構
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-2">
+                      <div className="grid grid-cols-1 gap-2 max-h-[360px] overflow-y-auto pr-1">
                         {NONO_DOMAIN_AGENTS.map((agent) => {
                           const isSelected = agent.id === activeNonoAgentId;
                           return (
@@ -4673,35 +4718,49 @@ export function App() {
                               }
                               className="p-2.5 rounded-xl border text-left transition-all cursor-pointer hover:border-white/30 space-y-1"
                             >
-                              <div className="flex items-center justify-between">
+                              <div className="flex flex-wrap items-center justify-between gap-1">
                                 <span className="text-xs font-bold text-white flex items-center gap-1.5">
                                   <span>{agent.name}</span>
-                                  <span
-                                    style={{ color: agent.furPresetColor }}
-                                    className="text-[10px] font-mono"
-                                  >
-                                    [{agent.badge}]
-                                  </span>
                                 </span>
-                                {isSelected && (
-                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-bold">
-                                    目前值班中
+                                {agent.status === 'active' ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[9px] font-bold">
+                                    ✓ 目前主力領域（已完整啟用）
+                                  </span>
+                                ) : agent.status === 'shared_staff_slot' ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[9px] font-bold">
+                                    🤝 發文＋訊息共同員工預留槽
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-white/10 border border-white/20 text-zinc-300 text-[9px] font-mono">
+                                    🔌 未來模組預留槽（待合併）
                                   </span>
                                 )}
                               </div>
+
                               <div className="text-[11px] font-semibold text-zinc-200">
                                 {agent.domain}
                               </div>
+
+                              {agent.sharedManagers && (
+                                <div className="text-[10px] font-mono text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-2 py-0.5">
+                                  👥 共同主管：{agent.sharedManagers.join(' ＋ ')}
+                                </div>
+                              )}
+
                               <p className="text-[10px] text-zinc-400 leading-snug">
                                 {agent.desc}
                               </p>
+
+                              <div className="text-[9px] font-mono text-sky-300/90 pt-0.5">
+                                🔗 可橋接任意軟體：{agent.connectedAppsHint}
+                              </div>
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
-                    {/* 同一個 Nono 同時執行多功能流水線紀錄 */}
+                    {/* 同一個社群發文 Nono 同時執行所有社群發文功能流水線 */}
                     <div
                       style={{
                         backgroundColor: activePanelTheme.panelCard,
@@ -4715,7 +4774,7 @@ export function App() {
                             style={{ color: activePanelTheme.accentSecondary }}
                             className="w-3.5 h-3.5"
                           />
-                          單一 Nono 多功能同時處理流水線
+                          「📣 社群發文總管 Nono」單機全功能連段處理
                         </span>
                         <button
                           type="button"
@@ -4730,9 +4789,9 @@ export function App() {
                         </button>
                       </div>
                       <p className="text-[11px] text-zinc-300 leading-relaxed">
-                        同一個 Nono 會自動串聯：
+                        負責社群發文的這位 Nono 會自己同時動用多項技能：
                         <strong className="text-white">
-                          「抓目前專案進度 ➔ 去除版本號轉化為故事貼文 ➔ 自動對齊最後一篇排程隔天」
+                          「抓專案進度 ➔ 去除版本號轉化為故事貼文 ➔ 對齊最後一篇排程隔天」
                         </strong>
                         一次完成！
                       </p>
@@ -4753,10 +4812,10 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Right Column: GrokBot-Style Multi-Nono Inter-Agent Communication Room */}
+                  {/* Right Column: Inter-Nono Communication Bus & Universal Software Connector */}
                   <div
                     className={`${
-                      isSingleColumnLayout ? '' : 'col-span-7'
+                      isSingleColumnLayout ? '' : 'col-span-6'
                     } flex flex-col justify-between space-y-3`}
                   >
                     <div
@@ -4773,10 +4832,10 @@ export function App() {
                               style={{ color: activePanelTheme.accent }}
                               className="w-3.5 h-3.5"
                             />
-                            <span>🤖 GrokBot 跨領域 Nono 互相溝通協作室</span>
+                            <span>📡 多 Nono 內部通訊總線 & 共同員工派工預演室</span>
                           </div>
                           <p className="text-[10px] text-zinc-400 mt-0.5">
-                            下達一個跨領域指令，4 位不同領域的 Nono 會互相點名 (@) 討論、接力完成進度解析、故事包裝、視覺建議與排程規劃
+                            預留標準化內部通訊協定（不綁定特定外部軟體），未來各領域 Nono 合併後可互相點名溝通或共同調度「智慧回信共同員工 Nono」
                           </p>
                         </div>
 
@@ -4791,7 +4850,7 @@ export function App() {
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                           <span>
-                            {isRunningCouncil ? '多 Nono 正在對話協作...' : '🚀 啟動四領域 Nono 互相溝通'}
+                            {isRunningCouncil ? '多 Nono 正在通訊...' : '🚀 預演多 Nono 內部通訊與共同員工派工'}
                           </span>
                         </button>
                       </div>
@@ -4808,7 +4867,7 @@ export function App() {
                           type="text"
                           value={councilCommandInput}
                           onChange={(e) => setCouncilCommandInput(e.target.value)}
-                          placeholder="輸入跨領域任務（例如：把最新專案進度包裝成引起觀眾好奇的故事並安排最佳排程）..."
+                          placeholder="測試跨 Nono 溝通指令（如：整理發文排程、或請訊息與發文 Nono 派共同員工回信）..."
                           className="flex-1 bg-black/55 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none"
                         />
                         <button
@@ -4821,56 +4880,44 @@ export function App() {
                           }}
                           className="px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer hover:brightness-110 shrink-0"
                         >
-                          發起協作
+                          發送指令
                         </button>
                       </form>
 
                       {/* 多 Nono 對話紀錄區 */}
                       <div className="flex-1 max-h-[340px] overflow-y-auto space-y-2 pr-1">
-                        {councilMessages.length === 0 ? (
-                          <div className="py-8 px-4 text-center space-y-2 rounded-xl bg-black/30 border border-dashed border-white/10">
-                            <div className="text-xs text-zinc-200 font-semibold">
-                              點擊上方「🚀 啟動四領域 Nono 互相溝通」開始跨領域協作
+                        {councilMessages.map((turn, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2.5 rounded-xl bg-black/50 border border-white/12 space-y-1"
+                          >
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-bold text-white flex items-center gap-1.5">
+                                <span style={{ color: turn.color || activePanelTheme.accent }}>
+                                  {turn.agentName}
+                                </span>
+                                <span
+                                  style={{ color: activePanelTheme.accentSecondary }}
+                                  className="text-[10px] font-mono"
+                                >
+                                  [{turn.domain}]
+                                </span>
+                              </span>
+                              <span className="text-[9px] font-mono text-zinc-500">
+                                Bus #{idx + 1}
+                              </span>
                             </div>
-                            <p className="text-[11px] text-zinc-400 leading-relaxed">
-                              🛠️ 研發觀察 Nono ➔ ✨ 敘事企劃 Nono ➔ 🎨 視覺展演 Nono ➔ 📊 排程策略 Nono
-                              將像 GrokBot 多代理一樣互相對話，直接產出潤飾好的故事貼文並對齊排程時間！
+                            <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                              {turn.message}
                             </p>
                           </div>
-                        ) : (
-                          councilMessages.map((turn, idx) => (
-                            <div
-                              key={idx}
-                              className="p-2.5 rounded-xl bg-black/50 border border-white/12 space-y-1"
-                            >
-                              <div className="flex items-center justify-between text-[11px]">
-                                <span className="font-bold text-white flex items-center gap-1.5">
-                                  <span style={{ color: turn.color || activePanelTheme.accent }}>
-                                    {turn.agentName}
-                                  </span>
-                                  <span
-                                    style={{ color: activePanelTheme.accentSecondary }}
-                                    className="text-[10px] font-mono"
-                                  >
-                                    [{turn.domain}]
-                                  </span>
-                                </span>
-                                <span className="text-[9px] font-mono text-zinc-500">
-                                  Turn #{idx + 1}
-                                </span>
-                              </div>
-                              <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                                {turn.message}
-                              </p>
-                            </div>
-                          ))
-                        )}
+                        ))}
                       </div>
 
                       {councilMessages.length > 0 && (
                         <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
                           <span className="text-[11px] text-emerald-300 font-mono">
-                            ✓ 多 Nono 協作產出的故事貼文已自動同步至編輯器與排程日期！
+                            ✓ 目前先專注完善「📣 社群發文總管 Nono」，未來其他 Nono 模組隨時可無縫掛載！
                           </span>
                           <div className="flex items-center gap-1.5">
                             <button

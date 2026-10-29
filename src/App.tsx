@@ -729,8 +729,10 @@ export function App() {
   // Desktop Care Bubble & Responsive Workbench states
   const [isNonoAwake, setIsNonoAwake] = useState<boolean>(true);
   const [isBubbleOpen, setIsBubbleOpen] = useState<boolean>(true);
-  // 預設支援「先點 Nono 浮現功能環 ➔ 再點選要用的功能出現對應面板」
-  const [isNonoHubOpen, setIsNonoHubOpen] = useState<boolean>(true);
+  // GrokBot 分層架構：Level 1 首頁領域指揮大廳 ('hub') ➔ Level 2 社群發文專屬工作台 ('workbench')
+  const [viewLayer, setViewLayer] = useState<'hub' | 'workbench'>('hub');
+  const [isAppearanceDrawerOpen, setIsAppearanceDrawerOpen] = useState<boolean>(false);
+  const [isNonoHubOpen, setIsNonoHubOpen] = useState<boolean>(false);
   const [activeWindow, setActiveWindow] = useState<ActiveWindowId>('notebook');
   const [isCompactPanel, setIsCompactPanel] = useState<boolean>(false);
   // 面板自訂寬度（支援點擊「窄版單邊 / 展開雙欄」或直接拖拉面板右邊界自由縮放！）
@@ -1601,7 +1603,11 @@ export function App() {
     setIdleAction(chosen.action);
     setActionLabel(chosen.label);
     setIsBubbleOpen(true);
-    setIsNonoHubOpen(true);
+    setIsNonoAwake(true);
+    if (!activeWindow) {
+      setActiveWindow('notebook');
+      setViewLayer('hub');
+    }
 
     const pool = wasLightSleeping
       ? BEHAVIOR_DIALOGUE_MAP.woke_up
@@ -1609,7 +1615,7 @@ export function App() {
     const picked =
       pool[Math.floor(Math.random() * pool.length)] || BEHAVIOR_DIALOGUE_MAP.clicked_nono[0];
     setNonoSpeech(picked);
-    setCareBadgeText(wasLightSleeping ? 'WAKE · 充飽電醒來囉' : 'HUB · 請點選下方 Nono 功能面板');
+    setCareBadgeText(wasLightSleeping ? 'WAKE · 充飽電醒來囉' : 'HUB · 歡迎回到 Nono 領域指揮大廳');
   };
 
   const handleDragEndNono = () => {
@@ -1914,22 +1920,46 @@ export function App() {
 
     Array.from(files).forEach((file: File) => {
       const isVideo = file.type.startsWith('video/');
+      const localPreviewUrl = URL.createObjectURL(file);
+      const mediaId = `media-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+      // 1. 立即以 ObjectURL 顯示在預覽卡片，不需要等傳輸！
+      const item: MediaAttachment = {
+        id: mediaId,
+        type: isVideo ? 'video' : 'image',
+        url: localPreviewUrl,
+        name: file.name,
+        source: 'local',
+      };
+      setBufferConfig((prev) => ({
+        ...prev,
+        mediaAttachments: [...prev.mediaAttachments, item],
+        status: 'ready_to_schedule',
+      }));
+
+      // 2. 背景轉為公開 HTTPS 網址（支援大型影片與素材，避免送出時觸發 HTTP 413 Payload Too Large）
       const reader = new FileReader();
-      reader.onload = () => {
-        const resultUrl =
-          typeof reader.result === 'string' ? reader.result : URL.createObjectURL(file);
-        const item: MediaAttachment = {
-          id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          type: isVideo ? 'video' : 'image',
-          url: resultUrl,
-          name: file.name,
-          source: 'local',
-        };
-        setBufferConfig((prev) => ({
-          ...prev,
-          mediaAttachments: [...prev.mediaAttachments, item],
-          status: 'ready_to_schedule',
-        }));
+      reader.onload = async () => {
+        if (typeof reader.result === 'string') {
+          try {
+            const uploadRes = await fetch('/api/media/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ dataUrl: reader.result, fileName: file.name }),
+            });
+            const uploadData = await uploadRes.json();
+            if (uploadData?.ok && uploadData?.url?.startsWith('https://')) {
+              setBufferConfig((prev) => ({
+                ...prev,
+                mediaAttachments: prev.mediaAttachments.map((m) =>
+                  m.id === mediaId ? { ...m, url: uploadData.url } : m
+                ),
+              }));
+            }
+          } catch {
+            // 保留本地預覽
+          }
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -2284,13 +2314,15 @@ export function App() {
   // 計算面板明確像素寬度（保證點「窄版單欄 / 展開雙欄」或拖拉面板右邊界時 100% 立即生效！）
   const targetPanelWidthPx =
     customPanelWidth ??
-    (isCompactPanel
-      ? 390
-      : activeWindow === 'buffer' || activeWindow === 'composer'
-        ? 730
-        : activeWindow === 'council'
-          ? 520
-          : 440);
+    (viewLayer === 'hub'
+      ? (isCompactPanel ? 480 : 820)
+      : isCompactPanel
+        ? 390
+        : activeWindow === 'buffer' || activeWindow === 'composer'
+          ? 730
+          : activeWindow === 'council'
+            ? 520
+            : 440);
   const isSingleColumnLayout = isCompactPanel || targetPanelWidthPx < 580;
 
   return (
@@ -2442,146 +2474,9 @@ export function App() {
         onDragEndNono={handleDragEndNono}
       />
 
-      {/* ==================== 點選 Nono 浮現的「專屬領域與功能選單環」 (先點 Nono ➔ 再點選要用的功能出現對應面板) ==================== */}
-      {isNonoHubOpen && (
-        <div
-          style={{
-            backgroundColor: activePanelTheme.panelBg,
-            borderColor: activePanelTheme.border,
-            boxShadow: `0 14px 42px rgba(0,0,0,0.88), 0 0 24px ${activePanelTheme.glowRgba}`,
-          }}
-          className="fixed bottom-11 right-3 z-40 w-[310px] rounded-2xl border-2 backdrop-blur-xl p-2.5 space-y-2 transition-all duration-200"
-        >
-          <div className="flex items-center justify-between gap-1 border-b border-white/10 pb-1.5">
-            <div className="flex items-center gap-1.5">
-              <PastelAuraStar
-                size={18}
-                idSuffix="hub-star"
-                accentColor={activePanelTheme.accent}
-                secondaryColor={activePanelTheme.accentSecondary}
-                coreColor={activePanelTheme.highlightTagBg}
-              />
-              <span className="text-[11px] font-bold text-white">
-                {activeDomainNono.name} · 功能選單
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsNonoHubOpen(false)}
-              className="text-[10px] text-zinc-400 hover:text-white px-1.5 py-0.5 rounded bg-white/5 cursor-pointer"
-              title="收起此選單（隨時點一下 3D Nono 即可再次叫出）"
-            >
-              收起選單 ✕
-            </button>
-          </div>
-
-          {/* 目前主力領域與未來擴充領域插槽快速預覽 */}
-          <div className="space-y-1">
-            <div className="text-[9px] font-mono text-zinc-400 flex items-center justify-between">
-              <span>目前值班：📣 社群發文總管 Nono</span>
-              <span style={{ color: activePanelTheme.accentSecondary }}>未來領域可隨時合併</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              {NONO_DOMAIN_AGENTS.slice(0, 4).map((agent) => {
-                const isCurr = agent.id === activeNonoAgentId;
-                return (
-                  <button
-                    key={agent.id}
-                    type="button"
-                    onClick={() => handleSwitchDomainNono(agent)}
-                    style={
-                      isCurr
-                        ? {
-                            backgroundColor: `${activePanelTheme.accent}35`,
-                            borderColor: activePanelTheme.accent,
-                          }
-                        : {
-                            backgroundColor: 'rgba(0,0,0,0.4)',
-                            borderColor: 'rgba(255,255,255,0.12)',
-                          }
-                    }
-                    className="p-1.5 rounded-lg border text-left cursor-pointer hover:border-white/35 transition-all"
-                  >
-                    <div className="text-[10px] font-bold text-white truncate">{agent.name}</div>
-                    <div className="text-[9px] text-zinc-400 truncate">
-                      {agent.status === 'active'
-                        ? '✓ 目前完整啟用'
-                        : agent.status === 'shared_staff_slot'
-                          ? '🤝 發文+訊息共同員工槽'
-                          : '🔌 未來擴充預留槽'}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 點選要用的功能 ➔ 出現對應專屬面板 */}
-          <div className="space-y-1 pt-1 border-t border-white/10">
-            <div className="text-[9px] font-mono text-zinc-400">
-              點選要使用的功能（開啟對應獨立面板）：
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              {[
-                { id: 'notebook' as const, title: '📂 1. 專案進度庫', sub: '抓各專案進度與主題' },
-                { id: 'composer' as const, title: '✍️ 2. 故事潤飾坊', sub: '主題前後潤飾與預覽' },
-                { id: 'buffer' as const, title: '📅 3. Buffer 排程', sub: '抓雲端資料與改時段' },
-                { id: 'council' as const, title: '🔌 4. 未來領域插槽', sub: '多Nono互聯與軟體橋接' },
-                { id: 'appearance' as const, title: '🎨 5. 外觀與動作', sub: '毛色主題與滾輪縮放' },
-              ].map((item) => {
-                const isOpen = isNonoAwake && activeWindow === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setIsNonoAwake(true);
-                      openSideWindow(item.id);
-                    }}
-                    style={
-                      isOpen
-                        ? {
-                            background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
-                            borderColor: '#ffffff99',
-                            color: '#fff',
-                          }
-                        : {
-                            backgroundColor: 'rgba(0,0,0,0.45)',
-                            borderColor: 'rgba(255,255,255,0.14)',
-                          }
-                    }
-                    className="p-1.5 rounded-lg border text-left cursor-pointer hover:border-white/40 transition-all"
-                  >
-                    <div className="text-[10px] font-bold text-white truncate">{item.title}</div>
-                    <div className="text-[9px] text-zinc-300 opacity-85 truncate">{item.sub}</div>
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={handleRunMultiSkillPipeline}
-                disabled={isRunningMultiSkill}
-                style={{
-                  backgroundColor: `${activePanelTheme.accentSecondary}28`,
-                  borderColor: activePanelTheme.accentSecondary,
-                  color: activePanelTheme.accentSecondary,
-                }}
-                className="p-1.5 rounded-lg border text-left cursor-pointer hover:brightness-110 transition-all"
-                title="讓同一個 Nono 同時執行：抓專案進度 ➔ 故事化潤飾 ➔ 自動計算最後一篇隔天排程"
-              >
-                <div className="text-[10px] font-bold truncate">
-                  {isRunningMultiSkill ? '⚡ 多功能處理中...' : '⚡ 一鍵多功能連段'}
-                </div>
-                <div className="text-[9px] text-zinc-300 truncate">抓進度+潤飾+排程一次完成</div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== RESPONSIVE & DRAGGABLE WORKBENCH DOCK ==================== */}
-      {isNonoAwake && activeWindow !== null && (
+      {/* ==================== GROKBOT 2-LAYER ARCHITECTURE ==================== */}
+      {/* LEVEL 1: NONO 領域指揮大廳 (HOME DOMAIN HUB) 或 LEVEL 2: 專屬工作台 (WORKBENCH) */}
+      {isNonoAwake && (
         <div
           style={{
             width: `min(calc(100vw - 1.5rem), ${targetPanelWidthPx}px)`,
@@ -2600,10 +2495,10 @@ export function App() {
             <div
               onPointerDown={handleStartPanelWidthDrag}
               className="absolute top-0 right-0 bottom-0 w-2.5 z-40 cursor-ew-resize hover:bg-white/20 transition-colors"
-              title="按住面板右邊緣左右拖拉，可自由收窄或拉寬工作台面板"
+              title="按住面板右邊緣左右拖拉，可自由收窄或拉寬面板"
             />
 
-            {/* Diagonal Neon Hazard Stripe Top Bar */}
+            {/* 頂部霓虹斜紋拖曳條 */}
             <div
               onPointerDown={handleStartWindowDrag}
               className="h-2 w-full shrink-0 opacity-95 cursor-move"
@@ -2613,177 +2508,474 @@ export function App() {
               title="按住頂部條紋可拖動整個桌面視窗"
             />
 
-            {/* STREAMLINED WORKBENCH HEADER (本身也是視窗拖曳列，按住空白處即可直接拖動整個視窗！) */}
-            <div
-              onPointerDown={handleStartWindowDrag}
-              style={{
-                borderColor: `${activePanelTheme.border}45`,
-                background: `linear-gradient(90deg, ${activePanelTheme.accent}24, ${activePanelTheme.accentSecondary}1c)`,
-              }}
-              className="px-3 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-1.5 cursor-move"
-              title="按住此標題列可直接拖動整個桌面視窗"
-            >
-              <div className="flex items-center gap-1.5">
-                <PastelAuraStar
-                  size={20}
-                  idSuffix="header-star"
-                  accentColor={activePanelTheme.accent}
-                  secondaryColor={activePanelTheme.accentSecondary}
-                  coreColor={activePanelTheme.highlightTagBg}
-                  className="-my-1"
-                />
-                <span className="text-[11px] font-mono font-black tracking-wider flex items-center gap-1">
-                  <span>{activeDomainNono.name}</span>
-                  <span className="text-[9px] font-normal text-zinc-400 hidden sm:inline">
-                    ({activeProjectName})
+            {/* LEVEL 1: 首頁「Nono 領域指揮大廳」HEADER */}
+            {viewLayer === 'hub' ? (
+              <div
+                onPointerDown={handleStartWindowDrag}
+                style={{
+                  borderColor: `${activePanelTheme.border}45`,
+                  background: `linear-gradient(90deg, ${activePanelTheme.accent}24, ${activePanelTheme.accentSecondary}1c)`,
+                }}
+                className="px-3 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-1.5 cursor-move"
+                title="按住此標題列可直接拖動整個桌面視窗"
+              >
+                <div className="flex items-center gap-1.5">
+                  <PastelAuraStar
+                    size={20}
+                    idSuffix="hub-star"
+                    accentColor={activePanelTheme.accent}
+                    secondaryColor={activePanelTheme.accentSecondary}
+                    coreColor={activePanelTheme.highlightTagBg}
+                    className="-my-1"
+                  />
+                  <span className="text-[11px] font-mono font-black tracking-wider flex items-center gap-1">
+                    <span>✦ Nono 領域指揮大廳 (Domain Hub)</span>
                   </span>
-                </span>
-                <button
-                  type="button"
-                  onClick={handleToggleAlwaysOnTop}
-                  style={{
-                    borderColor: isAlwaysOnTop
-                      ? activePanelTheme.highlightTagBg
-                      : 'rgba(255,255,255,0.22)',
-                    color: isAlwaysOnTop
-                      ? activePanelTheme.highlightTagBg
-                      : activePanelTheme.textMain,
-                  }}
-                  className="px-2 py-0.5 rounded-md bg-black/45 border text-[10px] font-mono cursor-pointer hover:bg-white/10"
-                  title="預設「🔓 可被壓住」讓其他視窗可以蓋在 Nono 上方；被蓋住時按 Alt+N 或點下方工作列/右下角系統匣即可一秒叫出來！"
-                >
-                  {isAlwaysOnTop ? '📌 置頂中' : '🔓 可被壓住(Alt+N喚出)'}
-                </button>
-              </div>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-bold">
+                    GrokBot 雙層架構
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setIsNonoHubOpen((prev) => !prev)}
-                  style={{
-                    borderColor: isNonoHubOpen
-                      ? activePanelTheme.accentSecondary
-                      : 'rgba(255,255,255,0.2)',
-                    color: isNonoHubOpen
-                      ? activePanelTheme.accentSecondary
-                      : activePanelTheme.textMain,
-                  }}
-                  className="px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border text-[10px] font-mono cursor-pointer"
-                  title="開啟或收起右下角 Nono 領域與功能選單環"
-                >
-                  ✨ Nono選單
-                </button>
-
-                {/* 窄版單邊 / 展開雙欄 切換按鈕 */}
-                <button
-                  type="button"
-                  onClick={handleToggleCompactSingleColumn}
-                  style={{
-                    borderColor: isSingleColumnLayout
-                      ? activePanelTheme.highlightTagBg
-                      : 'rgba(255,255,255,0.2)',
-                    color: isSingleColumnLayout
-                      ? activePanelTheme.highlightTagBg
-                      : activePanelTheme.textMain,
-                  }}
-                  className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border cursor-pointer"
-                  title="一鍵收窄為單邊窄版（390px）或展開為雙欄寬版（730px），也可直接拉動面板右邊緣調整"
-                >
-                  {isSingleColumnLayout ? (
-                    <>
-                      <Maximize2 className="w-3 h-3" />
-                      <span>展開雙欄</span>
-                    </>
-                  ) : (
-                    <>
-                      <Minimize2 className="w-3 h-3" />
-                      <span>收窄單邊</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsBubbleOpen((prev) => !prev)}
-                  style={{
-                    borderColor: isBubbleOpen
-                      ? activePanelTheme.accentSecondary
-                      : 'rgba(255,255,255,0.2)',
-                    color: isBubbleOpen
-                      ? activePanelTheme.accentSecondary
-                      : activePanelTheme.textMuted,
-                  }}
-                  className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-md bg-black/40 hover:bg-white/10 border transition-colors cursor-pointer"
-                >
-                  {isBubbleOpen ? (
-                    <>
-                      <MessageSquareOff className="w-3 h-3" />
-                      <span>隱藏氣泡</span>
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquare className="w-3 h-3" />
-                      <span>顯示氣泡</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleMinimizeAll}
-                  className="flex items-center gap-1 text-[11px] text-zinc-300 hover:text-white px-2 py-0.5 rounded-md bg-black/40 hover:bg-black/60 border border-white/15 transition-colors cursor-pointer"
-                  title="收起工作台（點一下 3D Nono 即可從功能選單再次打開任何面板）"
-                >
-                  <EyeOff className="w-3 h-3" />
-                  <span>收起面板</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 5 個獨立清爽面板切換列（也可直接點 3D Nono 從右下角選單開啟） */}
-            <div
-              style={{
-                backgroundColor: activePanelTheme.panelCard,
-                borderColor: `${activePanelTheme.border}38`,
-              }}
-              className="px-2.5 py-1.5 border-b shrink-0 grid grid-cols-5 gap-1"
-            >
-              {[
-                { id: 'notebook' as const, label: '1.專案進度', icon: BookOpen },
-                { id: 'composer' as const, label: '2.故事潤飾', icon: Wand2 },
-                { id: 'buffer' as const, label: '3.Buffer排程', icon: Calendar },
-                { id: 'council' as const, label: '4.未來擴充槽', icon: Zap },
-                { id: 'appearance' as const, label: '5.外觀動作', icon: Sparkles },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeWindow === tab.id;
-                return (
+                <div className="flex items-center gap-1">
                   <button
-                    key={tab.id}
                     type="button"
-                    onClick={() => openSideWindow(isActive ? null : tab.id)}
-                    style={
-                      isActive
-                        ? {
-                            background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
-                            borderColor: '#ffffff88',
-                            boxShadow: `0 0 14px ${activePanelTheme.glowRgba}`,
-                            color: '#ffffff',
-                          }
-                        : {
-                            backgroundColor: 'rgba(0,0,0,0.35)',
-                            borderColor: 'rgba(255,255,255,0.14)',
-                            color: activePanelTheme.textMain,
-                          }
-                    }
-                    className="flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer truncate"
+                    onClick={() => setIsAppearanceDrawerOpen((prev) => !prev)}
+                    style={{
+                      borderColor: isAppearanceDrawerOpen
+                        ? activePanelTheme.accentSecondary
+                        : 'rgba(255,255,255,0.2)',
+                      color: isAppearanceDrawerOpen
+                        ? activePanelTheme.accentSecondary
+                        : activePanelTheme.textMain,
+                    }}
+                    className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border cursor-pointer"
                   >
-                    <Icon className="w-3 h-3 shrink-0" />
-                    <span className="truncate">{tab.label}</span>
+                    <Sparkles className="w-3 h-3" />
+                    <span>🎨 外觀與主題</span>
                   </button>
-                );
-              })}
-            </div>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleAlwaysOnTop}
+                    style={{
+                      borderColor: isAlwaysOnTop
+                        ? activePanelTheme.highlightTagBg
+                        : 'rgba(255,255,255,0.22)',
+                      color: isAlwaysOnTop
+                        ? activePanelTheme.highlightTagBg
+                        : activePanelTheme.textMain,
+                    }}
+                    className="px-2 py-0.5 rounded-md bg-black/45 border text-[10px] font-mono cursor-pointer hover:bg-white/10"
+                    title="切換置頂"
+                  >
+                    {isAlwaysOnTop ? '📌 置頂中' : '🔓 可被壓住'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleMinimizeAll}
+                    className="flex items-center gap-1 text-[11px] text-zinc-300 hover:text-white px-2 py-0.5 rounded-md bg-black/40 hover:bg-black/60 border border-white/15 transition-colors cursor-pointer"
+                    title="收起大廳"
+                  >
+                    <EyeOff className="w-3 h-3" />
+                    <span>收起</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* LEVEL 2: 「📣 社群發文總管 Nono」工作台 HEADER */
+              <div
+                onPointerDown={handleStartWindowDrag}
+                style={{
+                  borderColor: `${activePanelTheme.border}45`,
+                  background: `linear-gradient(90deg, ${activePanelTheme.accent}24, ${activePanelTheme.accentSecondary}1c)`,
+                }}
+                className="px-3 py-2 border-b shrink-0 flex flex-wrap items-center justify-between gap-1.5 cursor-move"
+                title="按住此標題列可直接拖動整個桌面視窗"
+              >
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setViewLayer('hub')}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-white text-[11px] font-bold cursor-pointer transition-all shadow-sm"
+                    title="返回 Nono 領域指揮大廳首頁"
+                  >
+                    <span>← 🏠 領域首頁</span>
+                  </button>
+                  <PastelAuraStar
+                    size={18}
+                    idSuffix="wb-star"
+                    accentColor={activePanelTheme.accent}
+                    secondaryColor={activePanelTheme.accentSecondary}
+                    coreColor={activePanelTheme.highlightTagBg}
+                    className="-my-1"
+                  />
+                  <span className="text-[11px] font-mono font-black tracking-wider flex items-center gap-1">
+                    <span>📣 社群發文總管 Nono</span>
+                    <span className="text-[9px] font-normal text-zinc-400 hidden sm:inline">
+                      ({activeProjectName})
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsAppearanceDrawerOpen((prev) => !prev)}
+                    style={{
+                      borderColor: isAppearanceDrawerOpen
+                        ? activePanelTheme.accentSecondary
+                        : 'rgba(255,255,255,0.2)',
+                      color: isAppearanceDrawerOpen
+                        ? activePanelTheme.accentSecondary
+                        : activePanelTheme.textMain,
+                    }}
+                    className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>🎨 外觀</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleCompactSingleColumn}
+                    style={{
+                      borderColor: isSingleColumnLayout
+                        ? activePanelTheme.highlightTagBg
+                        : 'rgba(255,255,255,0.2)',
+                      color: isSingleColumnLayout
+                        ? activePanelTheme.highlightTagBg
+                        : activePanelTheme.textMain,
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-md bg-black/45 hover:bg-white/10 border cursor-pointer"
+                  >
+                    {isSingleColumnLayout ? (
+                      <>
+                        <Maximize2 className="w-3 h-3" />
+                        <span>展開雙欄</span>
+                      </>
+                    ) : (
+                      <>
+                        <Minimize2 className="w-3 h-3" />
+                        <span>收窄單邊</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleMinimizeAll}
+                    className="flex items-center gap-1 text-[11px] text-zinc-300 hover:text-white px-2 py-0.5 rounded-md bg-black/40 hover:bg-black/60 border border-white/15 transition-colors cursor-pointer"
+                  >
+                    <EyeOff className="w-3 h-3" />
+                    <span>收起面板</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* LEVEL 2 工作台的極簡 3 步導航標籤列 */}
+            {viewLayer === 'workbench' && (
+              <div
+                style={{
+                  backgroundColor: activePanelTheme.panelCard,
+                  borderColor: `${activePanelTheme.border}38`,
+                }}
+                className="px-2.5 py-1.5 border-b shrink-0 grid grid-cols-3 gap-1.5"
+              >
+                {[
+                  { id: 'notebook' as const, label: '步驟 ① 挑選進度主題', icon: BookOpen },
+                  { id: 'composer' as const, label: '步驟 ② 編輯文案與配圖', icon: Wand2 },
+                  { id: 'buffer' as const, label: '步驟 ③ 選擇時間與排程', icon: Calendar },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeWindow === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveWindow(tab.id)}
+                      style={
+                        isActive
+                          ? {
+                              background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                              borderColor: '#ffffff88',
+                              boxShadow: `0 0 14px ${activePanelTheme.glowRgba}`,
+                              color: '#ffffff',
+                            }
+                          : {
+                              backgroundColor: 'rgba(0,0,0,0.35)',
+                              borderColor: 'rgba(255,255,255,0.14)',
+                              color: activePanelTheme.textMain,
+                            }
+                      }
+                      className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer truncate"
+                    >
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* LEVEL 1: GROKBOT-STYLE 領域大廳內容區 (當 viewLayer === 'hub') */}
+            {viewLayer === 'hub' && (
+              <div className="p-3.5 overflow-y-auto space-y-3.5 flex-1 min-h-0">
+                {/* 歡迎與分層導航提示 */}
+                <div
+                  style={{
+                    backgroundColor: activePanelTheme.panelCard,
+                    borderColor: `${activePanelTheme.border}55`,
+                  }}
+                  className="p-3 rounded-xl border flex flex-wrap items-center justify-between gap-2"
+                >
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                      <span>歡迎來到 Nono 領域指揮大廳（GrokBot 雙層領域模組化設計）</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-300">
+                      首頁展示各領域 Nono 分工，點選欲指派的 Nono 即可開啟專屬工作台；目前社群發文為主力領域已完整啟用。
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRunMultiSkillPipeline}
+                    disabled={isRunningMultiSkill}
+                    style={{
+                      background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white cursor-pointer hover:brightness-110 disabled:opacity-40 flex items-center gap-1.5 shadow"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>{isRunningMultiSkill ? '執行中...' : '⚡ 一鍵連段自動跑（抓進度+潤飾+排程）'}</span>
+                  </button>
+                </div>
+
+                {/* 6 大領域 Nono 卡片網格 (2 欄響應式佈局) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {/* 卡片 1: 📣 社群發文總管 Nono (主力領域) */}
+                  <div
+                    style={{
+                      backgroundColor: `${activePanelTheme.accent}12`,
+                      borderColor: activePanelTheme.accent,
+                      boxShadow: `0 0 16px ${activePanelTheme.accent}22`,
+                    }}
+                    className="p-3 rounded-xl border-2 space-y-2 flex flex-col justify-between"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="text-sm">📣</span>
+                          <span>社群發文總管 Nono</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[9px] font-bold">
+                          🟢 目前主力領域 · 完整啟用
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-pink-300">
+                        進度抓取 · 故事潤飾 · Buffer 排程
+                      </div>
+                      <p className="text-[10px] text-zinc-300 leading-relaxed">
+                        負責跨專案自動掃描檔案與 Git 提交，去除生硬版本號潤飾為引發好奇的故事貼文，並透過 Buffer 一鍵上傳雲端排程。
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewLayer('workbench');
+                        setActiveWindow('notebook');
+                      }}
+                      style={{
+                        background: `linear-gradient(90deg, ${activePanelTheme.accent}, ${activePanelTheme.accentSecondary})`,
+                        boxShadow: `0 4px 16px ${activePanelTheme.glowRgba}`,
+                      }}
+                      className="w-full py-2 px-3 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:brightness-110 transition-all mt-1"
+                    >
+                      <span>👉 進入「社群發文」3 步極簡工作台 ▶</span>
+                    </button>
+                  </div>
+
+                  {/* 卡片 2: ✉️ 智慧回信共同員工 Nono */}
+                  <div
+                    style={{
+                      backgroundColor: activePanelTheme.panelCard,
+                      borderColor: 'rgba(251, 191, 36, 0.4)',
+                    }}
+                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="text-sm">✉️</span>
+                          <span>智慧回信共同員工 Nono</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[9px] font-bold">
+                          🤝 雙部門共同員工槽
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-amber-300">
+                        【📣 社群發文 ＋ 📬 社交訊息】共同員工
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">
+                        收到想回覆的指示後，代為擬稿並透過通用橋接回信給對方；同時也是社群發文與訊息整合兩隻 Nono 的共同幫手。
+                      </p>
+                    </div>
+
+                    <div className="p-1.5 rounded-lg bg-black/40 border border-amber-400/20 text-center text-[10px] text-amber-300/80 font-mono">
+                      🤝 預留槽已建立 · 等待訊息部門合併時即刻啟用
+                    </div>
+                  </div>
+
+                  {/* 卡片 3: 📬 社交訊息整合 Nono */}
+                  <div
+                    style={{
+                      backgroundColor: activePanelTheme.panelCard,
+                      borderColor: 'rgba(56, 189, 248, 0.3)',
+                    }}
+                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="text-sm">📬</span>
+                          <span>社交訊息整合 Nono</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-400/40 text-sky-300 text-[9px] font-mono">
+                          🔌 未來擴充預留槽
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-sky-300">
+                        Gmail · LINE · SNS 訊息集中彙整
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">
+                        不用個別手動開啟軟體，自動整理所有即時通訊軟體與信箱的未讀通知與重要代辦事項。
+                      </p>
+                    </div>
+
+                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
+                      🔌 獨立模組插槽 · 待單一領域完善後掛載
+                    </div>
+                  </div>
+
+                  {/* 卡片 4: 🗓️ 全日時程管理 Nono */}
+                  <div
+                    style={{
+                      backgroundColor: activePanelTheme.panelCard,
+                      borderColor: 'rgba(167, 139, 250, 0.3)',
+                    }}
+                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="text-sm">🗓️</span>
+                          <span>全日時程管理 Nono</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/40 text-purple-300 text-[9px] font-mono">
+                          🔌 未來擴充預留槽
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-purple-300">
+                        全日行程規劃 · 時間區塊最佳化
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">
+                        依您當天想做的事情與預定行程，智慧規劃最流暢的每日時段，提醒進度並隨時彈性調整。
+                      </p>
+                    </div>
+
+                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
+                      🔌 獨立模組插槽 · 待單一領域完善後掛載
+                    </div>
+                  </div>
+
+                  {/* 卡片 5: 🥗 日常生活管家 Nono */}
+                  <div
+                    style={{
+                      backgroundColor: activePanelTheme.panelCard,
+                      borderColor: 'rgba(52, 211, 153, 0.3)',
+                    }}
+                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="text-sm">🥗</span>
+                          <span>日常生活管家 Nono</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[9px] font-mono">
+                          🔌 未來擴充預留槽
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-emerald-300">
+                        飲食熱量守門員 · 運動陪伴 · 語言練習
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">
+                        生活健康與飲食熱量守護者，提醒喝水與伸展，並在日常中以對話陪伴練習外語。
+                      </p>
+                    </div>
+
+                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
+                      🔌 獨立模組插槽 · 待單一領域完善後掛載
+                    </div>
+                  </div>
+
+                  {/* 卡片 6: 👁️ 螢幕視覺助理 Nono */}
+                  <div
+                    style={{
+                      backgroundColor: activePanelTheme.panelCard,
+                      borderColor: 'rgba(236, 72, 153, 0.3)',
+                    }}
+                    className="p-3 rounded-xl border space-y-2 flex flex-col justify-between"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="text-sm">👁️</span>
+                          <span>螢幕視覺助理 Nono</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-pink-500/15 border border-pink-400/40 text-pink-300 text-[9px] font-mono">
+                          🔌 Screen Overlay Vision
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-pink-300">
+                        AE 等軟體螢幕覆蓋型點擊引導
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">
+                        操作 After Effects 等軟體時，直接在畫面上覆蓋指示游標標明點擊位置與操作步驟。
+                      </p>
+                    </div>
+
+                    <div className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-center text-[10px] text-zinc-400 font-mono">
+                      🔌 獨立模組插槽 · 待單一領域完善後掛載
+                    </div>
+                  </div>
+                </div>
+
+                {/* 通用訊息匯流排與跨軟體橋接狀態提示 */}
+                <div
+                  style={{
+                    backgroundColor: activePanelTheme.panelCard,
+                    borderColor: `${activePanelTheme.border}44`,
+                  }}
+                  className="p-2.5 rounded-xl border flex items-center justify-between gap-2 text-[10px] text-zinc-400 font-mono"
+                >
+                  <span className="flex items-center gap-1">
+                    <span className="text-emerald-400">●</span>
+                    <span>Inter-Nono 協作匯流排就緒 · 隨時可連線各軟體完成跨領域指令</span>
+                  </span>
+                  <span className="text-zinc-500">
+                    單一領域完善後即可一鍵掛載
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* LEVEL 2 工作台的面板主體 (當 viewLayer === 'workbench') */}
+            {viewLayer === 'workbench' && (
+              <>
 
             {/* ==================== PANEL 1: 多專案進度抓取 & 更新主題庫 ==================== */}
             {activeWindow === 'notebook' && (
@@ -3089,7 +3281,7 @@ export function App() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-white/10">
                   <button
                     onClick={handleGenerateFromNotebook}
                     disabled={isGeneratingDraft}
@@ -3102,12 +3294,12 @@ export function App() {
                     <Wand2 className="w-4 h-4" />
                     {isGeneratingDraft
                       ? '正在深度潤飾故事貼文...'
-                      : '✍️ 前往「2. 故事貼文工坊」微調與預覽'}
+                      : '👉 下一步：前往「步驟 ② 編輯文案與配圖」▶'}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => openSideWindow('buffer')}
+                    onClick={() => setActiveWindow('buffer')}
                     style={{
                       backgroundColor: `${activePanelTheme.accentSecondary}24`,
                       borderColor: activePanelTheme.accentSecondary,
@@ -3116,7 +3308,7 @@ export function App() {
                     className="py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:bg-white/10"
                   >
                     <Calendar className="w-4 h-4" />
-                    <span>📅 直接前往「3. Buffer 排程與雲端紀錄」</span>
+                    <span>跳至「步驟 ③ 選擇時間與排程」▶</span>
                   </button>
                 </div>
               </div>
@@ -3786,7 +3978,7 @@ export function App() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-white/10">
                       <button
                         type="button"
                         onClick={() => setActiveWindow('buffer')}
@@ -3797,16 +3989,16 @@ export function App() {
                         className="w-full py-2.5 px-4 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer hover:brightness-110"
                       >
                         <Calendar className="w-4 h-4" />
-                        <span>下一步：選日期與 Buffer 排程</span>
+                        <span>👉 下一步：前往「步驟 ③ 選擇時間與排程」▶</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setActiveWindow('council')}
+                        onClick={() => setActiveWindow('notebook')}
                         className="w-full py-2.5 px-3 rounded-xl bg-white/8 hover:bg-white/15 border border-white/15 text-zinc-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <Sparkles className="w-4 h-4" />
-                        <span>請多領域 Nono 協作潤飾</span>
+                        <BookOpen className="w-4 h-4" />
+                        <span>← 上一步：返回「步驟 ① 挑選進度主題」</span>
                       </button>
                     </div>
                   </div>
@@ -4492,6 +4684,15 @@ export function App() {
                         ? '正在傳送至 Buffer 排程佇列並寫入完整紀錄...'
                         : '🚀 確認直接上傳 Buffer 排程（永久記錄發送內容）'}
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveWindow('composer')}
+                      className="w-full py-1.5 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Wand2 className="w-3.5 h-3.5" />
+                      <span>← 返回「步驟 ② 編輯文案與配圖」微調</span>
+                    </button>
                   </div>
 
                   {/* Right Column: Full Scheduled & Sent Posts History (Cloud + Local Persistent Store) */}
@@ -4948,9 +5149,33 @@ export function App() {
             )}
 
 
-            {/* ==================== TAB 3: APPEARANCE & IDLE ACTIONS ==================== */}
-            {activeWindow === 'appearance' && (
-              <div className="p-3.5 space-y-3.5 overflow-y-auto flex-1 min-h-0">
+              </>
+            )}
+
+            {/* ==================== APPEARANCE & 3D CONTROLS DRAWER / PANEL ==================== */}
+            {(isAppearanceDrawerOpen || activeWindow === 'appearance') && (
+              <div className="p-3.5 space-y-3.5 overflow-y-auto flex-1 min-h-0 bg-black/60 backdrop-blur-xl">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles
+                      style={{ color: activePanelTheme.accent }}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-xs font-bold text-white">
+                      🎨 Nono 3D 外觀、動作與主題微調
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAppearanceDrawerOpen(false);
+                      if (activeWindow === 'appearance') setActiveWindow('notebook');
+                    }}
+                    className="text-[10px] font-mono text-zinc-300 hover:text-white px-2 py-0.5 rounded bg-white/10 cursor-pointer"
+                  >
+                    關閉設定 ✕
+                  </button>
+                </div>
                 <div
                   style={{
                     backgroundColor: activePanelTheme.panelCard,

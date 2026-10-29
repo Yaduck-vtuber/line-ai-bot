@@ -269,10 +269,10 @@ function smartLocalRefinePost(
   return { refined, explanation };
 }
 
-// ==================== 將電腦本地上傳的 Base64 圖片自動轉為公開 HTTPS 網址（供 Buffer & IG 抓取） ====================
+// ==================== 將電腦本地上傳的 Base64 / 二進位 圖片與影片自動轉為公開 HTTPS 網址（供 Buffer & IG 抓取） ====================
 async function uploadBase64MediaToPublicUrl(
   dataUrl: string,
-  fileName = 'nono-post.png'
+  fileName = 'nono-media.mp4'
 ): Promise<string | null> {
   try {
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -282,11 +282,16 @@ async function uploadBase64MediaToPublicUrl(
     const buffer = Buffer.from(base64Data, 'base64');
     const blob = new Blob([buffer], { type: mimeType });
 
-    // 1. 優先嘗試 Catbox 匿名公開圖床 (永久直連 HTTPS，支援 IG / Buffer 直接抓取)
+    const ext = mimeType.includes('video')
+      ? (mimeType.includes('quicktime') ? 'mov' : 'mp4')
+      : (mimeType.includes('png') ? 'png' : mimeType.includes('gif') ? 'gif' : 'jpg');
+    const safeFileName = fileName.endsWith(`.${ext}`) ? fileName : `nono-upload-${Date.now()}.${ext}`;
+
+    // 1. 優先嘗試 Catbox (支援影片與圖片，直連 HTTPS)
     try {
       const form = new FormData();
       form.append('reqtype', 'fileupload');
-      form.append('fileToUpload', blob, fileName);
+      form.append('fileToUpload', blob, safeFileName);
       const res = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
         body: form,
@@ -298,13 +303,33 @@ async function uploadBase64MediaToPublicUrl(
         }
       }
     } catch {
-      // ignore and try backup host
+      // try backup
     }
 
-    // 2. 備援：tmpfiles.org 公開 API
+    // 2. 備援：Litterbox (Catbox 官方臨時檔案託管，支援至 1GB 影片與素材)
+    try {
+      const formLit = new FormData();
+      formLit.append('reqtype', 'fileupload');
+      formLit.append('time', '72h');
+      formLit.append('fileToUpload', blob, safeFileName);
+      const resLit = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+        method: 'POST',
+        body: formLit,
+      });
+      if (resLit.ok) {
+        const textUrl = (await resLit.text()).trim();
+        if (textUrl.startsWith('https://')) {
+          return textUrl;
+        }
+      }
+    } catch {
+      // try backup
+    }
+
+    // 3. 備援：tmpfiles.org 公開 API
     try {
       const form2 = new FormData();
-      form2.append('file', blob, fileName);
+      form2.append('file', blob, safeFileName);
       const res2 = await fetch('https://tmpfiles.org/api/v1/upload', {
         method: 'POST',
         body: form2,
@@ -931,7 +956,30 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: '25mb' }));
+  // 支援大型高畫質圖片與長影片上傳（提升至 500MB，徹底解決 HTTP 413 Payload Too Large 錯誤）
+  app.use(express.json({ limit: '500mb' }));
+  app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
+  // 獨立媒體上傳通道：影片與圖片上傳後立即轉為公開 HTTPS 網址
+  app.post('/api/media/upload', async (req, res) => {
+    try {
+      const { dataUrl, fileName = 'media.mp4' } = req.body as {
+        dataUrl?: string;
+        fileName?: string;
+      };
+      if (!dataUrl || !dataUrl.startsWith('data:')) {
+        return res.status(400).json({ ok: false, message: '無效的媒體資料' });
+      }
+      const publicUrl = await uploadBase64MediaToPublicUrl(dataUrl, fileName);
+      if (publicUrl) {
+        return res.json({ ok: true, url: publicUrl });
+      }
+      // 若遠端圖床暫時無回應，保留本機 dataUrl 供預覽
+      return res.json({ ok: true, url: dataUrl, warning: '已保留本機預覽，送出排程時會自動重試雲端直連' });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, message: err?.message || '媒體處理失敗' });
+    }
+  });
 
   const getAiClient = () => {
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();

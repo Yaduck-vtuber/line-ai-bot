@@ -2463,12 +2463,15 @@ export function App() {
   return (
     <div
       style={{
-        backgroundColor: isTransparentDesktop ? 'transparent' : activePanelTheme.bgBase,
+        backgroundColor:
+          isTransparentDesktop && viewLayer === 'workbench'
+            ? 'transparent'
+            : activePanelTheme.bgBase,
         color: activePanelTheme.textMain,
       }}
       className="relative w-screen h-screen overflow-hidden select-none font-sans transition-colors duration-300"
     >
-      {/* 滑鼠移到視窗最上方（clientY <= 52px）才會浮現的無邊框視窗控制列（支援按住拖動視窗、切換視窗大小、縮小、關閉） */}
+      {/* 滑鼠移到視窗最上方（clientY <= 52px）才會浮現的無邊框視窗控制列（支援按住拖動視窗、釘選置頂、縮小、關閉） */}
       <div
         onMouseEnter={() => setIsMouseNearTop(true)}
         className={`fixed top-1.5 right-3 z-50 transition-all duration-200 ${
@@ -2492,25 +2495,6 @@ export function App() {
             <span>按住拖動視窗</span>
           </span>
 
-          {/* 一鍵調整桌面視窗大小 */}
-          <div className="flex items-center gap-1 border-l border-r border-white/15 px-1.5">
-            {[
-              { label: '小視窗', w: 540, h: 680 },
-              { label: '標準', w: 1020, h: 760 },
-              { label: '大視窗', w: 1280, h: 860 },
-            ].map((sz) => (
-              <button
-                key={sz.label}
-                type="button"
-                onClick={() => window.nonoDesktop?.setWindowSize(sz.w, sz.h)}
-                className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[10px] text-zinc-200 cursor-pointer"
-                title={`將桌面視窗調整為 ${sz.w}×${sz.h}`}
-              >
-                {sz.label}
-              </button>
-            ))}
-          </div>
-
           <button
             type="button"
             onClick={handleToggleAlwaysOnTop}
@@ -2522,14 +2506,6 @@ export function App() {
             title="切換「一般層級（可被其他視窗壓在下方）」或「釘選永遠置頂」。被壓在下方時可按 Alt+N 或點工作列/右下角圖示隨時叫出來！"
           >
             {isAlwaysOnTop ? '📌 釘選最上層' : '🔓 可被其他視窗壓住'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsNonoAwake((prev) => !prev)}
-            className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[11px] text-zinc-200 cursor-pointer"
-          >
-            {isNonoAwake ? '只留Nono' : '展開面板'}
           </button>
 
           <button
@@ -2568,13 +2544,13 @@ export function App() {
         <span>↘ 拉動調整視窗大小</span>
       </div>
 
-      {/* Optional Dark Ambient Wallpaper */}
-      {!isTransparentDesktop && (
+      {/* Optional Dark Ambient Wallpaper: 在非透明模式，或是首頁 Hub 時呈現優雅完整的星空實色背景 */}
+      {(!isTransparentDesktop || viewLayer === 'hub') && (
         <>
           <div
             className="fixed inset-0 pointer-events-none transition-all duration-500"
             style={{
-              background: `radial-gradient(circle at 72% 54%, ${activePanelTheme.accent}28 0%, ${activePanelTheme.accentSecondary}22 32%, ${activePanelTheme.bgBase} 82%)`,
+              background: `radial-gradient(circle at 50% 30%, ${activePanelTheme.accent}24 0%, ${activePanelTheme.accentSecondary}16 38%, ${activePanelTheme.bgBase} 85%)`,
             }}
           />
 
@@ -2588,35 +2564,42 @@ export function App() {
         </>
       )}
 
-      {/* Fullscreen Interactive 3D Desktop Pet Canvas */}
-      <NonoStage3D
-        furColor={furColor}
-        customModelUrl={customModelUrl}
-        modelScale={modelScale}
-        onModelScaleChange={setModelScale}
-        isThinking={isGeneratingDraft || isRefiningPost}
-        isAwake={isNonoAwake}
-        idleAction={idleAction}
-        nonoSpeech={nonoSpeech}
-        actionLabel={actionLabel}
-        careBadgeText={careBadgeText}
-        isBubbleOpen={isBubbleOpen}
-        onToggleBubble={setIsBubbleOpen}
-        panelTheme={activePanelTheme}
-        onSelectNono={handleSelectNono}
-        onAutoSleep={handleAutoSleep}
-        onEnterDeepSleep={handleEnterDeepSleep}
-        onDragEndNono={handleDragEndNono}
-      />
+      {/* 3D 桌面模型：首頁一開始看不到 3D 模型（包在首頁內，不單獨在外遊蕩），僅在點選進入工作台後啟動呈現 */}
+      {viewLayer === 'workbench' && isNonoAwake && (
+        <NonoStage3D
+          furColor={furColor}
+          customModelUrl={customModelUrl}
+          modelScale={modelScale}
+          onModelScaleChange={setModelScale}
+          isThinking={isGeneratingDraft || isRefiningPost}
+          isAwake={isNonoAwake}
+          idleAction={idleAction}
+          nonoSpeech={nonoSpeech}
+          actionLabel={actionLabel}
+          careBadgeText={careBadgeText}
+          isBubbleOpen={isBubbleOpen}
+          onToggleBubble={setIsBubbleOpen}
+          panelTheme={activePanelTheme}
+          onSelectNono={handleSelectNono}
+          onAutoSleep={handleAutoSleep}
+          onEnterDeepSleep={handleEnterDeepSleep}
+          onDragEndNono={handleDragEndNono}
+        />
+      )}
 
       {/* ==================== GROKBOT 2-LAYER ARCHITECTURE ==================== */}
       {/* LEVEL 1: NONO 領域指揮大廳 (HOME DOMAIN HUB) 或 LEVEL 2: 專屬工作台 (WORKBENCH) */}
       {isNonoAwake && (
         <div
           style={{
-            width: `min(calc(100vw - 1.5rem), ${viewLayer === 'hub' ? Math.max(targetPanelWidthPx, 840) : targetPanelWidthPx}px)`,
+            width:
+              viewLayer === 'hub'
+                ? 'min(calc(100vw - 2rem), 960px)'
+                : `min(calc(100vw - 1.5rem), ${targetPanelWidthPx}px)`,
           }}
-          className="fixed top-3 left-3 z-30 flex flex-col max-h-[calc(100vh-1.5rem)] transition-[width] duration-150"
+          className={`fixed top-3 ${
+            viewLayer === 'hub' ? 'left-1/2 -translate-x-1/2' : 'left-3'
+          } z-30 flex flex-col max-h-[calc(100vh-1.5rem)] transition-all duration-200`}
         >
           <div
             style={{

@@ -7,3 +7,7 @@ coverage/
 .env*
 !.env.example
 .nono-server-store.json
+__pycache__/
+*.pyc
+*.pyo
+

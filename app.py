@@ -176,8 +176,22 @@ SHEET_CACHE_TTL = 5  # 【第 1 層防呆：Live API Fetching】客戶儲存試�
 _failed_admin_attempts: dict[str, dict] = {}  # {user_id: {"count": int, "locked_until": float}}
 _user_rate_limits: dict[str, list[float]] = {}  # {user_id: [timestamps]} 防洗版限流
 _tenant_usage_counters: dict[str, dict] = {}  # {tenant_id: {"year_month": "2026-11", "count": int}}
+_site_support_ip_limits: dict[str, list[float]] = {}  # 官網 AI 客服 IP 防刷爆限流
+_site_support_daily_counter: dict[str, int] = {}  # 官網 AI 客服每日免費總閥門
 MAX_GUEST_RPM = 20  # 單一訪客每分鐘最多 20 則訊息，防惡意爆破
+MAX_SITE_SUPPORT_RPM = 5  # 官網客服單一 IP 每分鐘最多 5 次提問
+MAX_SITE_SUPPORT_DAILY = 150  # 官網客服全站每日免費 AI 呼叫上限（確保 100% 零成本不被刷爆）
 FREE_PLAN_QUOTA = 50  # 方案 A 免費版每月上限 50 次 AI 對話
+
+
+@app.after_request
+def add_security_headers(response):
+    """為所有網頁與 API 加上銀行級 HTTP 資安防護標頭（防 XSS、防點擊劫持、防 MIME 嗅探）"""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 
 def get_tenant_config(tenant_id: str) -> dict:
@@ -1409,6 +1423,98 @@ def api_test_action():
         return jsonify({"status": "ok", "alert_preview": test_alert_msg}), 200
 
     return jsonify({"status": "error", "message": "Unknown action"}), 400
+
+
+@app.route("/api/site_support_chat", methods=["POST"])
+def api_site_support_chat():
+    """
+    官網右下角「AI 開通與方案諮詢客服」（0 成本題庫優先 ＋ 3 道防刷爆鐵閘保護）：
+    1. 字數限制：單次最多 150 字，防止長文消耗 Token。
+    2. 單一 IP 限流：每分鐘最多 5 次，防止惡意腳本連點。
+    3. 每日全站免費總閥門：每日最多 150 次 AI 呼叫，100% 鎖定於免費額度內，保證 0 帳單風險！
+    """
+    data = request.get_json(silent=True) or {}
+    q = str(data.get("question", "")).strip()[:150]
+    lang = str(data.get("lang", "zh-TW")).strip()
+    if not q:
+        return jsonify({"reply": "請問有什麼我可以幫您的嗎？😊"}), 200
+
+    # 第 1 層：0 成本瞬時知識庫比對（完全不消耗任何 API 額度）
+    ql = q.lower()
+    if any(k in ql for k in ["記憶", "歸戶", "crm", "差在哪", "區別", "差別", "方案", "memory", "plan"]):
+        return jsonify({
+            "reply": (
+                "💡【方案與記憶功能白話文說明】：\n"
+                "• 方案 A (0元體驗)：每月免費 50 次 AI 回答，適合先測試效果。\n"
+                "• 方案 B (輕量版)：AI 無限次回答＋「當下聊天記憶（記住剛才聊的前 10 句話，對話不鬼打牆）」＋ LINE/Telegram/Email 轉接通知。\n"
+                "• 方案 C (專業版)：多加了「熟客專屬資料卡永久建檔（原稱：CRM 歸戶＋長期記憶）」！例如客人半年前說過『小孩花生過敏、要嬰兒床』，系統會自動幫他建檔存進您的雲端客戶表，下次他問早餐時 AI 會主動貼心提醒！"
+            ),
+            "mode": "zero_cost_kb",
+        }), 200
+
+    if any(k in ql for k in ["secret", "token", "金鑰", "哪裡找", "開通", "按鈕", "webhook"]):
+        return jsonify({
+            "reply": (
+                "🔑【LINE 金鑰 30 秒尋找步驟】：\n"
+                "1. 登入 LINE Developers Console 點選您的頻道。\n"
+                "2. 在第一個分頁「Basic settings (チャネル基本設定)」滑到最底下，複製 32 碼『Channel secret』。\n"
+                "3. 切換到「Messaging API (Messaging API設定)」分頁滑到最底下，點擊『Issue (発行)』複製長效『Channel access token』。\n"
+                "4. 貼入我們統一的【自助開通中心】即可自動生成 Webhook！"
+            ),
+            "mode": "zero_cost_kb",
+        }), 200
+
+    # 第 2 層：檢查 IP 限流與每日免費總閥門（3 道防刷爆鎖）
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+    now_ts = time.time()
+    today_str = datetime.now(TW_TZ).strftime("%Y-%m-%d")
+
+    with _memory_lock:
+        ip_times = [t for t in _site_support_ip_limits.get(client_ip, []) if now_ts - t < 60]
+        if len(ip_times) >= MAX_SITE_SUPPORT_RPM:
+            return jsonify({
+                "reply": "⏳ 您提問的速度稍快，請稍候 30 秒再試，或直接點選上方常見問題按鈕查看喔！😊",
+                "mode": "rate_limited",
+            }), 200
+        ip_times.append(now_ts)
+        _site_support_ip_limits[client_ip] = ip_times
+
+        daily_used = _site_support_daily_counter.get(today_str, 0)
+        if daily_used >= MAX_SITE_SUPPORT_DAILY:
+            return jsonify({
+                "reply": "💡 您好！您可以先點選方案 A（0 元體驗版）免費開通測試，或參考頁面上的 4 步驟圖文教學喔！",
+                "mode": "daily_cap_protected",
+            }), 200
+        _site_support_daily_counter[today_str] = daily_used + 1
+
+    # 第 3 層：安全呼叫輕量模型簡短回答（限制 max_output_tokens=220 確保極低消耗）
+    if USE_NEW_SDK and GEMINI_API_KEY:
+        try:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            sys_prompt = (
+                f"你是 SmartHost 24H LINE AI 管家官網的開通諮詢客服（請用 {lang} 語言簡短親切回答，控制在 3 句話內）。"
+                "方案A為0元/月(50次對話)；方案B為NT$1680/月(無限對話+當下10句聊天記憶+LINE/TG/Email轉接通知)；"
+                "方案C為NT$2980/月(含方案B+熟客重要偏好/過敏永久建檔歸戶+入住前自動發密碼)。"
+                "嚴禁回答與本產品無關的問題（如寫程式、寫文章、算數學），若無關請禮貌導回產品開通諮詢。"
+            )
+            resp = client.models.generate_content(
+                model="gemini-flash-latest",
+                contents=q,
+                config=types.GenerateContentConfig(
+                    system_instruction=sys_prompt,
+                    temperature=0.2,
+                    max_output_tokens=220,
+                ),
+            )
+            if resp and resp.text:
+                return jsonify({"reply": resp.text.strip(), "mode": "ai_protected"}), 200
+        except Exception as e:
+            logger.warning(f"Site support AI fallback error: {e}")
+
+    return jsonify({
+        "reply": "😊 您好！我們支援 0 元免費體驗（方案 A），只要到 LINE 後台複製 Channel Secret 與 Access Token 貼入開通中心，3 分鐘就能完成串接囉！",
+        "mode": "fallback",
+    }), 200
 
 
 @app.route("/cron/lifecycle", methods=["POST", "GET"])

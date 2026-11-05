@@ -29,7 +29,7 @@
 
       <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
         <a href="#how-it-works" data-i18n="nav_how" class="hover:text-emerald-400 transition">3 步驟開通</a>
-        <a href="#comparison" data-i18n="nav_compare" class="hover:text-emerald-400 transition">優勢對比</a>
+        <a href="#memory-diff" data-i18n="nav_memory" class="hover:text-emerald-400 transition">記憶與功能白話解析</a>
         <a href="#pricing" data-i18n="nav_pricing" class="hover:text-emerald-400 transition">三階梯方案</a>
         <a href="#faq" data-i18n="nav_faq" class="hover:text-emerald-400 transition">常見問題</a>
         <a href="/admin" data-i18n="nav_admin" class="text-cyan-400 hover:text-cyan-300 font-semibold transition">📊 測試與診斷後台</a>
@@ -46,14 +46,14 @@
         </select>
 
         <a href="/onboarding.html" data-i18n="nav_cta" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm px-3.5 py-2 rounded-lg transition shadow-lg shadow-emerald-500/20">
-          免費自助開通
+          統一自助開通
         </a>
       </div>
     </div>
   </header>
 
   <!-- Hero 區塊 -->
-  <section class="relative pt-32 pb-20 sm:pt-40 sm:pb-28 overflow-hidden">
+  <section class="relative pt-32 pb-20 sm:pt-40 sm:pb-24 overflow-hidden">
     <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/15 blur-[130px] rounded-full pointer-events-none"></div>
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
       <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-emerald-400 text-xs sm:text-sm font-medium mb-6">
@@ -66,7 +66,7 @@
       </h1>
 
       <p data-i18n="hero_subtitle" class="max-w-3xl mx-auto text-base sm:text-xl text-slate-400 leading-relaxed mb-10">
-        專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。免寫程式、免工程師，只要修改 Google 試算表，AI 1 秒同步最新知識庫，並支援 LINE + Telegram + Email 多重轉接推播！
+        專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。免寫程式、免工程師，只要在 Google 試算表打字修改，AI 1 秒同步最新資訊，找不到人時自動傳訊通知店長！
       </p>
 
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -77,115 +77,103 @@
           🧪 前往測試與狀態診斷後台
         </a>
       </div>
-
-      <div class="mt-10 flex flex-wrap justify-center gap-6 text-xs sm:text-sm text-slate-400">
-        <span data-i18n="hero_point1">✅ 支援亞歐 15+ 國語言自動切換</span>
-        <span data-i18n="hero_point2">✅ 試算表誤刪自動快照備份保護</span>
-        <span data-i18n="hero_point3">✅ A+B+C 三重管道真人轉接通知（LINE / Telegram / Email）</span>
-      </div>
     </div>
   </section>
 
   <!-- 3 步驟 100% 自助開通預覽區塊 (How It Works) -->
-  <section id="how-it-works" class="py-20 bg-slate-900/50 border-y border-slate-800/80">
+  <section id="how-it-works" class="py-16 bg-slate-900/50 border-y border-slate-800/80">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-16">
+      <div class="text-center max-w-3xl mx-auto mb-12">
         <h2 data-i18n="how_title" class="text-2xl sm:text-4xl font-extrabold text-white mb-4">
-          3 步驟 100% 自助開通，3 分鐘立即上線
+          3 步驟統一線上開通，3 分鐘立即上線
         </h2>
         <p data-i18n="how_desc" class="text-slate-400 text-base sm:text-lg">
-          無須等待業務報價、無須外包工程師，全自動化即時檢驗金鑰並生成專屬 Webhook。
+          全站採用單一加密開通中心，驗證後自動鎖定店家帳號防止外人竄改。
         </p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8 relative hover:border-emerald-500/50 transition">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-xl flex items-center justify-center mb-6">1</div>
           <h3 data-i18n="step1_title" class="text-xl font-bold text-white mb-3">1. 選擇方案 (A / B / C)</h3>
           <p data-i18n="step1_desc" class="text-slate-400 text-sm leading-relaxed">
-            從方案 A（0 元體驗版）、方案 B（輕量訂閱版）到方案 C（專業自動化版）自由選擇，支援 PayPal 跨國安全結帳，隨時可退訂。
+            可先從 0 元免費版開始體驗，或透過 PayPal 安全訂閱無限次對話方案，隨時皆可退訂。
           </p>
         </div>
 
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8 relative hover:border-cyan-500/50 transition">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-black text-xl flex items-center justify-center mb-6">2</div>
           <h3 data-i18n="step2_title" class="text-xl font-bold text-white mb-3">2. 貼上 LINE 金鑰與通知設定</h3>
           <p data-i18n="step2_desc" class="text-slate-400 text-sm leading-relaxed">
-            貼上 LINE Channel Secret 與 Access Token，勾選 LINE / Telegram / Email 轉接通知，綁定後自動鎖定帳號防止外人竄改。
+            跟著對應語系的按鈕名稱指引貼上金鑰，系統即刻產生專屬網址並永久鎖定保護您的帳號。
           </p>
         </div>
 
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8 relative hover:border-indigo-500/50 transition">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black text-xl flex items-center justify-center mb-6">3</div>
-          <h3 data-i18n="step3_title" class="text-xl font-bold text-white mb-3">3. 打開 Google 表格輕鬆維護</h3>
+          <h3 data-i18n="step3_title" class="text-xl font-bold text-white mb-3">3. 打開 Google 表格打字即改</h3>
           <p data-i18n="step3_desc" class="text-slate-400 text-sm leading-relaxed">
-            把營業時間、房價填進 Google 試算表，儲存後 1 秒同步至 AI 大腦，內建「自動快照備份＋3 層防呆機制」，誤刪表格也不怕！
+            把房價、營業時間填進 Google 試算表，儲存後 1 秒生效！內建自動快照備份，誤刪表格也不怕。
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 痛點對比區塊 -->
-  <section id="comparison" class="py-20">
+  <!-- 白話文詳解區塊：短期記憶 vs 長期記憶 & 什麼是顧客自動歸戶 -->
+  <section id="memory-diff" class="py-20">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-14">
-        <h2 data-i18n="comp_title" class="text-2xl sm:text-4xl font-extrabold text-white mb-4">
-          告別大夜班人事高成本與死板關鍵字機器人
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <span class="inline-block px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold mb-3">
+          💡 零術語・白話文功能詳解
+        </span>
+        <h2 data-i18n="mem_title" class="text-2xl sm:text-4xl font-extrabold text-white mb-4">
+          一眼看懂：「方案 B 當下記憶」與「方案 C 熟客建檔」差在哪？
         </h2>
-        <p data-i18n="comp_desc" class="text-slate-400 text-base sm:text-lg">
-          看看 SmartHost 24H 智慧管家如何為您的門市與旅宿創造五星好評與高轉換率。
+        <p data-i18n="mem_subtitle" class="text-slate-400 text-sm sm:text-base">
+          我們把複雜的 AI 技術變成最貼心的門市服務，讓您清楚知道哪個方案最適合貴店：
         </p>
       </div>
 
-      <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/40">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="border-b border-slate-800 bg-slate-900/80 text-xs sm:text-sm uppercase text-slate-400">
-              <th class="py-4 px-6" data-i18n="comp_col_feature">比較項目</th>
-              <th class="py-4 px-6" data-i18n="comp_col_human">傳統人工客服 / 大夜班</th>
-              <th class="py-4 px-6" data-i18n="comp_col_oldbot">傳統規則型 LINE 機器人</th>
-              <th class="py-4 px-6 text-emerald-400 font-bold bg-emerald-500/5" data-i18n="comp_col_smarthost">🌟 SmartHost AI 智慧管家</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 text-sm">
-            <tr>
-              <td class="py-4 px-6 font-semibold text-white" data-i18n="comp_row1_title">每月成本</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row1_human">NT$ 38,000+ / 人</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row1_old">建置費數萬 + 維護費</td>
-              <td class="py-4 px-6 text-emerald-400 font-bold bg-emerald-500/5" data-i18n="comp_row1_smart">0 元體驗起（依語系自動換算當地幣別）</td>
-            </tr>
-            <tr>
-              <td class="py-4 px-6 font-semibold text-white" data-i18n="comp_row2_title">多國語言接待</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row2_human">外語人才難尋、溝通吃力</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row2_old">需逐一人工翻譯設定劇本</td>
-              <td class="py-4 px-6 text-emerald-400 font-bold bg-emerald-500/5" data-i18n="comp_row2_smart">自動辨識中/英/日/韓/泰/歐等 15+ 語系</td>
-            </tr>
-            <tr>
-              <td class="py-4 px-6 font-semibold text-white" data-i18n="comp_row3_title">顧客偏好與過敏記憶</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row3_human">交班易遺漏客訴風險高</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row3_old">完全無記憶能力</td>
-              <td class="py-4 px-6 text-emerald-400 font-bold bg-emerald-500/5" data-i18n="comp_row3_smart">雙層記憶！自動記住花生過敏與抵達時間</td>
-            </tr>
-            <tr>
-              <td class="py-4 px-6 font-semibold text-white" data-i18n="comp_row4_title">多重轉接通知效率</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row4_human">需從頭翻閱上百句對話</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row4_old">只會鬼打牆重複罐頭訊息</td>
-              <td class="py-4 px-6 text-emerald-400 font-bold bg-emerald-500/5" data-i18n="comp_row4_smart">3 句話摘要卡同步推播 LINE + Telegram + Email</td>
-            </tr>
-            <tr>
-              <td class="py-4 px-6 font-semibold text-white" data-i18n="comp_row5_title">資料防刪與帳號安全</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row5_human">紙本交接易遺失</td>
-              <td class="py-4 px-6 text-slate-400" data-i18n="comp_row5_old">改壞設定直接當機</td>
-              <td class="py-4 px-6 text-emerald-400 font-bold bg-emerald-500/5" data-i18n="comp_row5_smart">試算表自動快照備份 ＋ 綁定帳號防竄改鎖定</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- 方案 B 的記憶說明 -->
+        <div class="bg-slate-900/70 border border-emerald-500/40 rounded-2xl p-7">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs">方案 B 內建</span>
+            <h3 data-i18n="mem_b_title" class="text-lg font-extrabold text-white">💬 當下聊天記憶（記住剛才聊的前 10 句話）</h3>
+          </div>
+          <p data-i18n="mem_b_desc" class="text-sm text-slate-300 leading-relaxed mb-4">
+            就像真人店員正在跟客人講電話，AI 會記住<strong>「當下這場對話最近 10 句話的上下文」</strong>，讓客人不用一直重複主詞，對話自然不鬼打牆！
+          </p>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5">
+            <div class="font-bold text-emerald-400">👉 實際例子：</div>
+            <p>• 客人先問：「請問海景雙人房一晚多少錢？」</p>
+            <p>• 客人接著問：「<strong>那有附早餐跟車位嗎？</strong>」（客人沒說是哪間房，但 AI 記得上一句是在問海景雙人房，能精準回答！）</p>
+            <p class="text-slate-400 pt-1">※ 超過 10 句話後，前面的閒聊會自動洗掉，不會永久保存客人個資。</p>
+          </div>
+        </div>
+
+        <!-- 方案 C 的記憶與歸戶說明 -->
+        <div class="bg-slate-900/70 border border-cyan-500/40 rounded-2xl p-7">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="px-3 py-1 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs">方案 C 獨享升級</span>
+            <h3 data-i18n="mem_c_title" class="text-lg font-extrabold text-white">📒 熟客專屬資料卡永久建檔（原稱：顧客自動歸戶）</h3>
+          </div>
+          <p data-i18n="mem_c_desc" class="text-sm text-slate-300 leading-relaxed mb-4">
+            什麼是「顧客自動歸戶」？用白話文說就是：<strong>「AI 自動幫每位客人建立一張專屬熟客筆記卡，並自動存進您的雲端客戶總表（Notion / Excel）」</strong>，永遠記得這位客人的重要習慣與禁忌！
+          </p>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5">
+            <div class="font-bold text-cyan-400">👉 實際例子：</div>
+            <p>• 客人王先生在訂房時順口說：「<strong>我們隨行有小孩對花生嚴重過敏，需要嬰兒床。</strong>」</p>
+            <p>• AI 會自動把「王先生＝花生過敏＋嬰兒床」永久寫進您的客戶名單表。</p>
+            <p>• <strong>就算隔了幾個月王先生再次來訊問早餐</strong>，AI 依然記得他是誰，並主動貼心提醒：「廚房已為您註記『花生過敏』，含花生醬餐點會為您單獨替換喔！」</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- 三階梯定價區塊 (#pricing：價格隨語系自動變動 + PayPal 金流串接) -->
+  <!-- 三階梯定價區塊 (#pricing：白話文清楚對比 + 價格隨語系變動 + 單一統一開通入口) -->
   <section id="pricing" class="py-20 bg-slate-900/50 border-t border-slate-800/80">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-16">
@@ -193,7 +181,7 @@
           三階梯透明訂閱方案 (A + B + C)，無綁約隨時可退訂
         </h2>
         <p data-i18n="price_desc" class="text-slate-400 text-base sm:text-lg">
-          切換右上角語系可自動換算當地幣別（NT$ / USD / JPY / IDR / EUR），支援 PayPal 與信用卡安全結帳！
+          切換右上角語系可自動換算當地幣別（NT$ / USD / JPY / IDR / EUR），全方案統一由安全開通中心 3 分鐘啟用！
         </p>
       </div>
 
@@ -201,23 +189,24 @@
         <!-- 方案 A: Free -->
         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8 flex flex-col justify-between">
           <div>
-            <span class="inline-block px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-bold mb-4" data-i18n="plan1_tag">方案 A｜新手零門檻</span>
+            <span class="inline-block px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-bold mb-4" data-i18n="plan1_tag">方案 A｜新手免費試用</span>
             <h3 class="text-2xl font-bold text-white mb-2" data-i18n="plan1_name">0 元體驗版 (Free)</h3>
             <div class="my-6">
               <span class="text-4xl font-black text-white" data-i18n="plan1_price">NT$ 0</span>
               <span class="text-slate-400 text-sm" data-i18n="price_unit"> / 月</span>
             </div>
-            <ul class="space-y-3 text-sm text-slate-300 mb-8">
-              <li data-i18n="p1_f1">✔️ 每月免費 <strong>50 次</strong> AI 多國語言對話</li>
-              <li data-i18n="p1_f2">✔️ Google 表格知識庫即時動態維護</li>
-              <li data-i18n="p1_f3">✔️ 試算表自動快照備份 + 3 層防呆機制</li>
-              <li data-i18n="p1_f4">✔️ 額度用完自動平滑切換真人客服通知</li>
-              <li data-i18n="p1_f5">✔️ 100% 線上全自助 3 分鐘免綁卡開通</li>
+            <ul class="space-y-3.5 text-sm text-slate-300 mb-8 leading-relaxed">
+              <li data-i18n="p1_f1">✔️ <strong>每月免費 50 次 AI 自動回答</strong>（支援 15+ 國語言自動翻譯接待）</li>
+              <li data-i18n="p1_f2">✔️ <strong>Google 表格打字即改知識庫</strong>（改房價/營業時間 1 秒生效）</li>
+              <li data-i18n="p1_f3">✔️ <strong>試算表防呆＋防誤刪自動備份</strong>（不小心刪空也不會當機）</li>
+              <li data-i18n="p1_f4">✔️ <strong>50 次用完自動切換真人通知</strong>（絕不對客人顯示系統錯誤）</li>
+              <li data-i18n="p1_f5">✔️ <strong>免綁信用卡・3 分鐘全自助開通</strong></li>
             </ul>
           </div>
-          <div class="space-y-2.5">
-            <a href="/onboarding.html?plan=free" data-i18n="plan1_btn" class="block w-full text-center py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition">
-              選擇方案 A（0 元免費開通）
+          <div>
+            <!-- 統一單一開通按鈕 -->
+            <a href="/onboarding.html?plan=free" data-i18n="plan1_btn" class="block w-full text-center py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold transition">
+              🚀 免費開通方案 A
             </a>
           </div>
         </div>
@@ -228,56 +217,52 @@
             MOST POPULAR 店長首選
           </div>
           <div>
-            <span class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold mb-4" data-i18n="plan2_tag">方案 B｜24H 無限暢聊</span>
+            <span class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold mb-4" data-i18n="plan2_tag">方案 B｜24H 無限次接待</span>
             <h3 class="text-2xl font-bold text-white mb-2" data-i18n="plan2_name">輕量訂閱版 (Basic)</h3>
             <div class="my-6">
               <span class="text-4xl font-black text-emerald-400" data-i18n="plan2_price">NT$ 1,680</span>
               <span class="text-slate-400 text-sm" data-i18n="price_unit"> / 月</span>
             </div>
-            <ul class="space-y-3 text-sm text-slate-200 mb-8">
-              <li data-i18n="p2_f1">🌟 <strong>無限次</strong> AI 跨語系智慧對話</li>
-              <li data-i18n="p2_f2">🌟 <strong>A+B+C 多重轉接通知</strong>（LINE ＋ Telegram ＋ Email）</li>
-              <li data-i18n="p2_f3">🌟 Google 表格內容即時動態維護（含防刪快照）</li>
-              <li data-i18n="p2_f4">🌟 短期 10 句對話記憶 + 3 秒接管問題摘要卡</li>
-              <li data-i18n="p2_f5">🌟 24H 防休眠高速託管 ＋ 帳號防竄改鎖定</li>
+            <ul class="space-y-3.5 text-sm text-slate-200 mb-8 leading-relaxed">
+              <li data-i18n="p2_f1">🌟 <strong>無限次 AI 多國語言自動回答</strong>（半夜、連假再多客人問都不怕）</li>
+              <li data-i18n="p2_f2">🌟 <strong>當下聊天記憶（記住剛才前 10 句話）</strong>：客人連續提問不鬼打牆</li>
+              <li data-i18n="p2_f3">🌟 <strong>真人求救 3 句話重點卡推播</strong>：客人找客服時，自動濃縮重點傳到店長手機（支援 LINE ＋ Telegram ＋ Email）</li>
+              <li data-i18n="p2_f4">🌟 <strong>Google 表格即時修改 ＋ 防誤刪快照備份</strong></li>
+              <li data-i18n="p2_f5">🌟 <strong>全天候秒回不卡頓</strong>（24H 高速待命，客人零等待）</li>
             </ul>
           </div>
-          <div class="space-y-2.5">
+          <div>
+            <!-- 統一單一訂閱與開通按鈕 -->
             <button type="button" onclick="openPayPalModal('basic')" data-i18n="plan2_paypal_btn"
-              class="w-full py-3.5 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold transition shadow-lg flex items-center justify-center gap-2">
-              <span>💳</span> <span>透過 PayPal 訂閱方案 B</span>
+              class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2">
+              <span>💳</span> <span>訂閱方案 B 並前往開通</span>
             </button>
-            <a href="/onboarding.html?plan=basic" data-i18n="plan2_direct_btn" class="block w-full text-center py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition">
-              或先前往開通中心綁定金鑰 →
-            </a>
           </div>
         </div>
 
         <!-- 方案 C: Pro -->
         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8 flex flex-col justify-between">
           <div>
-            <span class="inline-block px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold mb-4" data-i18n="plan3_tag">方案 C｜全自動私域營收引擎</span>
+            <span class="inline-block px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold mb-4" data-i18n="plan3_tag">方案 C｜熟客建檔與全自動管家</span>
             <h3 class="text-2xl font-bold text-white mb-2" data-i18n="plan3_name">專業自動化版 (Pro)</h3>
             <div class="my-6">
               <span class="text-4xl font-black text-white" data-i18n="plan3_price">NT$ 2,980</span>
               <span class="text-slate-400 text-sm" data-i18n="price_unit"> / 月</span>
             </div>
-            <ul class="space-y-3 text-sm text-slate-300 mb-8">
+            <ul class="space-y-3.5 text-sm text-slate-300 mb-8 leading-relaxed">
               <li data-i18n="p3_f1">🚀 <strong>包含方案 B（輕量版）全部無限功能</strong></li>
-              <li data-i18n="p3_f2">🚀 <strong>Google Calendar 預約行程自動寫入</strong></li>
-              <li data-i18n="p3_f3">🚀 <strong>Notion / Airtable CRM 顧客自動歸戶</strong></li>
-              <li data-i18n="p3_f4">🚀 顧客過敏/偏好長期記憶（如花生過敏主動提醒）</li>
-              <li data-i18n="p3_f5">🚀 入住前 1 小時自動推播密碼 ＋ 退房後回購折扣碼</li>
+              <li data-i18n="p3_f2">🚀 <strong>熟客資料卡永久建檔（自動歸戶）</strong>：自動將客人的重要習慣整理存進您的雲端客戶名單（Notion / Excel）</li>
+              <li data-i18n="p3_f3">🚀 <strong>跨次長期記憶（永遠記住過敏與偏好）</strong>：客人提過「花生過敏、要嬰兒床」，下次問早餐時 AI 會主動貼心提醒！</li>
+              <li data-i18n="p3_f4">🚀 <strong>Google 行事曆預約自動登記</strong>：預約接駁或服務自動寫入行事曆</li>
+              <li data-i18n="p3_f5">🚀 <strong>入住前 1 小時自動發送大門密碼 ＋ 退房後自動發折扣碼</strong></li>
             </ul>
           </div>
-          <div class="space-y-2.5">
+          <div>
+            <!-- 統一單一訂閱與開通按鈕 -->
             <button type="button" onclick="openPayPalModal('pro')" data-i18n="plan3_paypal_btn"
-              class="w-full py-3.5 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold transition shadow-lg flex items-center justify-center gap-2">
-              <span>💳</span> <span>透過 PayPal 訂閱方案 C</span>
+              class="w-full py-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
+              <span>💳</span> <span>訂閱方案 C 並前往開通</span>
             </button>
-            <a href="/onboarding.html?plan=pro" data-i18n="plan3_direct_btn" class="block w-full text-center py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 text-xs font-bold transition">
-              或先前往開通中心綁定金鑰 →
-            </a>
           </div>
         </div>
       </div>
@@ -309,46 +294,93 @@
       </h2>
       <div class="space-y-4">
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6">
-          <h3 class="font-bold text-white mb-2" data-i18n="faq1_q">Q1. 如果我的 Google 試算表不小心被刪掉，或是綁定資料會不會被別人偷改？</h3>
-          <p class="text-slate-400 text-sm" data-i18n="faq1_a">別擔心！第一，系統每次讀取您的 Google 試算表時都會自動保存「安全快照備份」，萬一試算表被誤刪，AI 會自動使用最後一次成功的快照繼續運作；第二，您的店家代號 (tenant_id) 一旦綁定成功就會自動上鎖，外人無法透過網頁覆蓋、竄改或刪除您的綁定帳號！</p>
+          <h3 class="font-bold text-white mb-2">Q1. 「當下聊天記憶（方案 B）」跟「熟客永久建檔（方案 C）」到底差在哪裡？</h3>
+          <p class="text-slate-400 text-sm">「當下聊天記憶（方案 B）」只記住客人剛才聊的最近 10 句話，讓對話順暢不跳針，聊完就洗掉；而「熟客永久建檔（方案 C）」會自動把客人提過的『花生過敏、需要嬰兒床、預計幾點到』整理成一張熟客資料卡存進您的雲端表格，就算幾個月後客人再來問早餐，AI 還是記得他對花生過敏！</p>
         </div>
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6">
-          <h3 class="font-bold text-white mb-2" data-i18n="faq2_q">Q2. 方案 A（免費版）每月 50 次 AI 對話用完了會怎樣？</h3>
-          <p class="text-slate-400 text-sm" data-i18n="faq2_a">當免費 50 次額度用完時，系統絕不會對客人顯示錯誤代碼，而是親切回覆客人「已為您轉接專人客服」，並同步透過 LINE / Telegram / Email 通知店長接手或升級方案 B。</p>
+          <h3 class="font-bold text-white mb-2">Q2. 如果我的 Google 試算表不小心被刪掉，或是綁定資料會不會被別人偷改？</h3>
+          <p class="text-slate-400 text-sm">完全不用擔心！第一，系統每次讀取您的 Google 試算表時都會自動存下一份「安全快照備份」，萬一試算表被誤刪，AI 會自動使用最後一次成功的快照繼續運作；第二，您的店家代號 (tenant_id) 一旦綁定成功就會自動上鎖，外人無法覆蓋、竄改或刪除您的綁定帳號！</p>
         </div>
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6">
-          <h3 class="font-bold text-white mb-2" data-i18n="faq3_q">Q3. 我可以在哪裡查看目前用了幾次 AI 對話、或直接測試機器人？</h3>
-          <p class="text-slate-400 text-sm" data-i18n="faq3_a">您可以隨時點擊上方導覽列的「📊 測試與診斷後台」(/admin)，不僅能以視覺化圖表查看本月剩餘額度、試算表快照狀態，還可以直接在網頁上模擬跟 AI 聊天測試！</p>
+          <h3 class="font-bold text-white mb-2">Q3. 我不確定怎麼開通或找不到 LINE 後台按鈕怎麼辦？</h3>
+          <p class="text-slate-400 text-sm">您可以隨時點擊畫面右下角的「💬 AI 開通客服小幫手」免費詢問，我們的開通教學也會根據您選擇的語言，精準顯示該語言 LINE 後台的按鈕名稱！</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- PayPal 跨國結帳彈窗 (支援依語系自動帶入幣別與金額) -->
+  <!-- PayPal 跨國結帳與統一開通彈窗 -->
   <div id="paypal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
       <button type="button" onclick="closePayPalModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-10 rounded-xl bg-[#FFC439]/20 border border-[#FFC439]/40 flex items-center justify-center text-xl">💳</div>
         <div>
-          <h3 class="text-lg font-extrabold text-white">PayPal 安全訂閱授權</h3>
+          <h3 class="text-lg font-extrabold text-white">PayPal 安全訂閱與統一開通</h3>
           <p id="paypal-plan-summary" class="text-xs text-emerald-400 font-bold"></p>
         </div>
       </div>
       <p class="text-xs text-slate-300 mb-5 leading-relaxed">
-        系統已根據您目前選擇的語系自動換算結帳幣別。完成 PayPal 付款授權後，將自動導向「自助開通中心」解鎖無限次 AI 對話額度：
+        系統已根據您目前選擇的語系自動換算結帳幣別。完成 PayPal 付款後，將自動進入「統一自助開通中心」綁定您的 LINE 金鑰：
       </p>
       <div class="space-y-3">
         <a id="paypal-checkout-link" href="#" target="_blank"
           class="block w-full text-center py-3.5 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold text-sm shadow-lg transition">
-          前往 PayPal 官方安全付款 ↗
+          步驟 1：前往 PayPal 官方安全付款 ↗
         </a>
         <button type="button" onclick="simulatePayPalSuccess()"
-          class="w-full py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition">
-          ✅ 我已完成付款（或沙盒測試跳轉至開通頁面）→
+          class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+          步驟 2：付款完成（或先免付款測試）➔ 進入統一開通中心 →
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- 右下角浮動「💬 AI 官網開通客服小幫手（0 成本題庫優先 + 3 道防刷爆鎖）」 -->
+  <div class="fixed bottom-5 right-5 z-50">
+    <!-- 展開的聊天視窗 -->
+    <div id="support-widget" class="hidden mb-3 w-80 sm:w-96 bg-slate-900 border-2 border-emerald-500/60 rounded-2xl shadow-2xl overflow-hidden flex-col">
+      <div class="bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 text-slate-950 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🤖</span>
+          <div>
+            <div class="font-extrabold text-xs sm:text-sm leading-tight">SmartHost AI 開通客服小幫手</div>
+            <div class="text-[10px] font-semibold opacity-80">0 成本瞬時題庫 ＋ 防刷爆保護</div>
+          </div>
+        </div>
+        <button onclick="toggleSupportWidget()" class="text-slate-950 font-black text-lg leading-none hover:opacity-70">✕</button>
+      </div>
+
+      <div id="support-messages" class="p-3.5 h-64 overflow-y-auto space-y-2.5 bg-slate-950 text-xs">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 leading-relaxed">
+          👋 您好！我是官網 AI 客服小幫手。請問您對<strong>方案 A/B/C 的差別</strong>、<strong>短期/長期記憶</strong>，或是<strong>怎麼找 LINE 金鑰開通</strong>有任何疑問嗎？可以直接點下方按鈕或打字問我喔！
+        </div>
+      </div>
+
+      <!-- 0 成本秒回快捷問題按鈕 -->
+      <div class="px-3 py-2 bg-slate-900/90 border-t border-slate-800 flex flex-wrap gap-1.5">
+        <button onclick="askSupport('方案 B 跟方案 C 的記憶跟歸戶差在哪？')" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300">
+          💡 方案與記憶差在哪？
+        </button>
+        <button onclick="askSupport('請問 LINE 金鑰 Secret 跟 Token 在哪裡找？')" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300">
+          🔑 金鑰在哪裡找？
+        </button>
+      </div>
+
+      <form id="support-form" class="p-2.5 bg-slate-900 border-t border-slate-800 flex gap-1.5">
+        <input type="text" id="support-input" maxlength="150" placeholder="輸入問題（限150字，內建防刷保護）..."
+          class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+        <button type="submit" class="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shrink-0">
+          送出
+        </button>
+      </form>
+    </div>
+
+    <!-- 浮動圓形按鈕 -->
+    <button onclick="toggleSupportWidget()" class="ml-auto flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-500/30 hover:scale-105 transition">
+      <span class="text-base">💬</span>
+      <span data-i18n="support_btn">AI 方案與開通客服</span>
+    </button>
   </div>
 
   <!-- Footer -->
@@ -356,14 +388,14 @@
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
       <p>© 2026 SmartHost AI Concierge Platform. All rights reserved.</p>
       <div class="flex flex-wrap justify-center gap-6">
-        <a href="/onboarding.html" class="hover:text-emerald-400">自助開通中心</a>
+        <a href="/onboarding.html" class="hover:text-emerald-400">統一自助開通中心</a>
         <a href="/admin" class="hover:text-cyan-400 font-semibold">📊 測試與診斷後台</a>
         <a href="#pricing" class="hover:text-emerald-400">三階梯方案定價</a>
       </div>
     </div>
   </footer>
 
-  <!-- 5 國語系字典 (含動態匯率定價) 與 IP / 瀏覽器自動偵測腳本 -->
+  <!-- 5 國語系字典 (含動態匯率定價) 與客服腳本 -->
   <script>
     const I18N_DICT = {
       "zh-TW": {
@@ -371,185 +403,195 @@
         basic_amount: "1680",
         pro_amount: "2980",
         nav_how: "3 步驟開通",
-        nav_compare: "優勢對比",
+        nav_memory: "記憶與功能白話解析",
         nav_pricing: "三階梯方案",
         nav_faq: "常見問題",
         nav_admin: "📊 測試與診斷後台",
-        nav_cta: "免費自助開通",
+        nav_cta: "統一自助開通",
+        support_btn: "AI 方案與開通客服",
         hero_badge: "100% 線上全自助開通・0 元建置費・無綁約隨時可退訂",
         hero_title: "0 元免費體驗！讓 AI 成為您的 <span class='gradient-text'>24H LINE 免費數位員工</span>",
-        hero_subtitle: "專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。免寫程式、免工程師，只要修改 Google 試算表，AI 1 秒同步最新知識庫，並支援 LINE + Telegram + Email 多重轉接推播！",
+        hero_subtitle: "專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。免寫程式、免工程師，只要在 Google 試算表打字修改，AI 1 秒同步最新資訊，找不到人時自動傳訊通知店長！",
         hero_btn_primary: "🚀 免費開始使用 (每月 50 次免費對話)",
         hero_btn_secondary: "🧪 前往測試與狀態診斷後台",
-        how_title: "3 步驟 100% 自助開通，3 分鐘立即上線",
+        how_title: "3 步驟統一線上開通，3 分鐘立即上線",
         step1_title: "1. 選擇方案 (A / B / C)",
         step2_title: "2. 貼上 LINE 金鑰與通知設定",
-        step3_title: "3. 打開 Google 表格輕鬆維護",
+        step3_title: "3. 打開 Google 表格打字即改",
         price_title: "三階梯透明訂閱方案 (A + B + C)，無綁約隨時可退訂",
-        price_desc: "切換右上角語系可自動換算當地幣別（NT$ / USD / JPY / IDR / EUR），支援 PayPal 安全結帳！",
+        price_desc: "切換右上角語系可自動換算當地幣別（NT$ / USD / JPY / IDR / EUR），全方案統一由安全開通中心 3 分鐘啟用！",
         price_unit: " / 月",
-        plan1_tag: "方案 A｜新手零門檻",
+        plan1_tag: "方案 A｜新手免費試用",
         plan1_name: "0 元體驗版 (Free)",
         plan1_price: "NT$ 0",
-        plan1_btn: "選擇方案 A（0 元免費開通）",
-        plan2_tag: "方案 B｜24H 無限暢聊",
+        plan1_btn: "🚀 免費開通方案 A",
+        plan2_tag: "方案 B｜24H 無限次接待",
         plan2_name: "輕量訂閱版 (Basic)",
         plan2_price: "NT$ 1,680",
-        plan2_paypal_btn: "💳 透過 PayPal 訂閱方案 B (NT$ 1,680)",
-        plan2_direct_btn: "或先前往開通中心綁定金鑰 →",
-        plan3_tag: "方案 C｜全自動私域營收引擎",
+        plan2_paypal_btn: "💳 訂閱方案 B 並前往開通 (NT$ 1,680)",
+        plan3_tag: "方案 C｜熟客建檔與全自動管家",
         plan3_name: "專業自動化版 (Pro)",
         plan3_price: "NT$ 2,980",
-        plan3_paypal_btn: "💳 透過 PayPal 訂閱方案 C (NT$ 2,980)",
-        plan3_direct_btn: "或先前往開通中心綁定金鑰 →"
+        plan3_paypal_btn: "💳 訂閱方案 C 並前往開通 (NT$ 2,980)"
       },
       "en": {
         currency: "USD",
         basic_amount: "55",
         pro_amount: "95",
         nav_how: "How It Works",
-        nav_compare: "Comparison",
+        nav_memory: "Memory & CRM Explained",
         nav_pricing: "Pricing",
         nav_faq: "FAQ",
         nav_admin: "📊 Admin & Test Console",
-        nav_cta: "Start Free",
+        nav_cta: "Unified Setup",
+        support_btn: "AI Support Chat",
         hero_badge: "100% Self-Service Onboarding · $0 Setup Fee · Cancel Anytime",
         hero_title: "Start for Free! Make AI Your <span class='gradient-text'>24/7 Multilingual LINE Concierge</span>",
-        hero_subtitle: "Built for hotels, clinics, salons, and businesses. Zero coding required—update your Google Sheet and AI syncs in 1 second with multi-channel handover alerts (LINE + Telegram + Email)!",
+        hero_subtitle: "Built for hotels, clinics, salons, and businesses. Zero coding required—update your Google Sheet and AI syncs in 1 second with multi-channel handover alerts!",
         hero_btn_primary: "🚀 Start Free (50 Free AI Replies / Mo)",
         hero_btn_secondary: "🧪 Open Live Test & Admin Console",
-        how_title: "3-Step 100% Self-Service Setup in 3 Minutes",
+        how_title: "3-Step Unified Self-Service Setup in 3 Minutes",
         step1_title: "1. Choose Plan (A / B / C)",
         step2_title: "2. Paste LINE Keys & Alert Channels",
         step3_title: "3. Manage via Google Sheets",
+        mem_title: "Plain-English Guide: Short-Term Chat Memory (Plan B) vs. VIP Guest Profile Card (Plan C)",
+        mem_b_title: "💬 Current Chat Memory (Remembers Last 10 Messages)",
+        mem_b_desc: "Just like a clerk on a phone call, AI remembers the last 10 messages of the current conversation so guests don't have to repeat themselves.",
+        mem_c_title: "📒 Permanent VIP Guest Profile Card (Auto-CRM Filing)",
+        mem_c_desc: "Automatically creates a permanent VIP note card for each guest in your cloud sheet (e.g. 'Child has severe peanut allergy, needs crib') and proactively reminds them months later!",
         price_title: "3-Tier Transparent Pricing (A + B + C), Cancel Anytime",
-        price_desc: "Prices automatically adjust to your local currency (USD / TWD / JPY / IDR / EUR) with PayPal Checkout!",
+        price_desc: "Prices automatically adjust to your local currency (USD / TWD / JPY / IDR / EUR) with unified onboarding!",
         price_unit: " / mo",
-        plan1_tag: "Plan A | Starter",
+        plan1_tag: "Plan A | Free Starter",
         plan1_name: "Free Trial (Free)",
         plan1_price: "$0 USD",
-        plan1_btn: "Start Plan A ($0 Free)",
+        p1_f1: "✔️ <strong>50 Free AI Replies / Month</strong> (15+ languages auto-detected)",
+        p1_f2: "✔️ <strong>Instant Google Sheet Sync</strong> (update prices & hours in 1 sec)",
+        p1_f3: "✔️ <strong>Auto-Snapshot Backup</strong> (protected even if Sheet is deleted)",
+        p1_f4: "✔️ <strong>Smooth Human Handover</strong> when 50 free replies are used",
+        p1_f5: "✔️ <strong>No Credit Card Required · 3-Min Setup</strong>",
+        plan1_btn: "🚀 Start Plan A ($0 Free)",
         plan2_tag: "Plan B | 24/7 Unlimited",
         plan2_name: "Basic Subscription",
         plan2_price: "$55 USD",
-        plan2_paypal_btn: "💳 Subscribe with PayPal ($55 USD)",
-        plan2_direct_btn: "Or configure LINE keys first →",
-        plan3_tag: "Plan C | Full Automation",
+        p2_f1: "🌟 <strong>Unlimited Multilingual AI Replies 24/7</strong>",
+        p2_f2: "🌟 <strong>Current Chat Memory (Last 10 turns)</strong> for natural follow-up questions",
+        p2_f3: "🌟 <strong>3-Sentence Handover Alert Card</strong> pushed to LINE + Telegram + Email",
+        p2_f4: "🌟 <strong>Google Sheet Live Sync + Anti-Delete Snapshot Backup</strong>",
+        p2_f5: "🌟 <strong>24/7 Zero-Lag Hosting + Immutable Account Lock</strong>",
+        plan2_paypal_btn: "💳 Subscribe Plan B & Setup ($55 USD)",
+        plan3_tag: "Plan C | VIP Memory & Full Automation",
         plan3_name: "Pro Automation",
         plan3_price: "$95 USD",
-        plan3_paypal_btn: "💳 Subscribe with PayPal ($95 USD)",
-        plan3_direct_btn: "Or configure LINE keys first →"
+        p3_f1: "🚀 <strong>Everything in Plan B (Unlimited)</strong>",
+        p3_f2: "🚀 <strong>Permanent VIP Guest Profile Card</strong> auto-saved to Notion / Excel",
+        p3_f3: "🚀 <strong>Long-Term Cross-Visit Memory</strong> (remembers allergies & preferences forever)",
+        p3_f4: "🚀 <strong>Google Calendar Auto-Booking Sync</strong>",
+        p3_f5: "🚀 <strong>Auto Door PIN 1h Before Arrival + Post-Checkout VIP Coupon</strong>",
+        plan3_paypal_btn: "💳 Subscribe Plan C & Setup ($95 USD)"
       },
       "ja": {
         currency: "JPY",
         basic_amount: "8200",
         pro_amount: "14500",
         nav_how: "導入3ステップ",
-        nav_compare: "機能比較",
+        nav_memory: "記憶機能の違い（わかりやすい解説）",
         nav_pricing: "料金プラン",
         nav_faq: "よくある質問",
         nav_admin: "📊 管理・テスト画面",
-        nav_cta: "無料で始める",
+        nav_cta: "オンライン開通",
+        support_btn: "AI 導入サポート相談",
         hero_badge: "100% オンライン自動開通・初期費用0円・いつでも解約可能",
         hero_title: "0円無料体験！AIをあなたの <span class='gradient-text'>24時間多言語 LINE コンシェルジュ</span> に",
-        hero_subtitle: "ホテル・旅館・クリニック・サロン向けLINE AI自動応答システム。Googleスプレッドシートを編集するだけで1秒でAIに反映！LINE・Telegram・メールの多重スタッフ引き継ぎ通知に完全対応。",
+        hero_subtitle: "ホテル・旅館・クリニック・サロン向けLINE AI自動応答システム。Googleスプレッドシートを編集するだけで1秒でAIに反映！",
         hero_btn_primary: "🚀 無料で始める（月50回AI対話無料）",
         hero_btn_secondary: "🧪 管理・AIテストコンソールを開く",
-        how_title: "わずか3分！3ステップで100%セルフ開通",
+        how_title: "わずか3分！統一開通センターで簡単スタート",
         step1_title: "1. プランを選択 (A / B / C)",
         step2_title: "2. LINEキーと通知先を設定",
         step3_title: "3. Googleスプレッドシートで簡単管理",
+        mem_title: "ひと目でわかる！「プランB：直近の会話記憶」と「プランC：顧客カルテ自動作成」の違い",
+        mem_b_title: "💬 直近の会話記憶（直前の10往復を記憶）",
+        mem_b_desc: "現在進行中の会話の前後関係（直近10メッセージ）を記憶し、自然な会話を行います。",
+        mem_c_title: "📒 顧客カルテ永久保存（長期記憶＆自動顧客リスト化）",
+        mem_c_desc: "お客様が話した「ピーナッツアレルギー」「ベビーベッド希望」などを自動で顧客リスト（Notion/Excel）に記録し、数ヶ月後の再来訪時にもAIが自動で配慮します！",
         price_title: "シンプルで透明な3段階料金プラン (A + B + C)",
-        price_desc: "言語設定に応じて日本円（JPY）でPayPal決済が可能です。初期費用0円・いつでも解約可能！",
+        price_desc: "日本円（JPY）でのPayPal決済に対応。初期費用0円・いつでも解約可能！",
         price_unit: " / 月",
-        plan1_tag: "プラン A｜無料体験",
+        plan1_tag: "プラン A｜無料お試し",
         plan1_name: "0円フリープラン (Free)",
         plan1_price: "¥0",
-        plan1_btn: "プラン A を無料で始める",
+        plan1_btn: "🚀 プラン A を無料で開通する",
         plan2_tag: "プラン B｜24時間無制限",
         plan2_name: "ベーシックプラン (Basic)",
         plan2_price: "¥8,200",
-        plan2_paypal_btn: "💳 PayPalで購読する (¥8,200/月)",
-        plan2_direct_btn: "または先にLINEキーを設定する →",
-        plan3_tag: "プラン C｜完全自動化・CRM連携",
+        plan2_paypal_btn: "💳 プラン B を購読して開通へ (¥8,200/月)",
+        plan3_tag: "プラン C｜顧客カルテ自動作成＆完全自動化",
         plan3_name: "プロ自動化プラン (Pro)",
         plan3_price: "¥14,500",
-        plan3_paypal_btn: "💳 PayPalで購読する (¥14,500/月)",
-        plan3_direct_btn: "または先にLINEキーを設定する →"
+        plan3_paypal_btn: "💳 プラン C を購読して開通へ (¥14,500/月)"
       },
       "id": {
         currency: "USD",
         basic_amount: "55",
         pro_amount: "95",
         nav_how: "Cara Kerja",
-        nav_compare: "Perbandingan",
+        nav_memory: "Penjelasan Memori AI",
         nav_pricing: "Harga",
         nav_faq: "FAQ",
         nav_admin: "📊 Konsol Tes & Admin",
-        nav_cta: "Mulai Gratis",
+        nav_cta: "Aktivasi Mandiri",
+        support_btn: "Tanya AI Support",
         hero_badge: "100% Aktivasi Mandiri Online · Biaya Setup Rp 0 · Batal Kapan Saja",
         hero_title: "Coba Gratis! Jadikan AI <span class='gradient-text'>Staf Digital LINE 24 Jam</span> Anda",
-        hero_subtitle: "Asisten pintar LINE multibahasa untuk hotel, klinik, dan bisnis. Tanpa coding—cukup edit Google Sheets dan AI langsung tersinkronisasi dalam 1 detik dengan notifikasi LINE, Telegram & Email!",
+        hero_subtitle: "Asisten pintar LINE multibahasa untuk hotel, klinik, dan bisnis. Tanpa coding—cukup edit Google Sheets dan AI langsung tersinkronisasi dalam 1 detik!",
         hero_btn_primary: "🚀 Mulai Gratis (50 Chat AI / Bulan)",
         hero_btn_secondary: "🧪 Buka Konsol Tes & Diagnostik",
-        how_title: "3 Langkah Aktivasi Mandiri dalam 3 Menit",
-        step1_title: "1. Pilih Paket (A / B / C)",
-        step2_title: "2. Tempel Kunci API LINE & Notifikasi",
-        step3_title: "3. Kelola Mudah Lewat Google Sheets",
         price_title: "3 Pilihan Paket Transparan (A + B + C)",
-        price_desc: "Harga otomatis disesuaikan ke Rupiah (IDR) dengan pembayaran aman via PayPal!",
         price_unit: " / bln",
         plan1_tag: "Paket A | Gratis",
         plan1_name: "Uji Coba Gratis (Free)",
         plan1_price: "Rp 0",
-        plan1_btn: "Pilih Paket A (Gratis)",
+        plan1_btn: "🚀 Aktifkan Paket A (Gratis)",
         plan2_tag: "Paket B | Chat Tanpa Batas",
         plan2_name: "Paket Basic",
         plan2_price: "Rp 850.000",
-        plan2_paypal_btn: "💳 Langganan via PayPal (Rp 850rb)",
-        plan2_direct_btn: "Atau atur kunci LINE terlebih dahulu →",
-        plan3_tag: "Paket C | Otomatisasi Penuh",
+        plan2_paypal_btn: "💳 Langganan Paket B & Aktivasi (Rp 850rb)",
+        plan3_tag: "Paket C | Kartu Profil Tamu & Otomatisasi",
         plan3_name: "Paket Pro",
         plan3_price: "Rp 1.490.000",
-        plan3_paypal_btn: "💳 Langganan via PayPal (Rp 1,49jt)",
-        plan3_direct_btn: "Atau atur kunci LINE terlebih dahulu →"
+        plan3_paypal_btn: "💳 Langganan Paket C & Aktivasi (Rp 1,49jt)"
       },
       "it": {
         currency: "EUR",
         basic_amount: "49",
         pro_amount: "89",
         nav_how: "Come Funziona",
-        nav_compare: "Confronto",
+        nav_memory: "Guida alla Memoria IA",
         nav_pricing: "Prezzi",
         nav_faq: "FAQ",
         nav_admin: "📊 Console Test e Admin",
-        nav_cta: "Inizia Gratis",
+        nav_cta: "Attivazione Unificata",
+        support_btn: "Supporto IA Online",
         hero_badge: "100% Self-Service Online · 0€ Costi di Attivazione · Disdici Quando Vuoi",
         hero_title: "Prova Gratuita! Trasforma l'IA nel Tuo <span class='gradient-text'>Concierge LINE 24/7</span>",
-        hero_subtitle: "Il concierge IA multilingue su LINE per hotel, cliniche e aziende. Nessun codice richiesto: aggiorna Google Sheets e l'IA si sincronizza in 1 secondo con notifiche LINE, Telegram ed Email!",
+        hero_subtitle: "Il concierge IA multilingue su LINE per hotel, cliniche e aziende. Aggiorna Google Sheets e l'IA si sincronizza in 1 secondo!",
         hero_btn_primary: "🚀 Inizia Gratis (50 Risposte IA / Mese)",
         hero_btn_secondary: "🧪 Apri Console di Test e Stato",
-        how_title: "Attivazione Self-Service in 3 Passaggi",
-        step1_title: "1. Scegli il Piano (A / B / C)",
-        step2_title: "2. Incolla le Chiavi LINE e Notifiche",
-        step3_title: "3. Gestisci tutto da Google Sheets",
         price_title: "3 Piani Tariffari Trasparenti (A + B + C)",
-        price_desc: "Prezzi convertiti automaticamente in Euro (€) con pagamento sicuro tramite PayPal!",
         price_unit: " / mese",
         plan1_tag: "Piano A | Gratuito",
         plan1_name: "Prova Gratuita (Free)",
         plan1_price: "€0",
-        plan1_btn: "Inizia Piano A (€0 Gratis)",
+        plan1_btn: "🚀 Attiva Piano A (€0 Gratis)",
         plan2_tag: "Piano B | Illimitato 24/7",
         plan2_name: "Piano Basic",
         plan2_price: "€49",
-        plan2_paypal_btn: "💳 Abbonati con PayPal (€49/mese)",
-        plan2_direct_btn: "Oppure configura prima le chiavi LINE →",
-        plan3_tag: "Piano C | Automazione Pro",
+        plan2_paypal_btn: "💳 Abbonati al Piano B e Attiva (€49/mese)",
+        plan3_tag: "Piano C | Scheda Cliente VIP e Automazione",
         plan3_name: "Piano Pro",
         plan3_price: "€89",
-        plan3_paypal_btn: "💳 Abbonati con PayPal (€89/mese)",
-        plan3_direct_btn: "Oppure configura prima le chiavi LINE →"
+        plan3_paypal_btn: "💳 Abbonati al Piano C e Attiva (€89/mese)"
       }
     };
 
@@ -576,7 +618,6 @@
       const currency = dict.currency || "TWD";
 
       document.getElementById("paypal-plan-summary").textContent = `${planName} — ${priceText}${dict.price_unit}`;
-      // 標準 PayPal 訂閱/結帳導向連結 (自動帶入當前語系對應之幣別與金額)
       const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=billing@smarthost-ai.com&item_name=${encodeURIComponent("SmartHost " + planName)}&amount=${amount}&currency_code=${currency}`;
       document.getElementById("paypal-checkout-link").href = paypalUrl;
 
@@ -594,6 +635,54 @@
     function simulatePayPalSuccess() {
       window.location.href = `/onboarding.html?plan=${selectedPayPalPlan}&paid=paypal&lang=${currentLang}`;
     }
+
+    function toggleSupportWidget() {
+      const w = document.getElementById("support-widget");
+      if (w.classList.contains("hidden")) {
+        w.classList.remove("hidden");
+        w.classList.add("flex");
+      } else {
+        w.classList.add("hidden");
+        w.classList.remove("flex");
+      }
+    }
+
+    function appendSupportMsg(role, text) {
+      const box = document.getElementById("support-messages");
+      const div = document.createElement("div");
+      if (role === "user") {
+        div.className = "bg-emerald-500 text-slate-950 font-semibold rounded-xl p-2.5 ml-8 text-right";
+      } else {
+        div.className = "bg-slate-900 border border-slate-800 rounded-xl p-3 mr-4 text-slate-200 whitespace-pre-wrap leading-relaxed";
+      }
+      div.textContent = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function askSupport(questionText) {
+      appendSupportMsg("user", questionText);
+      try {
+        const res = await fetch("/api/site_support_chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: questionText, lang: currentLang })
+        });
+        const data = await res.json();
+        appendSupportMsg("ai", data.reply || "請參考上方方案說明或進入開通中心體驗喔！");
+      } catch (e) {
+        appendSupportMsg("ai", "💡 方案 B 支援「當下前 10 句聊天記憶」；方案 C 支援「熟客資料卡永久建檔（如記住花生過敏）」。歡迎先從方案 A (0元) 免費開通！");
+      }
+    }
+
+    document.getElementById("support-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const inp = document.getElementById("support-input");
+      const val = inp.value.trim();
+      if (!val) return;
+      inp.value = "";
+      askSupport(val);
+    });
 
     async function detectLanguage() {
       const saved = localStorage.getItem("smarthost_lang");

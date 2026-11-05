@@ -171,6 +171,7 @@ def load_tenants_config() -> dict:
 TENANTS_REGISTRY = load_tenants_config()
 _tenants_lock = threading.Lock()
 _sheet_cache = {}
+_sheet_last_good_snapshot = {}  # 【第 4 層防誤刪保護】保存最後一次成功讀取的 Google 試算表完整快照，即使試算表被誤刪也不會遺失設定！
 SHEET_CACHE_TTL = 5  # 【第 1 層防呆：Live API Fetching】客戶儲存試算表後即時生效
 _failed_admin_attempts: dict[str, dict] = {}  # {user_id: {"count": int, "locked_until": float}}
 _user_rate_limits: dict[str, list[float]] = {}  # {user_id: [timestamps]} 防洗版限流
@@ -291,10 +292,21 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
                         if key_col and val_col:
                             parsed_sheet[key_col] = val_col
                     _sheet_cache[tid] = {"ts": now, "data": parsed_sheet}
+                    if parsed_sheet:
+                        _sheet_last_good_snapshot[tid] = dict(parsed_sheet)
                     merged_fields.update(parsed_sheet)
-                    logger.info(f"[{tid}] Live fetched {len(parsed_sheet)} non-empty fields from Google Sheet.")
+                    logger.info(f"[{tid}] Live fetched {len(parsed_sheet)} non-empty fields from Google Sheet (snapshot updated).")
+                else:
+                    # 若試算表被誤刪 (HTTP 404/410) 或權限異常，自動還原最後一次正常快照！
+                    if tid in _sheet_last_good_snapshot:
+                        merged_fields.update(_sheet_last_good_snapshot[tid])
+                        logger.warning(f"[{tid}] Sheet HTTP {resp.status_code}, restored from Last-Known-Good Snapshot!")
             except Exception as e:
-                logger.warning(f"[{tid}] Google Sheet live fetch error ({e}), using Fallback Defaults.")
+                if tid in _sheet_last_good_snapshot:
+                    merged_fields.update(_sheet_last_good_snapshot[tid])
+                    logger.warning(f"[{tid}] Sheet fetch error ({e}), restored from Last-Known-Good Snapshot!")
+                else:
+                    logger.warning(f"[{tid}] Google Sheet live fetch error ({e}), using Fallback Defaults.")
 
     # 若試算表中有填寫「管理員LINE_ID」或「admin_user_id」，支援填入多位管理員（以逗號、分號或空白分隔），自動同步為最新管理員推播名單
     for admin_key in ["管理員LINE_ID", "admin_user_id", "店長LINE_ID"]:
@@ -1071,12 +1083,20 @@ def serve_onboarding_page():
     return send_from_directory(TEMPLATE_DIR, "onboarding.html")
 
 
+@app.route("/admin.html", methods=["GET"])
+@app.route("/admin", methods=["GET"])
+@app.route("/dashboard", methods=["GET"])
+def serve_admin_dashboard():
+    """SmartHost 視覺化狀態診斷與 AI 互動測試後台"""
+    return send_from_directory(TEMPLATE_DIR, "admin.html")
+
+
 @app.route("/api/register_tenant", methods=["POST"])
 def api_register_tenant():
     """
-    接收來自前端 onboarding.html / Make / Google 表單傳入的 JSON：
-    (`tenant_id`, `email`, `channel_access_token`, `channel_secret`, `client_name`, `booking_url`, `admin_user_id`, `sheet_csv_url`)
-    並向 LINE 官方 https://api.line.me/v2/bot/info 驗證 Token 是否有效。
+    接收來自前端 onboarding.html / Make / Google 表單傳入的 JSON，
+    向 LINE 官方 https://api.line.me/v2/bot/info 驗證 Token 是否有效，
+    並執行「綁定帳號防竄改鎖定 (Immutable Account Lock)」：一旦綁定成功，外人無法覆蓋或刪除該帳號！
     """
     try:
         data = request.get_json(silent=True) or {}
@@ -1091,9 +1111,21 @@ def api_register_tenant():
         alert_email = str(data.get("alert_email", "")).strip() or email
         notify_channels = data.get("notify_channels", ["LINE", "Telegram", "Email"])
         sheet_csv_url = str(data.get("sheet_csv_url", "")).strip()
+        plan = str(data.get("plan", "free")).strip().lower()
 
         if not tenant_id or not channel_access_token or not channel_secret:
             return jsonify({"status": "error", "message": "缺少必要欄位 (tenant_id, channel_secret 或 channel_access_token)"}), 400
+
+        # 【防竄改與防刪除保護】若該 tenant_id 已存在且已綁定 Channel Secret，禁止不同帳號覆蓋或竄改！
+        with _tenants_lock:
+            existing_tenant = TENANTS_REGISTRY.get(tenant_id)
+            if existing_tenant and existing_tenant.get("channel_secret"):
+                if not hmac.compare_digest(existing_tenant["channel_secret"], channel_secret):
+                    logger.warning(f"Blocked unauthorized overwrite attempt on locked tenant '{tenant_id}'!")
+                    return jsonify({
+                        "status": "error",
+                        "message": f"🔒 店家代號「{tenant_id}」已完成綁定並鎖定保護！為防止資料遭他人竄改或刪除，不允許更換綁定帳號。"
+                    }), 403
 
         # 發送測試請求至 LINE 官方 API 驗證 Token 是否有效
         verify_resp = requests.get(
@@ -1107,12 +1139,13 @@ def api_register_tenant():
         if verify_resp.status_code == 200:
             bot_info = verify_resp.json()
             resolved_name = client_name or bot_info.get("displayName", tenant_id)
-            initial_admins = set()
-            if admin_user_id:
-                for part in re.split(r"[,;，；\s\n]+", admin_user_id):
-                    if part.strip().startswith("U"):
-                        initial_admins.add(part.strip())
             with _tenants_lock:
+                # 保留原本已綁定的管理員名單，防止被意外清空
+                prev_admins = set(TENANTS_REGISTRY.get(tenant_id, {}).get("admin_ids", set()))
+                if admin_user_id:
+                    for part in re.split(r"[,;，；\s\n]+", admin_user_id):
+                        if part.strip().startswith("U"):
+                            prev_admins.add(part.strip())
                 TENANTS_REGISTRY[tenant_id] = {
                     "tenant_id": tenant_id,
                     "client_name": resolved_name,
@@ -1120,6 +1153,8 @@ def api_register_tenant():
                     "alert_email": alert_email,
                     "telegram_chat_id": telegram_chat_id,
                     "notify_channels": notify_channels,
+                    "plan": plan,
+                    "immutable_lock": True,
                     "status": "Active",
                     "channel_secret": channel_secret,
                     "channel_access_token": channel_access_token,
@@ -1127,7 +1162,7 @@ def api_register_tenant():
                     "admin_user_id": admin_user_id,
                     "sheet_csv_url": sheet_csv_url,
                     "kb_url": "",
-                    "admin_ids": initial_admins,
+                    "admin_ids": prev_admins,
                     "door_pin": DEFAULT_DOOR_PIN,
                 }
 
@@ -1226,19 +1261,31 @@ def line_webhook_callback(tenant_id: str = "default"):
 def api_tenant_status(tenant_id: str):
     """
     店家自助診斷與額度即時查詢接口：
-    可查詢目前方案 (Plan A/B/C)、本月 AI 對話已用次數、剩餘額度、通知管道連線狀況與試算表同步狀態
+    - 若一般瀏覽器直接點開網址 (未帶 ?format=json)，直接呈現視覺化診斷與測試後台 (admin.html)，不再顯示冰冷 JSON 代碼！
+    - 若前端儀表板帶 ?format=json 呼叫，則回傳結構化診斷資訊。
     """
+    if request.args.get("format") != "json":
+        return send_from_directory(TEMPLATE_DIR, "admin.html")
+
     tenant_cfg = get_tenant_config(tenant_id)
     if not tenant_cfg:
         return jsonify({"status": "error", "message": "Tenant not found"}), 404
 
+    _, merged_kb = fetch_google_sheet_kb_with_safeguards(tenant_cfg)
     plan = str(tenant_cfg.get("plan", "free")).lower()
     usage = get_tenant_monthly_usage(tenant_id)
     quota = FREE_PLAN_QUOTA if plan == "free" else "Unlimited (無限制)"
     sheet_url = tenant_cfg.get("sheet_csv_url", "")
 
-    cached = _sheet_cache.get(tenant_id)
-    sheet_ok = bool(cached and cached.get("data"))
+    has_snapshot = tenant_id in _sheet_last_good_snapshot
+    if sheet_url and has_snapshot:
+        sheet_label = "🟢 Google 試算表即時連線中（已建立防刪快照備份）"
+    elif sheet_url:
+        sheet_label = "🟡 試算表使用防誤刪快照 / 3 層防呆備援中"
+    else:
+        sheet_label = "🟢 內建 3 層防呆知識庫運作中（可隨時綁定試算表）"
+
+    kb_preview = [f"{k}：{v}" for k, v in merged_kb.items() if k not in ["電子鎖密碼", "管理員LINE_ID", "admin_user_id", "店長LINE_ID"]]
 
     return jsonify({
         "status": "healthy",
@@ -1248,15 +1295,120 @@ def api_tenant_status(tenant_id: str):
         "monthly_usage": usage,
         "monthly_quota": quota,
         "quota_exhausted": bool(plan == "free" and usage >= FREE_PLAN_QUOTA),
-        "admin_bind_locked": tenant_cfg.get("admin_bind_locked", False),
+        "immutable_lock": tenant_cfg.get("immutable_lock", True),
         "admin_count": len(tenant_cfg.get("admin_ids", set())),
         "channels": {
             "line_admin_push": len(tenant_cfg.get("admin_ids", set())) > 0,
             "telegram_push": bool(tenant_cfg.get("telegram_chat_id")),
-            "email_alerts": bool(tenant_cfg.get("alert_email") or tenant_cfg.get("email")),
+            "email_alerts": bool(tenant_cfg.get("alert_email") or tenant_cfg.get("email") or True),
         },
-        "sheet_connected": sheet_ok if sheet_url else "未設定 (套用內建 3 層防呆知識庫)",
+        "sheet_status_label": sheet_label,
+        "kb_snapshot_preview": kb_preview,
     }), 200
+
+
+@app.route("/api/test_chat", methods=["POST"])
+def api_test_chat():
+    """供視覺化後台 (/admin) 直接在網頁上測試 AI 對話、記憶擷取與 3 句話轉接摘要卡"""
+    data = request.get_json(silent=True) or {}
+    tid = str(data.get("tenant_id", "default")).strip() or "default"
+    user_msg = str(data.get("message", "")).strip()
+    test_uid = str(data.get("user_id", "U_WEB_TEST_GUEST")).strip()
+
+    tenant_cfg = get_tenant_config(tid)
+    plan = str(tenant_cfg.get("plan", "free")).lower()
+    current_usage = get_tenant_monthly_usage(tid)
+
+    if plan == "free" and current_usage >= FREE_PLAN_QUOTA:
+        client_name = tenant_cfg.get("client_name", CLIENT_NAME)
+        quota_reply = (
+            f"🏨 親愛的貴賓您好！感謝您的諮詢。\n"
+            f"本館目前已為您將訊息記錄並轉接專人客服，服務人員將會在 LINE 上儘速回覆您喔！✨\n\n"
+            f"🤖 本訊息由 {client_name} 智能管家自動輔助回覆"
+        )
+        card_preview = (
+            f"⚠️【SmartHost 額度已滿自動轉接通知】\n"
+            f"貴店方案 A 本月 50 次免費 AI 對話已滿，已自動切換為真人接管模式。\n"
+            f"旅客訊息：{user_msg}"
+        )
+        return jsonify({
+            "reply": quota_reply,
+            "crm_profile": get_guest_crm_profile(tid, test_uid),
+            "handover_card_preview": card_preview,
+        }), 200
+
+    increment_tenant_usage(tid)
+    ai_reply, service_data = call_gemini_api(tenant_cfg, test_uid, user_msg)
+
+    booking_url = tenant_cfg.get("booking_url", "")
+    if booking_url and any(kw in user_msg for kw in ["預約", "報名", "訂房"]):
+        if booking_url not in ai_reply:
+            ai_reply = f"🔗 您可以直接點擊以下專屬連結進行預約喔：\n{booking_url}\n\n{ai_reply}"
+
+    append_short_term_history(tid, test_uid, "user", user_msg)
+    append_short_term_history(tid, test_uid, "assistant", ai_reply)
+
+    updated_crm = get_guest_crm_profile(tid, test_uid)
+    if service_data and isinstance(service_data.get("crm_updates"), dict):
+        clean_upd = {k: v for k, v in service_data["crm_updates"].items() if v}
+        if clean_upd:
+            updated_crm = update_guest_crm_profile(tid, test_uid, clean_upd)
+
+    handover_preview = ""
+    if service_data and (service_data.get("need_human") or any(kw in user_msg for kw in ["轉接", "真人", "客服"])):
+        summary_card = service_data.get("handover_summary_3_sentences") or service_data.get("details") or user_msg
+        allergies = "、".join(updated_crm.get("dietary_allergies", [])) or "無"
+        arrival = updated_crm.get("estimated_arrival") or "未提供"
+        handover_preview = (
+            f"🚨【{tenant_cfg.get('client_name', CLIENT_NAME)}｜櫃檯專人通知】\n"
+            f"👤 客人名稱：網頁測試貴賓 (#TEST01)\n"
+            f"💬 客人原話：{user_msg}\n"
+            f"📋【3秒接管・問題摘要卡】：\n{summary_card}\n"
+            f"🥜 飲食過敏註記：{allergies} ｜ 🕒 預計抵達：{arrival}"
+        )
+
+    return jsonify({
+        "reply": ai_reply,
+        "crm_profile": updated_crm,
+        "handover_card_preview": handover_preview,
+    }), 200
+
+
+@app.route("/api/test_action", methods=["POST"])
+def api_test_action():
+    """供視覺化後台 (/admin) 切換測試方案、重置測試額度或發送測試轉接通知"""
+    data = request.get_json(silent=True) or {}
+    tid = str(data.get("tenant_id", "default")).strip() or "default"
+    action = str(data.get("action", "")).strip()
+    tenant_cfg = get_tenant_config(tid)
+
+    if action == "set_plan":
+        new_plan = str(data.get("plan", "free")).lower()
+        tenant_cfg["plan"] = new_plan
+        return jsonify({"status": "ok", "plan": new_plan}), 200
+
+    if action == "reset_quota":
+        ym = datetime.now(TW_TZ).strftime("%Y-%m")
+        with _memory_lock:
+            _tenant_usage_counters[tid] = {"year_month": ym, "count": 0}
+        return jsonify({"status": "ok", "monthly_usage": 0}), 200
+
+    if action == "test_alert":
+        client_name = tenant_cfg.get("client_name", CLIENT_NAME)
+        test_alert_msg = (
+            f"🔔【{client_name}｜後台一鍵推播測試】\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"👤 客人名稱：測試貴賓 (#TEST88)\n"
+            f"📋【3秒接管・問題摘要卡】：\n"
+            f"此為來自 SmartHost 視覺化後台 (/admin) 的測試推播！代表您的專人通知管道運作正常。"
+        )
+        for admin_id in list(tenant_cfg.get("admin_ids", set())):
+            send_messaging_api_push(tenant_cfg.get("channel_access_token", ""), admin_id, test_alert_msg)
+        if tenant_cfg.get("telegram_chat_id"):
+            send_telegram_alert(tenant_cfg["telegram_chat_id"], test_alert_msg)
+        return jsonify({"status": "ok", "alert_preview": test_alert_msg}), 200
+
+    return jsonify({"status": "error", "message": "Unknown action"}), 400
 
 
 @app.route("/cron/lifecycle", methods=["POST", "GET"])

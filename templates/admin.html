@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>視覺化狀態診斷與 AI 互動測試後台｜SmartHost 24H LINE 智慧管家</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
+
+  <!-- 頂部導覽列 -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <a href="/index.html" class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black">S</div>
+          <span class="font-extrabold text-white tracking-tight text-sm sm:text-base">SmartHost 視覺化狀態診斷與 AI 測試後台</span>
+        </a>
+        <span class="hidden sm:inline-block text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold">
+          🟢 系統連線正常
+        </span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- 租戶切換器 -->
+        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1">
+          <span class="text-xs text-slate-400">店家代號:</span>
+          <input type="text" id="tenant-input" value="default"
+            class="w-24 bg-transparent text-xs font-mono text-emerald-400 font-bold focus:outline-none" />
+          <button onclick="loadDashboardStatus()" class="text-xs px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white">切換</button>
+        </div>
+        <a href="/onboarding.html" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition">
+          + 新增/設定店家
+        </a>
+        <a href="/index.html" class="text-xs text-slate-400 hover:text-white transition">← 返回首頁</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+    <!-- 頂部 4 大核心指標卡片 (取代原本冰冷的 JSON 代碼) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <!-- 卡片 1：當前方案與綁定鎖定狀態 -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span>🏢 商家名稱與方案</span>
+          <span id="lock-pill" class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold">🔒 帳號防竄改已鎖定</span>
+        </div>
+        <div id="card-client-name" class="text-lg font-extrabold text-white truncate mb-1">澄光行旅 Lumina Hotel</div>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-800/80">
+          <span id="card-plan-name" class="text-xs font-bold text-cyan-400">方案 A：0 元體驗版</span>
+          <select id="plan-simulator" onchange="changeSimulatedPlan(this.value)" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200">
+            <option value="free">切換測試：方案 A (免費50次)</option>
+            <option value="basic">切換測試：方案 B (無限次)</option>
+            <option value="pro">切換測試：方案 C (專業版)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 卡片 2：本月 AI 對話額度進度條 -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span>💬 本月 AI 自動回覆已用次數</span>
+          <button onclick="resetQuotaCounter()" class="text-[11px] text-cyan-400 hover:underline">重置測試次數</button>
+        </div>
+        <div class="flex items-baseline gap-2 mb-2">
+          <span id="card-usage" class="text-2xl font-black text-emerald-400">0</span>
+          <span class="text-xs text-slate-400">/ <span id="card-quota">50 次 (方案 A)</span></span>
+        </div>
+        <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+          <div id="quota-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-300" style="width: 4%"></div>
+        </div>
+        <p id="quota-hint" class="text-[11px] text-slate-400 mt-2">✅ 額度充足，AI 24H 自動接待中</p>
+      </div>
+
+      <!-- 卡片 3：Google 試算表與防誤刪快照狀態 -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span>📊 Google 試算表知識庫</span>
+          <span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-semibold">3 層防呆 + 快照</span>
+        </div>
+        <div id="card-sheet-status" class="text-sm font-bold text-white mb-1">🟢 內建安全防呆知識庫運作中</div>
+        <p id="card-snapshot-info" class="text-xs text-slate-400 leading-relaxed mt-2">
+          🛡️ <strong>防誤刪保護已啟用</strong>：即使 Google 試算表遭誤刪，系統也會自動載入「最後一次正常快照」與預設值，AI 絕不當機。
+        </p>
+      </div>
+
+      <!-- 卡片 4：A+B+C 複合轉接通知管道狀態 -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span>🔔 A+B+C 專人轉接通道</span>
+          <button onclick="sendTestAlertPush()" id="btn-test-push" class="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition">
+            發送測試通知
+          </button>
+        </div>
+        <div class="space-y-1.5 text-xs mt-2">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-300">A. LINE Messaging API 推播：</span>
+            <span id="ch-line" class="font-bold text-emerald-400">已就緒</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-300">B. Telegram 免費無上限備援：</span>
+            <span id="ch-tg" class="font-bold text-slate-400">選填未設</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-300">C. 緊急通知 Email：</span>
+            <span id="ch-email" class="font-bold text-emerald-400">已啟用</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主工作區：左欄「AI 即時聊天模擬測試台」＋ 右欄「CRM 記憶與轉接摘要卡即時透視」 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- 左欄 (7 cols)：網頁版 AI 管家即時對話測試器 -->
+      <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col h-[560px]">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-extrabold text-white flex items-center gap-2">
+              <span>🤖</span>
+              <span>AI 管家即時對話測試台（免開手機 LINE 直接實測）</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+              在下方輸入任何多國語言問題、過敏偏好或「我要找真人客服」，立即測試 AI 回覆與記憶提取效果！
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="quickTestPrompt('我們隨行有小孩對花生嚴重過敏，預計下午 16:00 抵達')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 transition">
+              🥜 測試花生過敏記憶
+            </button>
+            <button onclick="quickTestPrompt('請問明天早餐幾點供應？有什麼需要注意的嗎？')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">
+              🍳 測試早餐主動提醒
+            </button>
+            <button onclick="quickTestPrompt('冷氣有點滴水，請幫我轉接真人客服處理')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-300 transition">
+              🚨 測試真人轉接摘要卡
+            </button>
+          </div>
+        </div>
+
+        <!-- 對話訊息捲動區 -->
+        <div id="chat-box" class="flex-1 overflow-y-auto py-4 space-y-4 pr-2">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-xs shrink-0">AI</div>
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl rounded-tl-sm p-3.5 text-xs sm:text-sm text-slate-200 max-w-[85%] leading-relaxed">
+              🏨 您好！我是您的 24H AI 智慧管家。您可以直接在下方輸入訊息測試我的回答，或是點擊上方快捷按鈕測試「花生過敏長期記憶」與「真人轉接 3 句話摘要卡」喔！
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部輸入框 -->
+        <form id="chat-form" class="pt-3 border-t border-slate-800 flex gap-2">
+          <input type="text" id="chat-input" placeholder="輸入測試訊息（支援中/英/日/韓/印尼/義文，例如：請問有停車位嗎？我要訂房）..."
+            class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400" />
+          <button type="submit" id="chat-send-btn"
+            class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-sm transition shrink-0">
+            發送測試
+          </button>
+        </form>
+      </div>
+
+      <!-- 右欄 (5 cols)：長期記憶 CRM 檔案 ＆ 3秒接管問題摘要卡預覽 -->
+      <div class="lg:col-span-5 space-y-6">
+        <!-- 長期記憶 (CRM Profile) 即時透視卡 -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+          <h3 class="text-base font-extrabold text-white mb-1 flex items-center gap-2">
+            <span>🧠</span>
+            <span>顧客雙層記憶與 CRM 自動歸戶透視</span>
+          </h3>
+          <p class="text-xs text-slate-400 mb-4">
+            當客人在對話中順口提到過敏、特殊需求或抵達時間，AI 會自動擷取並寫入長期記憶：
+          </p>
+
+          <div class="space-y-3 text-xs bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="flex justify-between">
+              <span class="text-slate-400">🥜 飲食過敏 / 禁忌註記：</span>
+              <span id="crm-allergies" class="font-bold text-amber-400">尚無紀錄</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">🛏️ 住宿偏好 / 特殊需求：</span>
+              <span id="crm-prefs" class="font-bold text-cyan-400">尚無紀錄</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">🕒 預計抵達 (Check-in) 時間：</span>
+              <span id="crm-arrival" class="font-bold text-emerald-400">尚未提供</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 句話轉接問題摘要卡即時預覽 -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+          <h3 class="text-base font-extrabold text-white mb-1 flex items-center gap-2">
+            <span>🚨</span>
+            <span>店長手機收到的「3 句話問題摘要卡」預覽</span>
+          </h3>
+          <p class="text-xs text-slate-400 mb-3">
+            此內容只會推播給店長（LINE / Telegram / Email），<strong>100% 隱藏不會讓客人看見 JSON 代碼</strong>：
+          </p>
+
+          <pre id="handover-preview" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-emerald-300 font-mono whitespace-pre-wrap leading-relaxed">（尚未觸發專人轉接，可點擊左側「🚨 測試真人轉接摘要卡」按鈕體驗）</pre>
+        </div>
+
+        <!-- 試算表知識庫目前生效內容預覽 -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-extrabold text-white">📋 目前生效的知識庫快照 (防誤刪備份)</h3>
+            <span class="text-[11px] text-emerald-400">即時同步中</span>
+          </div>
+          <div id="kb-preview" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 max-h-40 overflow-y-auto space-y-1">
+            載入知識庫快照中...
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTenant = urlParams.get("tenant_id") || "default";
+    document.getElementById("tenant-input").value = initialTenant;
+
+    async function loadDashboardStatus() {
+      const tid = document.getElementById("tenant-input").value.trim() || "default";
+      try {
+        const res = await fetch(`/api/status/${encodeURIComponent(tid)}?format=json`);
+        const data = await res.json();
+        if (!res.ok) return;
+
+        document.getElementById("card-client-name").textContent = data.client_name || tid;
+        const planLabels = {
+          free: "方案 A：0 元體驗版 (Free)",
+          basic: "方案 B：輕量訂閱版 (Basic)",
+          pro: "方案 C：專業自動化版 (Pro)"
+        };
+        document.getElementById("card-plan-name").textContent = planLabels[data.plan] || planLabels.free;
+        document.getElementById("plan-simulator").value = data.plan || "free";
+
+        const usage = data.monthly_usage || 0;
+        const isFree = (data.plan || "free") === "free";
+        document.getElementById("card-usage").textContent = usage;
+        document.getElementById("card-quota").textContent = isFree ? "50 次 (方案 A)" : "無限次 (Unlimited)";
+
+        const pct = isFree ? Math.min(100, Math.round((usage / 50) * 100)) : 15;
+        const bar = document.getElementById("quota-bar");
+        bar.style.width = `${Math.max(4, pct)}%`;
+        if (data.quota_exhausted) {
+          bar.className = "h-full bg-rose-500 transition-all duration-300";
+          document.getElementById("quota-hint").innerHTML = "<span class='text-rose-400 font-bold'>⚠️ 免費 50 次額度已滿，已自動切換為全真人轉接模式！</span>";
+        } else {
+          bar.className = "h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-300";
+          document.getElementById("quota-hint").textContent = "✅ 額度充足，AI 24H 自動接待中";
+        }
+
+        document.getElementById("card-sheet-status").textContent = data.sheet_status_label || "🟢 3 層防呆與快照備份運作中";
+
+        if (data.channels) {
+          document.getElementById("ch-line").textContent = data.channels.line_admin_push ? `🟢 已綁定 (${data.admin_count} 人)` : "🟡 待填入管理員LINE_ID";
+          document.getElementById("ch-tg").textContent = data.channels.telegram_push ? "🟢 已連線" : "⚪ 選填未設";
+          document.getElementById("ch-email").textContent = data.channels.email_alerts ? "🟢 已啟用" : "🟢 預設啟用";
+        }
+
+        if (data.kb_snapshot_preview && Array.isArray(data.kb_snapshot_preview)) {
+          document.getElementById("kb-preview").innerHTML = data.kb_snapshot_preview
+            .map(line => `<div class="truncate">• ${line}</div>`)
+            .join("");
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function changeSimulatedPlan(newPlan) {
+      const tid = document.getElementById("tenant-input").value.trim() || "default";
+      await fetch(`/api/test_action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: tid, action: "set_plan", plan: newPlan })
+      });
+      loadDashboardStatus();
+    }
+
+    async function resetQuotaCounter() {
+      const tid = document.getElementById("tenant-input").value.trim() || "default";
+      await fetch(`/api/test_action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: tid, action: "reset_quota" })
+      });
+      loadDashboardStatus();
+    }
+
+    async function sendTestAlertPush() {
+      const tid = document.getElementById("tenant-input").value.trim() || "default";
+      const btn = document.getElementById("btn-test-push");
+      btn.textContent = "發送中...";
+      try {
+        const res = await fetch(`/api/test_action`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant_id: tid, action: "test_alert" })
+        });
+        const data = await res.json();
+        document.getElementById("handover-preview").textContent = data.alert_preview || "已觸發測試通知！";
+      } finally {
+        btn.textContent = "已發送！";
+        setTimeout(() => { btn.textContent = "發送測試通知"; }, 2000);
+      }
+    }
+
+    function appendChatBubble(role, text) {
+      const box = document.getElementById("chat-box");
+      const wrap = document.createElement("div");
+      if (role === "user") {
+        wrap.className = "flex items-start justify-end gap-3";
+        wrap.innerHTML = `
+          <div class="bg-emerald-500 text-slate-950 font-medium rounded-2xl rounded-tr-sm p-3.5 text-xs sm:text-sm max-w-[85%] leading-relaxed"></div>
+          <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-200 font-bold flex items-center justify-center text-xs shrink-0">客人</div>
+        `;
+        wrap.children[0].textContent = text;
+      } else {
+        wrap.className = "flex items-start gap-3";
+        wrap.innerHTML = `
+          <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-xs shrink-0">AI</div>
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl rounded-tl-sm p-3.5 text-xs sm:text-sm text-slate-200 max-w-[85%] whitespace-pre-wrap leading-relaxed"></div>
+        `;
+        wrap.children[1].textContent = text;
+      }
+      box.appendChild(wrap);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendSimulatedChat(messageText) {
+      const tid = document.getElementById("tenant-input").value.trim() || "default";
+      appendChatBubble("user", messageText);
+      const sendBtn = document.getElementById("chat-send-btn");
+      sendBtn.disabled = true;
+      sendBtn.textContent = "AI 思考中...";
+
+      try {
+        const res = await fetch("/api/test_chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant_id: tid, message: messageText, user_id: "U_WEB_TEST_GUEST" })
+        });
+        const data = await res.json();
+        appendChatBubble("assistant", data.reply || "（無回應）");
+
+        if (data.crm_profile) {
+          document.getElementById("crm-allergies").textContent = (data.crm_profile.dietary_allergies || []).join("、") || "尚無紀錄";
+          document.getElementById("crm-prefs").textContent = (data.crm_profile.preferences || []).join("、") || "尚無紀錄";
+          document.getElementById("crm-arrival").textContent = data.crm_profile.estimated_arrival || "尚未提供";
+        }
+        if (data.handover_card_preview) {
+          document.getElementById("handover-preview").textContent = data.handover_card_preview;
+        }
+        loadDashboardStatus();
+      } catch (e) {
+        appendChatBubble("assistant", "連線測試異常，請稍後再試。");
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "發送測試";
+      }
+    }
+
+    function quickTestPrompt(text) {
+      document.getElementById("chat-input").value = text;
+      sendSimulatedChat(text);
+      document.getElementById("chat-input").value = "";
+    }
+
+    document.getElementById("chat-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = document.getElementById("chat-input");
+      const val = input.value.trim();
+      if (!val) return;
+      input.value = "";
+      sendSimulatedChat(val);
+    });
+
+    loadDashboardStatus();
+  </script>
+</body>
+</html>

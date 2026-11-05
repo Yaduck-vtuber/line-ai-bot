@@ -60,13 +60,13 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <button onclick="quickCreatorCustomerPreview()" class="text-xs px-3 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 font-bold">
+          <button type="button" onclick="quickCreatorCustomerPreview()" class="text-xs px-3 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 font-bold">
             👁️ 以前台會員視角開啟官網
           </button>
-          <button onclick="loadOverview()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold">
+          <button type="button" onclick="manualRefreshOverview()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold">
             🔄 重新整理
           </button>
-          <button onclick="creatorLogout()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 text-rose-300 font-semibold">
+          <button type="button" onclick="creatorLogout()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 text-rose-300 font-semibold">
             登出鎖定
           </button>
         </div>
@@ -112,25 +112,31 @@
         </button>
       </div>
 
-      <!-- 分頁 1：店家與客戶名單管理（可在這裡一鍵切換您自己 LINE 帳號的 A/B/C 方案，直接用手機 LINE 真實聊天測試！） -->
+      <!-- 分頁 1：店家與客戶名單管理（可在這裡直接填寫/修改您原本 LINE 帳號的表單知識庫、綁定店長 LINE 通知、切換 A/B/C 方案） -->
       <section id="tab-tenants" class="space-y-4">
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 leading-relaxed">
-          💡 <strong>如何在您自己的手機 LINE 測試不同方案？</strong><br/>
-          下方 <code>default</code>（或您開通的店家）可直接點擊下拉選單切換為 <strong>方案 A（單次問答）</strong>、<strong>方案 B（記住前 10 句聊天記憶）</strong> 或 <strong>方案 C（熟客過敏/偏好永久建檔）</strong>，切換後立即生效，直接打開您的手機 LINE 對機器人傳訊息即可真實測試！
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 leading-relaxed space-y-1.5">
+          <div>💡 <strong>1. 如何重新綁定您的 LINE 接收「專人客服通知」？</strong><br/>
+          現在只要打開您的手機 LINE，直接對這隻機器人輸入 <strong><code>/綁定店長</code></strong> 四個字，系統就會在 1 秒內把您的 LINE 設為店長通知接收人！綁定後可點下方「📨 發送專人通知測試」驗證。</div>
+          <div>💡 <strong>2. 如何用這隻原本的 LINE 帳號自己填看看表單並測試回覆？</strong><br/>
+          展開下方 <code>default</code> 店家的 <strong>「📝 直接填寫／修改這隻 LINE 帳號的店家問答表單（知識庫）」</strong>，填入您想測試的規定並按儲存；<strong>只要客人問了沒寫在表單裡的問題，AI 一律不會亂猜，並會立即轉接通知到您的 LINE！</strong></div>
         </div>
-        <div id="tenants-container" class="space-y-3"></div>
+        <div id="tenants-container" class="space-y-4"></div>
       </section>
 
-      <!-- 分頁 2：訂單與退費管理（含一鍵模擬訂單實測退費） -->
+      <!-- 分頁 2：訂單與退費管理（免彈窗，一鍵直接建立模擬訂單實測退費） -->
       <section id="tab-orders" class="hidden space-y-4">
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div class="text-slate-300 leading-relaxed">
+          <div class="text-slate-300 leading-relaxed max-w-xl">
             🧪 <strong>如何實測客戶「查詢購買紀錄」與「申請退費」流程？</strong><br/>
-            點擊右側「建立模擬付費訂單」，再點上方「👁️ 以前台會員視角開啟官網」➔ 點右上角「我的購買紀錄與設定」，就能親手點擊「申請取消訂閱 / 退費」，並回到這裡核銷退費！
+            在右側確認測試信箱後點擊「🧪 建立一筆模擬付費訂單」，即可立即在下方產生測試訂單；接著點頂部「👁️ 以前台會員視角開啟官網」，就能親手點擊「申請取消訂閱 / 退費」並回到這裡一鍵核銷退費！
           </div>
-          <button onclick="createSimulatedPaidOrder()" class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold shrink-0">
-            🧪 建立一筆模擬付費訂單（測試退費用）
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <input type="email" id="sim-order-email" value="creator@smarthost-ai.com" placeholder="輸入測試訂單信箱"
+              class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
+            <button type="button" onclick="createSimulatedPaidOrder()" class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold shrink-0 transition">
+              🧪 建立一筆模擬付費訂單（測試退費用）
+            </button>
+          </div>
         </div>
         <div id="orders-container" class="space-y-3"></div>
       </section>
@@ -174,28 +180,33 @@
           </div>
 
           <div class="border-t border-slate-800 pt-5">
-            <h3 class="text-base font-extrabold text-cyan-400 mb-1">2. Google 帳號一鍵登入設定 (Google OAuth Client ID)</h3>
-            <p class="text-xs text-slate-400 mb-3">
-              完全不需要上架 Google 商店！只要在 Google Cloud Console「API 和服務 ➔ 憑證」免費建立「OAuth 用戶端 ID（網頁應用程式）」貼入下方，官網即自動顯示官方 Google 一鍵登入按鈕。
-            </p>
+            <h3 class="text-base font-extrabold text-cyan-400 mb-1">2. Google 帳號一鍵登入設定 (Google OAuth Client ID — 選填)</h3>
+            <div class="text-xs text-slate-300 mb-3 bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1 leading-relaxed">
+              <div class="font-bold text-cyan-300">📌 Google Cloud Console 設定小抄（對應您的畫面）：</div>
+              <p>1. <strong>目標對象 (User Type)</strong>：請選擇 <strong>「外部 (External)」</strong> 並按下一步（選外部才能讓所有一般 Gmail 客人登入；完成後在「目標對象」頁點一下「發布應用程式」即可開放所有人免審核登入）。</p>
+              <p>2. <strong>建立用戶端 (Clients)</strong>：應用程式類型選 <strong>「網頁應用程式 (Web application)」</strong>，在「已授權的 JavaScript 來源」填入：<code class="text-emerald-400 select-all">https://line-ai-bot-530475721837.asia-east1.run.app</code></p>
+              <p>3. 複製產生出來的 <code>xxxx.apps.googleusercontent.com</code> 貼入下方並儲存，首頁的 Google 按鈕就會直接彈出官方 Google 帳號選擇視窗！</p>
+            </div>
             <input type="text" id="set-google-cid" placeholder="例如：1234567890-abcdefg.apps.googleusercontent.com"
               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono" />
           </div>
 
           <div class="border-t border-slate-800 pt-5">
-            <h3 class="text-base font-extrabold text-indigo-400 mb-1">3. 自動寄信信箱設定 (Gmail SMTP：寄送開通信、付款收據、6位數驗證碼)</h3>
-            <p class="text-xs text-slate-400 mb-3">
-              填入您的 Gmail 信箱與 Google 帳戶「兩步驟驗證 ➔ 應用程式密碼（16碼）」，系統即可全自動免費寄發所有官方通知信！
-            </p>
+            <h3 class="text-base font-extrabold text-indigo-400 mb-1">3. 自動寄信信箱設定 (Gmail 16 碼應用程式密碼 — 選填・不填也能正常營運！)</h3>
+            <div class="text-xs text-slate-300 mb-3 bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1 leading-relaxed">
+              <div class="font-bold text-indigo-300">❓ 什麼是「Gmail 16 碼應用程式密碼」？（此欄為選填，現在留空完全不影響網站與 LINE 機器人運作！）</div>
+              <p>• 為了保護您的個人信箱安全，Google 規定「網站自動寄信程式」不能填您平常登入 Gmail 的密碼，而是要填一組由 Google 專門簽發的「16 個英文字母專用代號」。</p>
+              <p>• <strong>日後若想啟用自動寄信怎麼拿？</strong>只要登入您的 Google 帳戶 ➔ 搜尋「<strong>應用程式密碼 (App passwords)</strong>」➔ 輸入名稱「SmartHost」點建立，Google 就會給您 16 個英文字母貼在這裡（不需要時留空即可）。</p>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <label class="block text-slate-300 font-semibold mb-1">發信 Gmail 信箱</label>
-                <input type="email" id="set-smtp-email" placeholder="yourname@gmail.com"
+                <label class="block text-slate-300 font-semibold mb-1">發信 Gmail 信箱 (選填)</label>
+                <input type="email" id="set-smtp-email" placeholder="yourname@gmail.com (選填)"
                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white" />
               </div>
               <div>
-                <label class="block text-slate-300 font-semibold mb-1">Gmail 16 碼應用程式密碼 <span id="smtp-pwd-badge" class="text-emerald-400"></span></label>
-                <input type="password" id="set-smtp-pwd" placeholder="不修改請留空"
+                <label class="block text-slate-300 font-semibold mb-1">Gmail 16 碼應用程式密碼 (選填) <span id="smtp-pwd-badge" class="text-emerald-400"></span></label>
+                <input type="password" id="set-smtp-pwd" placeholder="選填・不設定請留空"
                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono" />
               </div>
             </div>
@@ -315,41 +326,120 @@
 
       // Render Tenants
       const tBox = document.getElementById("tenants-container");
-      tBox.innerHTML = tenants.map(t => `
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 text-xs">
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-base font-extrabold text-white">${t.client_name}</span>
-              <span class="px-2 py-0.5 rounded bg-slate-800 font-mono text-cyan-300">${t.tenant_id}</span>
-              <span class="px-2 py-0.5 rounded ${t.has_line_keys ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-300'} font-bold">
-                ${t.has_line_keys ? '🟢 LINE 金鑰已連線' : '🟡 尚未貼入 LINE 金鑰'}
-              </span>
+      tBox.innerHTML = tenants.map(t => {
+        const boundIds = (t.admin_ids || []).join(", ");
+        const isBound = (t.admin_ids || []).length > 0;
+        const safeKb = (t.custom_kb_text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeLinks = (t.booking_links || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeSheet = (t.sheet_csv_url || "").replace(/"/g, "&quot;");
+        const safeEm = (t.alert_emails || []).join(", ").replace(/"/g, "&quot;");
+
+        return `
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-base font-extrabold text-white">${t.client_name}</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 font-mono text-cyan-300">${t.tenant_id}</span>
+                <span class="px-2 py-0.5 rounded ${t.has_line_keys ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-300'} font-bold">
+                  ${t.has_line_keys ? '🟢 LINE 金鑰已連線' : '🟡 尚未貼入 LINE 金鑰'}
+                </span>
+                <span class="px-2.5 py-0.5 rounded ${isBound ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'} font-extrabold">
+                  ${isBound ? `🔔 已綁定店長 LINE (${t.admin_count} 人)` : '⚠️ 尚未綁定店長 LINE（請在手機 LINE 輸入 /綁定店長）'}
+                </span>
+              </div>
+              <div class="text-slate-400">
+                Google 客戶帳號：<strong class="text-slate-200">${t.owner_email}</strong> ｜
+                緊急通知信箱：${(t.alert_emails || []).join(", ") || "-"} ｜
+                店長 LINE ID：<code class="text-emerald-400">${boundIds || "尚未綁定"}</code>
+              </div>
+              <div class="text-slate-400 font-mono">Webhook：${t.webhook_url}</div>
             </div>
-            <div class="text-slate-400">
-              Google 客戶帳號：<strong class="text-slate-200">${t.owner_email}</strong> ｜
-              緊急通知信箱：${(t.alert_emails || []).join(", ") || "-"} ｜
-              已綁定店長 LINE 數：<strong>${t.admin_count} 人</strong>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="testTenantLineNotify('${t.tenant_id}')"
+                class="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-extrabold transition">
+                📨 發送專人通知測試到 LINE
+              </button>
+
+              <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+                <span class="text-slate-400 mr-1">本月對話：</span>
+                <strong class="text-emerald-400 text-sm">${t.monthly_usage}</strong> 次
+                <button type="button" onclick="resetTenantQuota('${t.tenant_id}')" class="ml-2 text-cyan-400 hover:underline">歸零</button>
+              </div>
+
+              <select onchange="changeTenantPlan('${t.tenant_id}', this.value)"
+                class="bg-slate-950 border-2 border-emerald-500/50 rounded-xl px-3 py-2 font-extrabold text-white focus:outline-none">
+                <option value="free" ${t.plan === 'free' ? 'selected' : ''}>方案 A：0元版 (前3句完整記憶)</option>
+                <option value="basic" ${t.plan === 'basic' ? 'selected' : ''}>方案 B：輕量版 (前10句完整記憶)</option>
+                <option value="pro" ${t.plan === 'pro' ? 'selected' : ''}>方案 C：專業版 (前10句+熟客重點卡)</option>
+              </select>
             </div>
-            <div class="text-slate-400 font-mono">Webhook：${t.webhook_url}</div>
-            ${t.booking_links ? `<div class="text-slate-300">多組預約連結：${t.booking_links}</div>` : ""}
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
-              <span class="text-slate-400 mr-1">本月對話：</span>
-              <strong class="text-emerald-400 text-sm">${t.monthly_usage}</strong> 次
-              <button onclick="resetTenantQuota('${t.tenant_id}')" class="ml-2 text-cyan-400 hover:underline">歸零</button>
-            </div>
+          <!-- 展開直接填寫/測試這隻 LINE 帳號的「店家問答表單（知識庫）」與綁定設定 -->
+          <details class="bg-slate-950 border border-slate-800 rounded-xl p-4" ${t.tenant_id === 'default' ? 'open' : ''}>
+            <summary class="cursor-pointer font-extrabold text-emerald-400 text-xs sm:text-sm select-none">
+              📝 點此展開：直接填寫／修改「${t.client_name} (${t.tenant_id})」的問答表單知識庫 ＆ 專人通知綁定設定
+            </summary>
+            <div class="mt-4 space-y-3 pt-3 border-t border-slate-800">
+              <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-slate-300 leading-relaxed">
+                <div class="font-bold text-emerald-400 mb-1">💡 怎麼重新綁定您的 LINE 並測試這隻帳號的表單回答？</div>
+                <p>1. <strong>1 秒綁定店長 LINE 通知</strong>：直接拿起手機打開 LINE，對這隻機器人傳送 <strong><code>/綁定店長</code></strong> 四個字，就會自動把您的 LINE ID 寫入下方欄位！接著點右上角「📨 發送專人通知測試到 LINE」即可收到測試通知。</p>
+                <p>2. <strong>100% 依下方表單回答（沒寫的問題自動轉真人）</strong>：您可以在下方「店家問答表單知識庫」直接打字修改規定（一行一項，格式為 <code>項目：內容</code>），按儲存後馬上就能在手機 LINE 實測！<strong>只要客人問了下方沒寫到的問題，AI 絕對不會亂編，並會立刻把問題推播給您！</strong></p>
+              </div>
 
-            <select onchange="changeTenantPlan('${t.tenant_id}', this.value)"
-              class="bg-slate-950 border-2 border-emerald-500/50 rounded-xl px-3 py-2 font-extrabold text-white focus:outline-none">
-              <option value="free" ${t.plan === 'free' ? 'selected' : ''}>方案 A：0元版 (前3句短記憶)</option>
-              <option value="basic" ${t.plan === 'basic' ? 'selected' : ''}>方案 B：輕量版 (前10句記憶)</option>
-              <option value="pro" ${t.plan === 'pro' ? 'selected' : ''}>方案 C：專業版 (前10句+熟客重點卡)</option>
-            </select>
-          </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">商家 / 品牌名稱</label>
+                  <input type="text" id="adm-name-${t.tenant_id}" value="${t.client_name.replace(/"/g, '&quot;')}"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">已綁定店長 LINE User ID (U開頭，可逗號分隔多位)</label>
+                  <input type="text" id="adm-uid-${t.tenant_id}" value="${boundIds}" placeholder="在手機 LINE 輸入 /綁定店長 自動帶入，或手動貼入 U..."
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-emerald-300 font-mono" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">緊急通知 Email (最多 3 組，逗號分隔)</label>
+                  <input type="text" id="adm-em-${t.tenant_id}" value="${safeEm}" placeholder="a@gmail.com, b@gmail.com"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <label class="text-emerald-300 font-extrabold">📋 店家問答表單知識庫（AI 僅回答此處與 Google 試算表有寫的內容；未寫的問題一律轉接專人！）</label>
+                  <button type="button" onclick="fillSampleTemplate('${t.tenant_id}')" class="text-[11px] px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold">
+                    ✨ 載入防出錯標準填寫範本
+                  </button>
+                </div>
+                <textarea id="adm-kb-${t.tenant_id}" rows="8"
+                  class="w-full bg-slate-900 border border-emerald-500/40 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono leading-relaxed focus:outline-none focus:border-emerald-400">${safeKb}</textarea>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">多組預約 / 訂房 / 菜單連結（一行一組）</label>
+                  <textarea id="adm-links-${t.tenant_id}" rows="2" placeholder="線上預約：https://..."
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">${safeLinks}</textarea>
+                </div>
+                <div>
+                  <label class="block text-slate-400 font-semibold mb-1">外部 Google 試算表 CSV 網址（選填，可與上方表單並用）</label>
+                  <input type="url" id="adm-sheet-${t.tenant_id}" value="${safeSheet}" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+              </div>
+
+              <button type="button" onclick="saveTenantDetailsFromAdmin('${t.tenant_id}')"
+                class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm transition shadow-lg">
+                💾 儲存「${t.client_name}」表單知識庫與通知綁定設定（立即生效）
+              </button>
+            </div>
+          </details>
         </div>
-      `).join("");
+        `;
+      }).join("");
 
       // Render Orders
       const oBox = document.getElementById("orders-container");
@@ -415,6 +505,59 @@
       document.getElementById("set-service-hours").value = s.official_service_hours || "";
     }
 
+    async function manualRefreshOverview() {
+      showToast("🔄 正在同步最新店家、訂單與設定資料...");
+      await loadOverview();
+      showToast("✅ 已同步最新店家、訂單與設定資料！");
+    }
+
+    function fillSampleTemplate(tid) {
+      const sample = [
+        "營業時間與入住退房規定：每日 15:00 後辦理入住 (Check-in)，隔日 11:00 前辦理退房 (Check-out)；櫃檯服務時間為 08:00–22:00。",
+        "房型與服務價目表：標準雙人房每晚 NT$ 2,800（含 2 客早餐）、海景四人房每晚 NT$ 4,600（含 4 客早餐）；假日每晚加價 NT$ 600。",
+        "停車與交通指引：本館 B1 設有免費平面停車場（限高 2.1 公尺，共 15 個車位，採先到先停無法保留車位）。距離捷運忠孝敦化站 6 號出口步行 3 分鐘。",
+        "早餐與餐飲規定：早餐供應時間為 07:30–10:00 於 2F 餐廳。若有花生過敏或蛋奶素需求，請於入住前告知，廚房可協助替換餐點。",
+        "店家不提供項目與限制：本館全面禁菸、禁止攜帶寵物入住、不提供嬰兒床與加床服務、亦不提供 22:00 後之延遲入住接待。",
+        "預約與退改規定：入住前 7 日以上可免費取消；入住前 1–6 日取消扣訂金 50%；當日取消恕不退還訂金。"
+      ].join("\n");
+      const el = document.getElementById(`adm-kb-${tid}`);
+      if (el) el.value = sample;
+      showToast("✨ 已載入防出錯標準填寫範本！您可自由修改文字後點擊下方「儲存」立即生效！");
+    }
+
+    async function saveTenantDetailsFromAdmin(tid) {
+      const payload = {
+        action: "update_tenant_details",
+        tenant_id: tid,
+        client_name: document.getElementById(`adm-name-${tid}`).value.trim(),
+        admin_user_id: document.getElementById(`adm-uid-${tid}`).value.trim(),
+        alert_emails: document.getElementById(`adm-em-${tid}`).value.trim(),
+        custom_kb_text: document.getElementById(`adm-kb-${tid}`).value.trim(),
+        booking_links: document.getElementById(`adm-links-${tid}`).value.trim(),
+        sheet_csv_url: document.getElementById(`adm-sheet-${tid}`).value.trim()
+      };
+      const res = await creatorFetch("/api/creator/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showToast(data.message || "✅ 設定已儲存！");
+      await loadOverview();
+    }
+
+    async function testTenantLineNotify(tid) {
+      showToast("📨 正在發送測試專人通知至您的 LINE...");
+      const res = await creatorFetch("/api/creator/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test_line_notify", tenant_id: tid })
+      });
+      const data = await res.json();
+      showToast(data.message || "測試完成");
+      await loadOverview();
+    }
+
     async function changeTenantPlan(tid, newPlan) {
       const res = await creatorFetch("/api/creator/action", {
         method: "POST",
@@ -438,27 +581,29 @@
     }
 
     async function createSimulatedPaidOrder() {
-      const email = prompt("請輸入要綁定這筆測試訂單的信箱（用來讓您在前台測試『查看購買紀錄』與『申請退費』）：", document.getElementById("set-contact-email").value || "creator@smarthost-ai.com");
-      if (!email) return;
+      const emailInput = document.getElementById("sim-order-email");
+      const email = (emailInput && emailInput.value.trim()) || document.getElementById("set-contact-email").value.trim() || "creator@smarthost-ai.com";
       const res = await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create_test_paid_order", email, plan: "pro" })
       });
-      if (res.ok) {
-        showToast(`🧪 已為 ${email} 建立一筆模擬付費訂單！可點右上角「以前台會員視角開啟官網」實測退費！`);
-        loadOverview();
+      const data = await res.json();
+      if (res.ok && data.order) {
+        showToast(`🧪 已成功為 ${email} 建立模擬付費訂單【${data.order.order_id}】！現在可點頂部「👁️ 以前台會員視角開啟官網」實測退費！`);
+        await loadOverview();
+      } else {
+        showToast("❌ 建立模擬訂單失敗，請重新整理後再試。");
       }
     }
 
     async function markOrderRefunded(orderId) {
-      if (!confirm(`確定將訂單 ${orderId} 標記為「已完成退費」並發送通知信給客戶嗎？`)) return;
       await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "mark_order_refunded", order_id: orderId })
       });
-      showToast(`✅ 訂單 ${orderId} 已完成退費核銷！`);
+      showToast(`✅ 訂單 ${orderId} 已完成退費核銷並將店家切換回方案 A（0 元免費版）！`);
       loadOverview();
     }
 
@@ -472,7 +617,9 @@
     }
 
     async function quickCreatorCustomerPreview() {
-      const email = document.getElementById("set-contact-email").value || "creator@smarthost-ai.com";
+      const emailInput = document.getElementById("sim-order-email");
+      const email = (emailInput && emailInput.value.trim()) || document.getElementById("set-contact-email").value.trim() || "creator@smarthost-ai.com";
+      showToast(`👁️ 正在以測試會員（${email}）身分開啟前台官網與購買紀錄中心...`);
       const res = await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -480,9 +627,12 @@
       });
       const data = await res.json();
       if (data && data.token) {
-        try { localStorage.setItem("smarthost_user_token", data.token); } catch (e) {}
+        try {
+          localStorage.setItem("smarthost_user_token", data.token);
+          localStorage.setItem("open_portal", "1");
+        } catch (e) {}
       }
-      window.open("/index.html", "_blank");
+      window.location.href = "/index.html";
     }
 
     document.getElementById("platform-settings-form").addEventListener("submit", async (e) => {

@@ -273,19 +273,27 @@
         </div>
       </div>
 
-      <!-- 歐盟 AI 法案與服務免責警告框 (全 5 國語系翻譯) -->
-      <div class="mt-14 bg-amber-500/5 border border-amber-500/30 rounded-2xl p-6 text-xs sm:text-sm text-slate-300 leading-relaxed">
+      <!-- 歐盟 AI 法案、跨國匯率差額聲明、方案升級先退款機制與完整合約 (全 5 國語系翻譯) -->
+      <div class="mt-14 bg-amber-500/5 border border-amber-500/30 rounded-2xl p-6 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-3">
         <div class="flex items-start gap-3">
           <span class="text-xl">⚖️</span>
-          <div>
-            <h4 class="font-bold text-amber-400 mb-1" data-i18n="legal_title">
+          <div class="space-y-2">
+            <h4 class="font-bold text-amber-400" data-i18n="legal_title">
               歐盟 AI 法案第 50 條透明度聲明、SLA 99.5% 可用性保證與自助退費規範
             </h4>
             <p data-i18n="legal_body" class="text-slate-400">
-              1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶 AI 輔助回覆標示，明確告知消費者正與人工智慧系統互動。<br/>
-              2. <strong>服務可用性（99.5% SLA）與試算表防刪快照</strong>：系統內建 Google 試算表安全快照備份；萬一試算表遭誤刪，AI 仍會自動使用最後一次完整快照繼續服務。<br/>
-              3. <strong>安全金流與隨時退訂規定</strong>：付款全程透過 PayPal 官方加密收銀台完成，本站不儲存任何信用卡號。您可隨時登入「我的購買紀錄與設定」查詢訂單、一鍵取消訂閱或申請退費。
+              1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶 AI 輔助回覆標示與保留記憶句數提醒（方案 A 完整記錄前 3 句／方案 B・C 完整記錄前 10 句），且僅依據店家填寫之表單回答；表單未記載之問題一律自動轉接真人客服。<br/>
+              2. <strong>跨國幣別匯率差額與發卡行手續費聲明（Currency & FX Notice）</strong>：本平台基準結算幣別為<strong>新臺幣（TWD：方案 B NT$ 1,680／月、方案 C NT$ 2,980／月）</strong>。外語頁面所列之 USD / JPY / IDR / EUR 金額為匯率估算參考值；實際扣款依 PayPal 收銀台顯示幣別及您發卡銀行當日即時匯率換算（可能產生匯率差額或跨國刷卡手續費）。<br/>
+              3. <strong>方案升級「先退當月原方案、再扣新方案」與隨時退訂保障</strong>：若您於當月由方案 B 升級至方案 C，完成方案 C 付款後系統將<strong>自動把當月原方案 B 已付全額款項標記優先退刷回您的原付款帳戶</strong>！您亦可隨時於右上角「我的購買紀錄與設定」一鍵取消訂閱或申請退費。
             </p>
+            <div class="pt-1 flex flex-wrap gap-3">
+              <button type="button" onclick="openLegalTermsModal()" class="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-extrabold text-xs transition">
+                📜 點此查閱完整《服務條款、退款條件、跨國匯率差額聲明暨 Google/AI 資料授權合約》
+              </button>
+              <a href="#contact" onclick="prefillBugReport()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs transition">
+                🐞 系統錯誤或功能建議回報 →
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -338,6 +346,11 @@
             <div>
               <div class="text-slate-400" data-i18n="contact_hours_lbl">🕒 專人服務時間：</div>
               <div id="public-service-hours" class="font-semibold text-slate-200">週一至週五 09:30–18:30 (GMT+8)｜AI 客服 24H 全年無休</div>
+            </div>
+            <div class="pt-2 border-t border-slate-800">
+              <button type="button" onclick="prefillBugReport()" class="w-full py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition">
+                🐞 點此快速帶入「錯誤回報 / 功能建議」主旨（或於 LINE 輸入 /回報）
+              </button>
             </div>
           </div>
         </div>
@@ -455,9 +468,9 @@
     </div>
   </div>
 
-  <!-- ================= 彈窗 2：PayPal 正式安全結帳彈窗 (已徹底移除「先免付款測試」按鈕) ================= -->
-  <div id="paypal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+  <!-- ================= 彈窗 2：PayPal 正式安全結帳彈窗 (含台幣基準匯率警語、升級先退款提示、必勾合約與完成付款確認鈕) ================= -->
+  <div id="paypal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative my-6">
       <button type="button" onclick="closePayPalModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-10 rounded-xl bg-[#FFC439]/20 border border-[#FFC439]/40 flex items-center justify-center text-xl">💳</div>
@@ -466,17 +479,88 @@
           <p id="paypal-plan-summary" class="text-xs text-emerald-400 font-bold"></p>
         </div>
       </div>
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 space-y-1 mb-5">
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 space-y-1 mb-3">
         <div><span class="text-slate-400">Google 購買帳號：</span><strong id="pp-buyer-email" class="text-white"></strong></div>
         <div><span class="text-slate-400">專屬訂單編號：</span><strong id="pp-order-id" class="text-cyan-400 font-mono"></strong></div>
+        <div id="pp-upgrade-notice" class="hidden text-emerald-400 font-bold pt-1">
+          🔄 系統偵測到您正由方案 B 升級至方案 C：完成付款後，系統將依約優先為您辦理當月原方案 B 款項退刷！
+        </div>
       </div>
-      <p data-i18n="pp_desc" class="text-xs text-slate-300 mb-5 leading-relaxed">
-        點擊下方按鈕將前往 PayPal 官方加密收銀台（支援信用卡或 PayPal 付款）。完成付款後系統將自動寄發扣款憑證信並引導您進入開通頁面：
+
+      <!-- 匯率差額與台幣基準結算警語 -->
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-[11px] text-amber-200 leading-relaxed mb-3">
+        💱 <strong>結帳幣別與匯率差額提醒：</strong>本站收款連結以<strong>新臺幣（TWD：方案 B NT$ 1,680 / 方案 C NT$ 2,980）</strong>為基準計價。若您使用非新臺幣信用卡或外幣 PayPal 帳戶付款，PayPal 或您的發卡銀行將依當日即時匯率自動換算，可能產生些微匯率差額或跨國刷卡手續費。
+      </div>
+
+      <!-- 強制勾選服務條款與退款合約 -->
+      <label class="flex items-start gap-2.5 text-xs text-slate-200 bg-slate-950 border border-slate-800 rounded-xl p-3 mb-4 cursor-pointer">
+        <input type="checkbox" id="pp-agree-terms" checked class="mt-0.5 w-4 h-4 accent-emerald-500 shrink-0" />
+        <span>
+          我已詳細閱讀並同意
+          <button type="button" onclick="openLegalTermsModal()" class="text-emerald-400 underline font-bold">《服務條款、7日退款條件、方案升級先退後扣規範、匯率差額聲明暨 Google/AI 資料授權合約》</button>
+        </span>
+      </label>
+
+      <p data-i18n="pp_desc" class="text-xs text-slate-300 mb-3 leading-relaxed">
+        點擊下方黃色按鈕將開啟 PayPal 官方加密收銀台（支援信用卡或 PayPal 付款）：
       </p>
-      <a id="paypal-checkout-link" href="#"
-        class="block w-full text-center py-4 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold text-sm shadow-lg transition">
-        🔒 前往 PayPal 官方安全付款 ↗
-      </a>
+      <div class="space-y-2.5">
+        <a id="paypal-checkout-link" href="#" target="_blank" rel="noopener noreferrer" onclick="return checkTermsBeforePayPal()"
+          class="block w-full text-center py-3.5 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold text-sm shadow-lg transition">
+          🔒 1. 前往 PayPal 官方安全付款 (開啟新分頁) ↗
+        </a>
+        <a id="paypal-confirm-return-link" href="#"
+          class="block w-full text-center py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 font-extrabold text-xs transition">
+          ✅ 2. 已於 PayPal 分頁完成付款？點此確認並進入 LINE 開通頁面 →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 彈窗 4：完整法律條款、退款條件、升級先退款與 Google/AI 資料授權合約 ================= -->
+  <div id="legal-terms-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto text-xs sm:text-sm text-slate-300 leading-relaxed space-y-4">
+      <button type="button" onclick="closeLegalTermsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
+      <h3 class="text-lg sm:text-xl font-extrabold text-white border-b border-slate-800 pb-3">
+        📜 SmartHost 服務條款、退款與方案升級規範、跨國匯率聲明暨 Google/AI 資料授權合約
+      </h3>
+
+      <div class="space-y-3">
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <h4 class="font-bold text-emerald-400 mb-1">第一條：退款條件與消費者保護規範（Refund & Cancellation Conditions）</h4>
+          <p>1. <strong>7 日猶豫期全額退費條件</strong>：凡首次付費訂閱方案 B 或方案 C 之客戶，自付款日起算 <strong>7 日內</strong>，若該店家頻道累積使用 AI 自動回覆未滿 20 次，得隨時於官網右上角「我的購買紀錄與設定」一鍵申請全額退費，無須負擔任何違約金。</p>
+          <p class="mt-1">2. <strong>使用期間內可申請退費之法定條件</strong>：(a) 因本平台系統故障導致當月累計停止服務超過 24 小時；(b) 因重複扣款或帳務異常經查證屬實；(c) 辦理方案升級（由方案 B 升級至方案 C）時之原方案當月款項退還。</p>
+          <p class="mt-1">3. <strong>隨時取消下期續訂權利</strong>：若當月已使用超過 7 日或超過 20 次 AI 回覆，客戶仍可隨時一鍵取消訂閱；取消後將立即停止下期自動扣款，絕無綁約。</p>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <h4 class="font-bold text-cyan-400 mb-1">第二條：方案升級「先退還當月原方案款項、再扣新方案費用」規範</h4>
+          <p>當客戶於同一計費週期內由「方案 B（NT$ 1,680／月）」升級至「方案 C（NT$ 2,980／月）」時，為保障客戶權益並確保金流帳務清晰，採行<strong>「先退還當月原方案款項，再收取新方案費用」</strong>原則：當您完成方案 C 付款時，系統會自動將您當月已支付之方案 B 訂單標記為「升級優先全額退還（Upgrade Refund）」，由平台透過 PayPal 原付款管道退還當月原方案 B 款項。</p>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <h4 class="font-bold text-amber-400 mb-1">第三條：PayPal 新臺幣（TWD）基準結算與跨國匯率差額警語</h4>
+          <p>本平台所有付費方案均以<strong>新臺幣（TWD：方案 B NT$ 1,680、方案 C NT$ 2,980）</strong>為法定基準結算貨幣。外語介面（英／日／印尼／義文）所展示之美元（USD）、日圓（JPY）、印尼盾（IDR）及歐元（EUR）標價為依近期匯率換算之參考值。若買方以非新臺幣信用卡或外幣 PayPal 帳戶支付，實際扣款與退費金額悉依 PayPal 或發卡機構當日結匯匯率計算，因國際匯率波動產生之匯差或跨國交易手續費由買方發卡銀行依約計收。</p>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <h4 class="font-bold text-indigo-400 mb-1">第四條：AI 依表單知識庫回覆原則、未知問題轉真人與免責聲明</h4>
+          <p>1. 本系統採用 Google Gemini 生成式 AI 技術，嚴格設定為<strong>「僅依據店家於 Google 試算表或後台表單明確填寫之資訊回答」</strong>，對於表單未記載之問題將自動回覆「已通知專人客服確認」並推播予店家接手。</p>
+          <p class="mt-1">2. 店家應確保所填寫之價格、營業時間及「店家不提供項目與限制」真實完整。本平台提供技術託管服務，不介入店家與其終端消費者間之商品或住宿交易糾紛；本平台依法所負之累計損害賠償責任上限，以該店家當月實際支付予本平台之訂閱費用為限。</p>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+          <h4 class="font-bold text-rose-300 mb-1">第五條：Google 帳號權限、試算表讀取與短期／熟客記憶個資保護</h4>
+          <p>1. <strong>Google 權限最小化原則</strong>：本網站之 Google 登入僅取得您的公開基本資訊（Email 與顯示名稱）以綁定購買紀錄；Google 試算表僅讀取您主動設定為公開連結之知識庫表格，絕不存取您 Google 雲端硬碟之其他私人檔案。</p>
+          <p class="mt-1">2. <strong>對話記憶與隱私保護</strong>：方案 A 完整記錄最近 3 句對話、方案 B 與 C 完整記錄最近 10 句對話（超過句數自動清除，且於每則回覆底部明確告知消費者）；方案 C 僅萃取過敏禁忌與住宿偏好等重點需求句子寫入店家專屬客戶表，符合歐盟 AI 法案第 50 條與個資保護規範。</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button type="button" onclick="closeLegalTermsModal()" class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm">
+          我已閱讀並了解
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1244,7 +1328,7 @@
           return;
         }
         if (data.status === "payment_not_configured") {
-          alert(data.message);
+          openAuthMsgBanner(data.message);
           return;
         }
         if (planKey === "free" && data.next_url) {
@@ -1254,17 +1338,70 @@
         if (data.checkout_url && data.order) {
           const planTitle = planKey === "pro" ? dict.plan3_name : dict.plan2_name;
           const priceStr = planKey === "pro" ? dict.plan3_price : dict.plan2_price;
-          document.getElementById("paypal-plan-summary").textContent = `${planTitle} — ${priceStr}${dict.price_unit}`;
+          const twdBase = planKey === "pro" ? "NT$ 2,980 TWD" : "NT$ 1,680 TWD";
+          document.getElementById("paypal-plan-summary").textContent = `${planTitle} — ${priceStr}${dict.price_unit} (基準結算: ${twdBase})`;
           document.getElementById("pp-buyer-email").textContent = currentUser.email;
           document.getElementById("pp-order-id").textContent = data.order.order_id;
+          const upgEl = document.getElementById("pp-upgrade-notice");
+          if (upgEl) {
+            upgEl.classList.toggle("hidden", !data.order.upgrade_from_order_id);
+          }
           document.getElementById("paypal-checkout-link").href = data.checkout_url;
+          const confirmLink = document.getElementById("paypal-confirm-return-link");
+          if (confirmLink && data.confirm_return_url) {
+            confirmLink.href = data.confirm_return_url;
+          }
           const modal = document.getElementById("paypal-modal");
           modal.classList.remove("hidden");
           modal.classList.add("flex");
         }
       } catch (e) {
-        alert("建立訂單連線異常，請稍後重試。");
+        openAuthMsgBanner("建立訂單連線異常，請稍後重試。");
       }
+    }
+
+    function checkTermsBeforePayPal() {
+      const chk = document.getElementById("pp-agree-terms");
+      if (chk && !chk.checked) {
+        openAuthMsgBanner("⚠️ 請先勾選同意《服務條款、退款條件、匯率差額聲明暨 Google/AI 資料授權合約》後再前往付款！");
+        return false;
+      }
+      return true;
+    }
+
+    function openLegalTermsModal() {
+      const m = document.getElementById("legal-terms-modal");
+      m.classList.remove("hidden");
+      m.classList.add("flex");
+    }
+
+    function closeLegalTermsModal() {
+      const m = document.getElementById("legal-terms-modal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+
+    function prefillBugReport() {
+      const subj = document.getElementById("contact-subject");
+      const msg = document.getElementById("contact-message");
+      if (subj) subj.value = "【系統錯誤 / 功能建議回報】";
+      if (msg && !msg.value) {
+        msg.value = "您好，我想回報以下問題或建議：\n1. 發生頁面或 LINE 對話內容：\n2. 期待改善方式：";
+        msg.focus();
+      }
+    }
+
+    function openAuthMsgBanner(text) {
+      let bar = document.getElementById("site-top-toast");
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "site-top-toast";
+        bar.className = "fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border-2 border-emerald-400 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold max-w-lg text-center";
+        document.body.appendChild(bar);
+      }
+      bar.textContent = text;
+      bar.classList.remove("hidden");
+      setTimeout(() => bar.classList.add("hidden"), 5000);
     }
 
     function closePayPalModal() {
@@ -1395,22 +1532,20 @@
     }
 
     async function requestOrderRefund(orderId) {
-      const reason = prompt("請輸入取消訂閱或申請退費原因（送出後將立即降級回 0 元版並寄送確認信）：", "申請取消訂閱與退費");
-      if (reason === null) return;
       const res = await userFetch("/api/orders/cancel_or_refund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId, reason })
+        body: JSON.stringify({ order_id: orderId, reason: "客戶於會員中心點擊一鍵申請取消訂閱 / 退費" })
       });
       const data = await res.json();
-      alert(data.message || "已送出申請");
+      openAuthMsgBanner(data.message || "✅ 已送出退訂與退費申請！");
       await loadPublicAndAuth();
     }
 
     async function sendResetKeyOtp() {
       const res = await userFetch("/api/account/send_security_otp", { method: "POST" });
       const data = await res.json();
-      alert(data.creator_test_code ? `${data.message}\n(創建者預覽驗證碼: ${data.creator_test_code})` : (data.message || "已發送驗證碼"));
+      openAuthMsgBanner(data.creator_test_code ? `${data.message} (預覽驗證碼: ${data.creator_test_code})` : (data.message || "已發送驗證碼"));
     }
 
     async function saveStoreSettings(tid) {
@@ -1438,7 +1573,7 @@
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      alert(data.message || "更新完成");
+      openAuthMsgBanner(data.message || "✅ 店家設定更新完成！");
       if (res.ok) await loadPublicAndAuth();
     }
 

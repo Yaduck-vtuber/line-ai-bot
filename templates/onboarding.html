@@ -266,6 +266,31 @@
               <input type="url" id="sheet_csv_url" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
             </div>
+
+            <!-- 新增：直接在網頁填寫店家問答與禁忌清單 + 防出錯填寫指南 -->
+            <div class="bg-slate-950/95 border border-emerald-500/30 rounded-xl p-4 space-y-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <label class="text-xs font-extrabold text-emerald-400">
+                  📝 直接填寫店家問答表單與不接受事項（可搭配或取代 Google 試算表・零幻覺防答錯）
+                </label>
+                <button type="button" onclick="fillStandardKbTemplateOnboard()"
+                  class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold transition">
+                  ✨ 點此載入防出錯標準填寫範本
+                </button>
+              </div>
+              <textarea id="custom_kb_text" rows="5"
+                placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。&#10;⚠️ 嚴格防答錯保護：只要沒寫在這裡或 Google 試算表內的問題，AI 一律回答『將為您轉交專人客服處理』並立即通知您，絕不亂編答案！"
+                class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+              <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed space-y-1">
+                <div class="font-bold text-amber-300">💡 怎麼填寫最不會出錯？推薦填寫以下 6 大黃金欄位（Google 試算表亦同）：</div>
+                <div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div>
+                <div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額（勿只寫「依現場為主」）。</div>
+                <div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div>
+                <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
+                <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div>
+                <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：客人問任何沒寫在表單裡的問題，或主動要求找真人，AI 都會百分之百轉交給您，絕不擅自承諾！</div>
+              </div>
+            </div>
           </div>
 
           <button type="submit" id="submit-btn" data-i18n="btn_submit"
@@ -1077,7 +1102,25 @@
     function copyWebhookUrl() {
       const input = document.getElementById("generated-webhook-url");
       navigator.clipboard.writeText(input.value);
-      alert("✅ Webhook URL Copied!");
+      const btn = document.querySelector("button[onclick='copyWebhookUrl()']");
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = "✅ 已複製！";
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+      }
+    }
+
+    function fillStandardKbTemplateOnboard() {
+      const el = document.getElementById("custom_kb_text");
+      if (!el) return;
+      el.value = [
+        "【營業時間與入住退房規定】：入住時間 15:00 後，退房時間 11:00 前；櫃檯服務時間 08:00-22:00。",
+        "【房型與服務價目表】：標準雙人房平日 NT$2,200 / 假日 NT$2,800；四人家庭房平日 NT$3,600 / 假日 NT$4,500。",
+        "【停車與交通指引】：本館附設免費平面停車場（車位有限採先到先停），距離捷運站步行約 5 分鐘。",
+        "【早餐與餐飲規定】：住宿均附中西式自助早餐（供應時間 07:00-10:00）。",
+        "【店家不提供項目與禁忌規定】：全館嚴禁吸菸、禁止攜帶寵物入住、不提供加床服務、22:00 後謝絕訪客。",
+        "【預約與退改規定】：入住前 7 日可免費取消；3 日內取消收取首晚 50% 手續費。"
+      ].join("\n");
     }
 
     document.getElementById("onboarding-form").addEventListener("submit", async (e) => {
@@ -1100,6 +1143,7 @@
       ].filter(Boolean);
       const bookingLinks = document.getElementById("booking_links").value.trim();
       const sheetCsvUrl = document.getElementById("sheet_csv_url").value.trim();
+      const customKbText = (document.getElementById("custom_kb_text")?.value || "").trim();
 
       const notifyChannels = [];
       if (document.getElementById("chk_notify_line").checked) notifyChannels.push("LINE");
@@ -1148,6 +1192,7 @@
             notify_channels: notifyChannels,
             booking_links: bookingLinks,
             sheet_csv_url: sheetCsvUrl,
+            custom_kb_text: customKbText,
             plan: plan,
             order_id: orderId
           })

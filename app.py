@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 import logging
@@ -132,35 +133,33 @@ def build_system_instruction() -> str:
 1. 【簡短易讀】：手機螢幕空間有限，每封回覆控制在 3-5 句內，並善用適當換行，嚴禁輸出長篇大論。
 2. 【視覺標記】：每段訊息開頭適度運用 Emoji（如 🏨、🔑、🚗、⏰、💡），增加手機閱讀的親和力與視覺焦點。
 3. 【語言自動切換（含亞洲與歐洲全語系）】：自動偵測旅客輸入的語言，包含亞洲語系（繁中、簡中、英文、日文、韓文、泰文、越南文）與歐洲語系（法文 Français、德文 Deutsch、西班牙文 Español、義大利文 Italiano、葡萄牙文、荷蘭文等），並一律用「相同的語言」進行親切回覆。
+4. 【禁止輸出程式區塊】：請只輸出給旅客閱讀的自然語言文字與提示標籤，嚴禁在回覆中顯示任何 JSON 或程式碼區塊。
 
 # KNOWLEDGE BASE (知識庫)
 所有回答必須 100% 嚴格基於以下資料，不可憑空臆測：
 {kb_content}
 
 # BOUNDARIES & HUMAN ESCALATION (轉接真人機制)
-1. 遇以下狀況，請禮貌告知並立即觸發專人通知（同時在訊息末端附上隱藏 JSON 且設定 "need_human": true）：
+1. 遇以下狀況，請禮貌告知並轉接專人：
    - 旅客主動要求找真人（例如提及：「轉接真人、找客服、人工客服、專人服務、Human agent、Speak to staff」等）。
    - 詢問資料庫未記載的特殊折扣、房間設施故障（如冷氣滴水、斷水斷電等）、緊急醫療求助、複雜退款或投訴。
    - 觸發自訂轉接關鍵字：轉接真人、找客服、人工客服、專人服務、設施故障、冷氣滴水、特殊折扣、投訴、退款、緊急醫療。
-   - 回覆範例（請依旅客使用的語言自動翻譯）：「這項需求我已為您記錄並通知櫃檯專人，服務人員將會在 LINE 上儘速回覆您喔！手邊如有緊急狀況，也可直接致電櫃檯洽詢。」
+   - 回覆範例（請依旅客使用的語言自動翻譯）：「這項需求我已為您記錄並通知櫃檯專人，服務人員將會在 LINE 上儘速回覆您喔！手邊如有緊急狀況，也可直接致電櫃檯：+886-2-2775-8890。」
 
 # TRANSPARENCY & BOT NOTICE (透明度標籤)
-在回覆訊息正文的最後一行（在隱藏 JSON 區塊之前），必須加上此提示標籤（若旅客使用外語，可保留中文或附上對應語言說明）：
+在回覆訊息正文的最後一行，必須加上此提示標籤（若旅客使用外語，可保留中文或附上對應語言說明）：
 「🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆」
-
-# BACKEND JSON EXTRACTION (給 Make/n8n/自動化流程串接用)
-當旅客提及「預約接駁車、寄放行李、加購早餐、特殊房型需求」或觸發「轉接真人機制（主動呼叫真人客服、設施故障、未記載優惠、投訴）」時，請在訊息最後單獨附上以下 Markdown JSON 區塊（若僅為一般資訊詢問如純問 Wi-Fi 密碼或純問退房時間，則嚴禁輸出任何 JSON 區塊）：
-
-```json
-{{
-  "event": "service_request",
-  "guest_language": "使用的語言",
-  "service_type": "轉接真人/接駁/行李/早餐/其他",
-  "details": "需求摘要",
-  "need_human": true
-}}
-```
 """
+
+
+def strip_json_blocks(text: str) -> str:
+    """移除任何模型可能夾帶的隱藏 JSON 區塊，確保 LINE 旅客只看到乾淨親切的對話"""
+    if not text:
+        return text
+    # 擷取並記錄於後台日誌供未來串接參考，但從給旅客的訊息中移除
+    cleaned = re.sub(r"```(?:json)?\s*\{[\s\S]*?\}\s*```", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\n*\{\s*\"event\"\s*:\s*\"service_request\"[\s\S]*?\}\s*$", "", cleaned)
+    return cleaned.strip()
 
 
 # -------------------------------------------------------------
@@ -205,7 +204,7 @@ def call_gemini_api(user_message: str) -> str:
                 )
                 if response and response.text:
                     logger.info(f"Successfully generated reply with model: {model_name}")
-                    return response.text
+                    return strip_json_blocks(response.text)
             except Exception as err:
                 logger.warning(f"Model '{model_name}' failed ({err}), switching to next fallback model...")
 
@@ -228,7 +227,7 @@ def call_gemini_api(user_message: str) -> str:
             ),
         )
         response = model.generate_content(user_message)
-        return response.text if response.text else "抱歉，目前暫時無法回覆您的問題，請稍候再試。"
+        return strip_json_blocks(response.text) if response.text else "抱歉，目前暫時無法回覆您的問題，請稍候再試。"
 
 
 # -------------------------------------------------------------

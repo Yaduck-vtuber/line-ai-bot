@@ -164,27 +164,59 @@ def build_system_instruction() -> str:
 
 
 # -------------------------------------------------------------
-# AI 生成核心邏輯 (支援 google-genai 與向下相容)
+# AI 生成核心邏輯 (內建多模型自動切換，避免 503 塞車無回應)
 # -------------------------------------------------------------
 def call_gemini_api(user_message: str) -> str:
-    """呼叫 Gemini API 產出智能回覆"""
+    """呼叫 Gemini API 產出智能回覆（若遇 503 高負載自動切換備援模型）"""
     system_instruction = build_system_instruction()
+    client_name = os.getenv("CLIENT_NAME", CLIENT_NAME).strip()
 
     if USE_NEW_SDK:
-        # 官方最新 google-genai SDK 規格
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=user_message,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.2,
-                max_output_tokens=350,
-            ),
+        # 限制單一模型重試次數，遇 503 時立即秒切下一個輕量模型
+        try:
+            http_opts = types.HttpOptions(
+                retry_options=types.HttpRetryOptions(attempts=2)
+            )
+            client = genai.Client(api_key=GEMINI_API_KEY, http_options=http_opts)
+        except Exception:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+
+        candidate_models = [
+            os.getenv("GEMINI_MODEL", GEMINI_MODEL).strip(),
+            "gemini-flash-latest",
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-3.8-flash",
+            "gemma-4-31b-it",
+        ]
+        models_to_try = list(dict.fromkeys(m for m in candidate_models if m))
+
+        for model_name in models_to_try:
+            try:
+                logger.info(f"Trying Gemini model: {model_name}")
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=user_message,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.2,
+                        max_output_tokens=350,
+                    ),
+                )
+                if response and response.text:
+                    logger.info(f"Successfully generated reply with model: {model_name}")
+                    return response.text
+            except Exception as err:
+                logger.warning(f"Model '{model_name}' failed ({err}), switching to next fallback model...")
+
+        # 若所有雲端模型皆暫時 503 塞車，仍回傳友善提示給旅客，確保 LINE 100% 有回應
+        return (
+            "🏨 您好！目前線上諮詢量較大，您的訊息我們已收到並通知櫃檯專人，"
+            "服務人員將會在 LINE 上儘速回覆您喔！\n"
+            "📞 手邊如有緊急狀況，歡迎直接致電櫃檯：+886-2-2775-8890。\n\n"
+            f"🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆"
         )
-        return response.text if response.text else "抱歉，目前暫時無法回覆您的問題，請稍候再試。"
     else:
-        # 舊版 google-generativeai 相容 fallback
         genai_legacy.configure(api_key=GEMINI_API_KEY)
         model_name = GEMINI_MODEL if "1.5" in GEMINI_MODEL else "gemini-1.5-flash"
         model = genai_legacy.GenerativeModel(

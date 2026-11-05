@@ -533,6 +533,13 @@
       document.getElementById("smtp-pwd-badge").textContent = s.smtp_password_set ? "(已設定密碼)" : "(尚未設定)";
       document.getElementById("set-contact-email").value = s.official_contact_email || "";
       document.getElementById("set-service-hours").value = s.official_service_hours || "";
+      } catch (err) {
+        const errEl = document.getElementById("login-err");
+        if (errEl) {
+          errEl.textContent = "載入後台資料異常：" + (err.message || err);
+          errEl.classList.remove("hidden");
+        }
+      }
     }
 
     async function manualRefreshOverview() {

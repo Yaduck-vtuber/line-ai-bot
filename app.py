@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import json
 import time
 import logging
 import requests
@@ -51,7 +52,13 @@ LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "").strip()
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 CLIENT_NAME = os.getenv("CLIENT_NAME", "澄光行旅 Lumina Boutique Hotel").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip()
+ADMIN_LINE_USER_ID = os.getenv("ADMIN_LINE_USER_ID", "").strip()
+
+# 支援動態綁定管理員 ID (除環境變數外，管理員可在 LINE 輸入「/綁定管理員」即時綁定)
+active_admin_user_ids = set()
+if ADMIN_LINE_USER_ID:
+    active_admin_user_ids.add(ADMIN_LINE_USER_ID)
 
 if not LINE_CHANNEL_SECRET or not LINE_CHANNEL_ACCESS_TOKEN:
     logger.warning("LINE_CHANNEL_SECRET or LINE_CHANNEL_ACCESS_TOKEN is missing!")
@@ -133,45 +140,68 @@ def build_system_instruction() -> str:
 1. 【簡短易讀】：手機螢幕空間有限，每封回覆控制在 3-5 句內，並善用適當換行，嚴禁輸出長篇大論。
 2. 【視覺標記】：每段訊息開頭適度運用 Emoji（如 🏨、🔑、🚗、⏰、💡），增加手機閱讀的親和力與視覺焦點。
 3. 【語言自動切換（含亞洲與歐洲全語系）】：自動偵測旅客輸入的語言，包含亞洲語系（繁中、簡中、英文、日文、韓文、泰文、越南文）與歐洲語系（法文 Français、德文 Deutsch、西班牙文 Español、義大利文 Italiano、葡萄牙文、荷蘭文等），並一律用「相同的語言」進行親切回覆。
-4. 【禁止輸出程式區塊】：請只輸出給旅客閱讀的自然語言文字與提示標籤，嚴禁在回覆中顯示任何 JSON 或程式碼區塊。
 
 # KNOWLEDGE BASE (知識庫)
 所有回答必須 100% 嚴格基於以下資料，不可憑空臆測：
 {kb_content}
 
 # BOUNDARIES & HUMAN ESCALATION (轉接真人機制)
-1. 遇以下狀況，請禮貌告知並轉接專人：
+1. 遇以下狀況，請禮貌告知並立即觸發專人通知（同時在訊息末端附上隱藏 JSON 且設定 "need_human": true）：
    - 旅客主動要求找真人（例如提及：「轉接真人、找客服、人工客服、專人服務、Human agent、Speak to staff」等）。
    - 詢問資料庫未記載的特殊折扣、房間設施故障（如冷氣滴水、斷水斷電等）、緊急醫療求助、複雜退款或投訴。
    - 觸發自訂轉接關鍵字：轉接真人、找客服、人工客服、專人服務、設施故障、冷氣滴水、特殊折扣、投訴、退款、緊急醫療。
    - 回覆範例（請依旅客使用的語言自動翻譯）：「這項需求我已為您記錄並通知櫃檯專人，服務人員將會在 LINE 上儘速回覆您喔！手邊如有緊急狀況，也可直接致電櫃檯：+886-2-2775-8890。」
 
 # TRANSPARENCY & BOT NOTICE (透明度標籤)
-在回覆訊息正文的最後一行，必須加上此提示標籤（若旅客使用外語，可保留中文或附上對應語言說明）：
+在回覆訊息正文的最後一行（在隱藏 JSON 區塊之前），必須加上此提示標籤（若旅客使用外語，可保留中文或附上對應語言說明）：
 「🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆」
+
+# BACKEND JSON EXTRACTION (給後端系統攔截用，後端會自動過濾不讓旅客看見)
+當旅客提及「預約接駁車、寄放行李、加購早餐、特殊房型需求」或觸發「轉接真人機制」時，請在訊息最後單獨附上以下 JSON 區塊：
+```json
+{{
+  "event": "service_request",
+  "guest_language": "使用的語言",
+  "service_type": "轉接真人/接駁/行李/早餐/其他",
+  "details": "需求摘要",
+  "need_human": true
+}}
+```
 """
 
 
-def strip_json_blocks(text: str) -> str:
-    """移除任何模型可能夾帶的隱藏 JSON 區塊，確保 LINE 旅客只看到乾淨親切的對話"""
-    if not text:
-        return text
-    # 擷取並記錄於後台日誌供未來串接參考，但從給旅客的訊息中移除
-    cleaned = re.sub(r"```(?:json)?\s*\{[\s\S]*?\}\s*```", "", text, flags=re.IGNORECASE)
-    cleaned = re.sub(r"\n*\{\s*\"event\"\s*:\s*\"service_request\"[\s\S]*?\}\s*$", "", cleaned)
-    return cleaned.strip()
+def extract_and_strip_json(raw_text: str):
+    """
+    從 AI 回覆中攔截隱藏的 JSON 區塊供後台通知管理員使用，
+    並將 JSON 從文字中徹底清除，確保旅客在 LINE 絕對不會看到任何程式碼！
+    """
+    if not raw_text:
+        return "", None
+
+    extracted_data = None
+    # 尋找 ```json ... ``` 或 {"event": ...}
+    json_match = re.search(r"\{[\s\S]*?\"event\"\s*:\s*\"service_request\"[\s\S]*?\}", raw_text)
+    if json_match:
+        try:
+            extracted_data = json.loads(json_match.group(0))
+        except Exception as e:
+            logger.warning(f"Failed to parse extracted JSON: {e}")
+
+    # 徹底清除所有 ```json ... ``` 區塊（包含可能被截斷的結尾）與殘留 JSON
+    cleaned = re.sub(r"```(?:json)?[\s\S]*?(?:```|$)", "", raw_text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\{[\s\S]*?\"event\"\s*:\s*\"service_request\"[\s\S]*$", "", cleaned)
+    return cleaned.strip(), extracted_data
 
 
 # -------------------------------------------------------------
 # AI 生成核心邏輯 (內建多模型自動切換，避免 503 塞車無回應)
 # -------------------------------------------------------------
-def call_gemini_api(user_message: str) -> str:
-    """呼叫 Gemini API 產出智能回覆（若遇 503 高負載自動切換備援模型）"""
+def call_gemini_api(user_message: str):
+    """呼叫 Gemini API 產出智能回覆（回傳：(給旅客的乾淨文字, 攔截到的服務需求JSON)）"""
     system_instruction = build_system_instruction()
     client_name = os.getenv("CLIENT_NAME", CLIENT_NAME).strip()
 
     if USE_NEW_SDK:
-        # 限制單一模型重試次數，遇 503 時立即秒切下一個輕量模型
         try:
             http_opts = types.HttpOptions(
                 retry_options=types.HttpRetryOptions(attempts=2)
@@ -199,22 +229,22 @@ def call_gemini_api(user_message: str) -> str:
                     config=types.GenerateContentConfig(
                         system_instruction=system_instruction,
                         temperature=0.2,
-                        max_output_tokens=350,
+                        max_output_tokens=500,
                     ),
                 )
                 if response and response.text:
                     logger.info(f"Successfully generated reply with model: {model_name}")
-                    return strip_json_blocks(response.text)
+                    return extract_and_strip_json(response.text)
             except Exception as err:
                 logger.warning(f"Model '{model_name}' failed ({err}), switching to next fallback model...")
 
-        # 若所有雲端模型皆暫時 503 塞車，仍回傳友善提示給旅客，確保 LINE 100% 有回應
-        return (
+        fallback_msg = (
             "🏨 您好！目前線上諮詢量較大，您的訊息我們已收到並通知櫃檯專人，"
             "服務人員將會在 LINE 上儘速回覆您喔！\n"
             "📞 手邊如有緊急狀況，歡迎直接致電櫃檯：+886-2-2775-8890。\n\n"
             f"🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆"
         )
+        return fallback_msg, {"event": "service_request", "service_type": "轉接真人", "details": user_message, "need_human": True}
     else:
         genai_legacy.configure(api_key=GEMINI_API_KEY)
         model_name = GEMINI_MODEL if "1.5" in GEMINI_MODEL else "gemini-1.5-flash"
@@ -223,11 +253,44 @@ def call_gemini_api(user_message: str) -> str:
             system_instruction=system_instruction,
             generation_config=genai_legacy.types.GenerationConfig(
                 temperature=0.2,
-                max_output_tokens=350,
+                max_output_tokens=500,
             ),
         )
         response = model.generate_content(user_message)
-        return strip_json_blocks(response.text) if response.text else "抱歉，目前暫時無法回覆您的問題，請稍候再試。"
+        if response and response.text:
+            return extract_and_strip_json(response.text)
+        return "抱歉，目前暫時無法回覆您的問題，請稍候再試。", None
+
+
+def notify_admins_on_line(line_bot_api: MessagingApi, user_text: str, service_data: dict):
+    """當旅客觸發真人客服或預約需求時，主動推播通知給櫃檯管理員"""
+    service_type = service_data.get("service_type", "客戶服務")
+    details = service_data.get("details", "無摘要")
+    guest_lang = service_data.get("guest_language", "未知")
+    need_human = service_data.get("need_human", False)
+
+    alert_msg = (
+        f"🚨【櫃檯專人通知】\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"📌 需求類別：{service_type}\n"
+        f"🗣️ 旅客語系：{guest_lang}\n"
+        f"💬 旅客原話：{user_text}\n"
+        f"📝 AI 摘要：{details}\n"
+        f"⚠️ 需真人介入：{'是 (請至官方帳號後台回覆)' if need_human else '一般預約紀錄'}"
+    )
+    logger.info(f"[SERVICE ALERT] {alert_msg}")
+
+    for admin_id in list(active_admin_user_ids):
+        try:
+            line_bot_api.push_message(
+                PushMessageRequest(
+                    to=admin_id,
+                    messages=[TextMessage(text=alert_msg)],
+                )
+            )
+            logger.info(f"Notified admin {admin_id} successfully.")
+        except Exception as e:
+            logger.warning(f"Failed to push alert to admin {admin_id}: {e}")
 
 
 # -------------------------------------------------------------
@@ -236,8 +299,29 @@ def call_gemini_api(user_message: str) -> str:
 def process_user_message_async(reply_token: str, user_text: str, user_id: str = None):
     """在背景執行緒中呼叫 Gemini 並回覆給 LINE 使用者"""
     try:
+        stripped_cmd = user_text.strip()
+
+        # 內建管理員快速綁定指令：管理員在 LINE 輸入「/綁定管理員」即可接收真人轉接推播通知
+        if stripped_cmd in ["/綁定管理員", "綁定管理員", "/admin"]:
+            if user_id:
+                active_admin_user_ids.add(user_id)
+                bind_reply = (
+                    f"✅ 綁定成功！\n"
+                    f"您的 LINE 已設為「{CLIENT_NAME}」櫃檯專人通知帳號。\n"
+                    f"🔑 您的 User ID 為：\n{user_id}\n\n"
+                    f"💡 當有旅客要求「轉接真人」或「預約接駁/早餐/寄放行李」時，系統會自動隱藏 JSON 並推播通知給您！"
+                )
+            else:
+                bind_reply = "⚠️ 無法取得您的 LINE User ID，請於一對一聊天室中使用此指令。"
+
+            with ApiClient(line_configuration) as api_client:
+                MessagingApi(api_client).reply_message(
+                    ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=bind_reply)])
+                )
+            return
+
         logger.info(f"Processing message in background: '{user_text[:30]}...'")
-        ai_reply = call_gemini_api(user_text)
+        ai_reply, service_data = call_gemini_api(user_text)
 
         with ApiClient(line_configuration) as api_client:
             line_bot_api = MessagingApi(api_client)
@@ -263,6 +347,11 @@ def process_user_message_async(reply_token: str, user_text: str, user_id: str = 
                     logger.info("Successfully sent fallback push_message.")
                 else:
                     raise reply_err
+
+            # 若有攔截到服務需求或轉接真人，主動通知管理員
+            if service_data:
+                notify_admins_on_line(line_bot_api, user_text, service_data)
+
     except Exception as e:
         logger.error(f"Error during async message processing: {e}", exc_info=True)
 

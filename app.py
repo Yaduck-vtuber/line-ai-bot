@@ -67,9 +67,9 @@ ADMIN_SECRET_CODE = os.getenv("ADMIN_SECRET_CODE", "lumina8890").strip()
 ADMIN_LINE_USER_ID = os.getenv("ADMIN_LINE_USER_ID", "").strip()
 CRON_SECRET_TOKEN = os.getenv("CRON_SECRET_TOKEN", "lumina_cron_secret").strip()
 
-# 預設預約連結與 LINE Notify 權杖
+# 預設預約連結與管理員 LINE User ID (因應 LINE Notify 結束服務，全面改用 LINE Messaging API Push Message)
 DEFAULT_BOOKING_URL = os.getenv("BOOKING_URL", "").strip()
-DEFAULT_NOTIFY_TOKEN = os.getenv("LINE_NOTIFY_TOKEN", "").strip()
+DEFAULT_ADMIN_USER_ID = os.getenv("ADMIN_LINE_USER_ID", "").strip()
 
 # 外部雲端總表與 Make 自動化串接 (Google Sheets CSV / Make Webhook / Notion / Airtable)
 GOOGLE_SHEET_CSV_URL = os.getenv("GOOGLE_SHEET_CSV_URL", "").strip()
@@ -116,6 +116,7 @@ FALLBACK_DEFAULTS = {
 
 def load_tenants_config() -> dict:
     """載入多租戶設定（支援動態 API 註冊與環境變數預設載入）"""
+    default_admins = {ADMIN_LINE_USER_ID} if ADMIN_LINE_USER_ID else set()
     tenants = {
         "default": {
             "tenant_id": "default",
@@ -125,11 +126,11 @@ def load_tenants_config() -> dict:
             "channel_secret": LINE_CHANNEL_SECRET,
             "channel_access_token": LINE_CHANNEL_ACCESS_TOKEN,
             "booking_url": DEFAULT_BOOKING_URL,
-            "notify_token": DEFAULT_NOTIFY_TOKEN,
+            "admin_user_id": ADMIN_LINE_USER_ID,
             "sheet_csv_url": GOOGLE_SHEET_CSV_URL,
             "kb_url": os.getenv("KNOWLEDGE_BASE_URL", "").strip(),
             "admin_code": ADMIN_SECRET_CODE,
-            "admin_ids": {ADMIN_LINE_USER_ID} if ADMIN_LINE_USER_ID else set(),
+            "admin_ids": set(default_admins),
             "door_pin": DEFAULT_DOOR_PIN,
         }
     }
@@ -138,6 +139,10 @@ def load_tenants_config() -> dict:
         try:
             custom_tenants = json.loads(raw_json)
             for tid, tcfg in custom_tenants.items():
+                admin_set = set(tcfg.get("admin_ids", []))
+                single_admin = tcfg.get("admin_user_id", "").strip()
+                if single_admin:
+                    admin_set.add(single_admin)
                 tenants[tid] = {
                     "tenant_id": tid,
                     "client_name": tcfg.get("client_name", tid),
@@ -146,11 +151,11 @@ def load_tenants_config() -> dict:
                     "channel_secret": tcfg.get("channel_secret", ""),
                     "channel_access_token": tcfg.get("channel_access_token", ""),
                     "booking_url": tcfg.get("booking_url", ""),
-                    "notify_token": tcfg.get("notify_token", ""),
+                    "admin_user_id": single_admin,
                     "sheet_csv_url": tcfg.get("sheet_csv_url", ""),
                     "kb_url": tcfg.get("kb_url", ""),
                     "admin_code": tcfg.get("admin_code", ADMIN_SECRET_CODE),
-                    "admin_ids": set(tcfg.get("admin_ids", [])),
+                    "admin_ids": admin_set,
                     "door_pin": tcfg.get("door_pin", DEFAULT_DOOR_PIN),
                 }
             logger.info(f"Loaded {len(tenants)} tenant configurations.")
@@ -167,28 +172,33 @@ _failed_admin_attempts = {}
 
 
 def get_tenant_config(tenant_id: str) -> dict:
-    """根據 tenant_id 動態讀取該客戶設定（含 booking_url, notify_token, channel_access_token 等）"""
+    """根據 tenant_id 動態讀取該客戶設定（含 booking_url, admin_user_id, channel_access_token 等）"""
     with _tenants_lock:
         if tenant_id in TENANTS_REGISTRY:
             return TENANTS_REGISTRY[tenant_id]
         return TENANTS_REGISTRY["default"]
 
 
-def send_line_notify(token: str, message: str) -> bool:
-    """發送 LINE Notify 轉接通報給店家手機"""
-    if not token:
+def send_messaging_api_push(channel_access_token: str, to_user_id: str, message: str) -> bool:
+    """
+    【替代已結束服務之 LINE Notify】
+    使用官方 LINE Messaging API (push_message) 直接將專人轉接通知推播至店長/管理員的 LINE
+    """
+    if not channel_access_token or not to_user_id:
         return False
     try:
-        headers = {"Authorization": f"Bearer {token.strip()}"}
-        resp = requests.post(
-            "https://notify-api.line.me/api/notify",
-            headers=headers,
-            data={"message": message},
-            timeout=5,
-        )
-        return resp.status_code == 200
+        line_cfg = Configuration(access_token=channel_access_token)
+        with ApiClient(line_cfg) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            line_bot_api.push_message(
+                PushMessageRequest(
+                    to=to_user_id.strip(),
+                    messages=[TextMessage(text=message)],
+                )
+            )
+        return True
     except Exception as e:
-        logger.warning(f"LINE Notify send failed: {e}")
+        logger.warning(f"LINE Messaging API push_message failed to {to_user_id}: {e}")
         return False
 
 
@@ -259,10 +269,17 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
             except Exception as e:
                 logger.warning(f"[{tid}] Google Sheet live fetch error ({e}), using Fallback Defaults.")
 
+    # 若試算表中有填寫「管理員LINE_ID」或「admin_user_id」，自動加入該租戶的管理員推播名單
+    for admin_key in ["管理員LINE_ID", "admin_user_id", "店長LINE_ID"]:
+        sheet_admin_id = merged_fields.get(admin_key, "").strip()
+        if sheet_admin_id and sheet_admin_id.startswith("U"):
+            tenant_cfg.setdefault("admin_ids", set()).add(sheet_admin_id)
+
     custom_raw_kb = os.getenv("CLIENT_KNOWLEDGE_BASE", "").strip()
     kb_lines = ["---【即時動態知識庫 (含 3 層防呆備援保護)】---"]
     for k, v in merged_fields.items():
-        if k not in ["電子鎖密碼"]:  # 電子鎖密碼僅於入住前1小時自動推播，一般問答不主動外洩
+        # 電子鎖密碼與管理員 LINE ID 屬於機密欄位，一般問答不主動外洩給房客
+        if k not in ["電子鎖密碼", "管理員LINE_ID", "admin_user_id", "店長LINE_ID"]:
             kb_lines.append(f"- {k}：{v}")
     if custom_raw_kb:
         kb_lines.append("\n---【補充說明資訊】---\n" + custom_raw_kb)
@@ -601,7 +618,7 @@ def call_gemini_api(tenant_cfg: dict, user_id: str, user_message: str):
 
 
 # =============================================================
-# 7. 專人轉接「3 句話問題摘要卡」推播 (LINE 管理員 + LINE Notify 雙通道)
+# 7. 專人轉接「3 句話問題摘要卡」推播 (官方 LINE Messaging API Push Message)
 # =============================================================
 def notify_admins_on_line(
     line_bot_api: MessagingApi,
@@ -614,7 +631,6 @@ def notify_admins_on_line(
 ):
     tid = tenant_cfg["tenant_id"]
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
-    notify_token = tenant_cfg.get("notify_token", "")
     service_type = service_data.get("service_type", "客戶服務")
     details = service_data.get("details", user_text)
     summary_card = service_data.get("handover_summary_3_sentences") or details
@@ -640,16 +656,18 @@ def notify_admins_on_line(
         f"━━━━━━━━━━━━━━\n"
         f"🥜 飲食過敏註記：{allergies}\n"
         f"🕒 預計抵達時間：{arrival}\n"
-        f"⚠️ 狀態：{'請至官方帳號後台接手回覆' if need_human else '系統已自動記錄預約'}"
+        f"⚠️ 狀態：{'請至 LINE 官方帳號後台接手回覆' if need_human else '系統已自動記錄預約'}"
     )
     logger.info(f"[{tid}] [ADMIN ALERT]\n{alert_msg}")
 
-    # 通道 A：若有設定 LINE Notify Token，發送 LINE Notify 通報給店家手機
-    if notify_token:
-        send_line_notify(notify_token, "\n" + alert_msg)
+    # 彙整所有管理員 LINE User ID (包含開通表單設定之 admin_user_id 與對話中 /綁定管理員 之名單)
+    target_admins = set(tenant_cfg.get("admin_ids", set()))
+    configured_admin = tenant_cfg.get("admin_user_id", "").strip()
+    if configured_admin:
+        target_admins.add(configured_admin)
 
-    # 通道 B：推播給已透過密碼綁定的 LINE 管理員
-    for admin_id in list(tenant_cfg.get("admin_ids", set())):
+    # 透過官方 LINE Messaging API (push_message) 直接推播給所有綁定的店長/管理員手機
+    for admin_id in list(target_admins):
         if not admin_id:
             continue
         try:
@@ -659,9 +677,9 @@ def notify_admins_on_line(
                     messages=[TextMessage(text=alert_msg)],
                 )
             )
-            logger.info(f"[{tid}] Pushed handover summary card to admin {admin_id}.")
+            logger.info(f"[{tid}] Pushed handover summary card via Messaging API to admin {admin_id}.")
         except Exception as e:
-            logger.warning(f"[{tid}] Failed to push alert to admin {admin_id}: {e}")
+            logger.warning(f"[{tid}] Failed to push alert via Messaging API to admin {admin_id}: {e}")
 
 
 # =============================================================
@@ -758,13 +776,12 @@ threading.Thread(target=background_scheduler_loop, daemon=True).start()
 
 
 # =============================================================
-# 9. 核心訊息處理流程 (含動態預約連結、LINE Notify 轉接與雙層記憶)
+# 9. 核心訊息處理流程 (含動態預約連結、LINE Messaging API 專人轉接與雙層記憶)
 # =============================================================
 def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: str, user_id: str = None):
     tid = tenant_cfg["tenant_id"]
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
     booking_url = tenant_cfg.get("booking_url", "")
-    notify_token = tenant_cfg.get("notify_token", "")
     line_cfg = Configuration(access_token=tenant_cfg["channel_access_token"])
 
     try:
@@ -773,6 +790,20 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
         with ApiClient(line_cfg) as api_client:
             line_bot_api = MessagingApi(api_client)
             guest_name = fetch_line_guest_name(line_bot_api, tid, user_id)
+
+            # ---------------------------------------------------------
+            # 0. 查詢個人 LINE User ID 快捷指令 (/我的ID)
+            # ---------------------------------------------------------
+            if stripped in ["/我的ID", "我的ID", "/id", "/userid"]:
+                id_reply = (
+                    f"🪪 您的 LINE 顯示名稱：{guest_name}\n"
+                    f"🔑 您的 LINE User ID：\n{user_id}\n\n"
+                    f"💡 若您是店家管理員，可直接輸入：\n"
+                    f"`/綁定管理員 {tenant_cfg.get('admin_code', ADMIN_SECRET_CODE)}`\n"
+                    f"即可透過 LINE Messaging API 接收真人客服轉接與 3 秒問題摘要卡推播！"
+                )
+                reply_to_line(tenant_cfg, reply_token, id_reply, user_id)
+                return
 
             # ---------------------------------------------------------
             # 1. 資安防護：管理員綁定指令需驗證密碼 (/綁定管理員 <密碼>)
@@ -790,11 +821,13 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                 if input_code and hmac.compare_digest(input_code, expected_code):
                     if user_id:
                         tenant_cfg["admin_ids"].add(user_id)
+                        tenant_cfg["admin_user_id"] = user_id
                         bind_reply = (
-                            f"✅【管理員安全認證成功】\n"
+                            f"✅【管理員安全認證成功｜Messaging API 推播已啟用】\n"
                             f"👤 管理員：{guest_name}\n"
                             f"🏢 綁定品牌：{client_name}\n"
                             f"🔑 您的 LINE User ID：\n{user_id}\n\n"
+                            f"📲 專人轉接通知已透過官方 LINE Messaging API 綁定至此帳號（完全不需使用已停服的 LINE Notify）。\n"
                             f"🛡️ 資安保護已啟用：未持有管理員密碼之房客無法綁定。\n"
                             f"💡 實用管理員指令：\n"
                             f"• 輸入「/發送入住密碼」可測試入住前1小時自動推播\n"
@@ -824,18 +857,13 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                     return
 
             # ---------------------------------------------------------
-            # 2. 結合 AI 推論、動態預約連結帶入與 LINE Notify 轉接通報
+            # 2. 結合 AI 推論、動態預約連結帶入與 LINE Messaging API 轉接推播
             # ---------------------------------------------------------
             logger.info(f"[{tid}] Guest '{guest_name}' ({user_id}): '{user_text[:40]}'")
             ai_reply, service_data = call_gemini_api(tenant_cfg, user_id, user_text)
 
-            # 意圖判定 A：若顧客明確提及「轉接專人」或「真人客服」，確保強制觸發 LINE Notify 與管理員摘要卡
-            if "轉接專人" in stripped or "真人客服" in stripped:
-                if notify_token:
-                    send_line_notify(
-                        token=notify_token,
-                        message=f"\n🚨 [SmartHost 轉接提醒]\n顧客名稱：{guest_name}\n顧客訊息：{user_text}\n請撥空回覆！",
-                    )
+            # 意圖判定 A：若顧客明確提及「轉接專人」或「真人客服」，確保強制觸發 Messaging API 管理員推播
+            if any(kw in stripped for kw in ["轉接專人", "真人客服", "轉接真人", "人工客服", "找真人"]):
                 if not service_data:
                     service_data = {
                         "event": "service_request",
@@ -844,6 +872,8 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                         "handover_summary_3_sentences": f"旅客 {guest_name} 主動要求轉接專人客服，原話為：「{user_text}」，請管家第一時間聯繫旅客。",
                         "need_human": True,
                     }
+                else:
+                    service_data["need_human"] = True
 
             # 意圖判定 B：若顧客詢問「預約 / 報名 / 訂房」且店家設有 booking_url，自動帶入專屬預約連結
             if booking_url and any(kw in stripped for kw in ["預約", "報名", "訂房"]):
@@ -867,7 +897,7 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
             # 回傳訊息給 LINE 顧客
             reply_to_line(tenant_cfg, reply_token, ai_reply, user_id)
 
-            # 發送管理員專人通知與 LINE Notify
+            # 透過官方 LINE Messaging API (push_message) 發送管理員專人通知與 3 句話摘要卡
             if service_data:
                 notify_admins_on_line(
                     line_bot_api,
@@ -921,7 +951,7 @@ def serve_onboarding_page():
 def api_register_tenant():
     """
     接收來自前端 onboarding.html / Make / Google 表單傳入的 JSON：
-    (`tenant_id`, `email`, `channel_access_token`, `channel_secret`, `client_name`, `booking_url`, `notify_token`, `sheet_csv_url`)
+    (`tenant_id`, `email`, `channel_access_token`, `channel_secret`, `client_name`, `booking_url`, `admin_user_id`, `sheet_csv_url`)
     並向 LINE 官方 https://api.line.me/v2/bot/info 驗證 Token 是否有效。
     """
     try:
@@ -932,7 +962,7 @@ def api_register_tenant():
         channel_secret = str(data.get("channel_secret", "")).strip()
         client_name = str(data.get("client_name", "")).strip() or tenant_id
         booking_url = str(data.get("booking_url", "")).strip()
-        notify_token = str(data.get("notify_token", "")).strip()
+        admin_user_id = str(data.get("admin_user_id", "")).strip()
         sheet_csv_url = str(data.get("sheet_csv_url", "")).strip()
 
         if not tenant_id or not channel_access_token or not channel_secret:
@@ -950,6 +980,7 @@ def api_register_tenant():
         if verify_resp.status_code == 200:
             bot_info = verify_resp.json()
             resolved_name = client_name or bot_info.get("displayName", tenant_id)
+            initial_admins = {admin_user_id} if admin_user_id else set()
             with _tenants_lock:
                 TENANTS_REGISTRY[tenant_id] = {
                     "tenant_id": tenant_id,
@@ -959,11 +990,11 @@ def api_register_tenant():
                     "channel_secret": channel_secret,
                     "channel_access_token": channel_access_token,
                     "booking_url": booking_url,
-                    "notify_token": notify_token,
+                    "admin_user_id": admin_user_id,
                     "sheet_csv_url": sheet_csv_url,
                     "kb_url": "",
                     "admin_code": ADMIN_SECRET_CODE,
-                    "admin_ids": set(),
+                    "admin_ids": initial_admins,
                     "door_pin": DEFAULT_DOOR_PIN,
                 }
 

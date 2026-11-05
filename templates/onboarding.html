@@ -149,9 +149,14 @@
             </p>
           </div>
 
-          <!-- 進階選填設定：預約連結、LINE Notify、Google Sheet -->
+          <!-- 進階選填設定：預約連結、Messaging API 管理員推播、Google Sheet -->
           <div class="pt-3 border-t border-slate-800 space-y-4">
-            <p class="text-xs font-bold text-emerald-400">✨ 商用自動化選填設定（可隨時於試算表修改）</p>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="text-xs font-bold text-emerald-400">✨ 商用自動化選填設定（可隨時於試算表修改）</p>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
+                已全面升級官方 Messaging API 推播（免設定已停服之 LINE Notify）
+              </span>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs text-slate-400 mb-1">線上預約 / 訂房連結 (booking_url)</label>
@@ -159,8 +164,8 @@
                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
               </div>
               <div>
-                <label class="block text-xs text-slate-400 mb-1">店家 LINE Notify 權杖 (notify_token)</label>
-                <input type="text" id="notify_token" placeholder="選填，觸發真人轉接時自動推播手機"
+                <label class="block text-xs text-slate-400 mb-1">店長接收通知 LINE User ID (admin_user_id)</label>
+                <input type="text" id="admin_user_id" placeholder="選填，或開通後於 LINE 輸入 /綁定管理員 自動綁定"
                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
               </div>
             </div>
@@ -344,7 +349,7 @@
       const secret = document.getElementById("channel_secret").value.trim();
       const token = document.getElementById("channel_access_token").value.trim();
       const bookingUrl = document.getElementById("booking_url").value.trim();
-      const notifyToken = document.getElementById("notify_token").value.trim();
+      const adminUserId = document.getElementById("admin_user_id").value.trim();
       const sheetCsvUrl = document.getElementById("sheet_csv_url").value.trim();
 
       // Regex 規則檢查
@@ -392,7 +397,7 @@
             channel_secret: secret,
             channel_access_token: token,
             booking_url: bookingUrl,
-            notify_token: notifyToken,
+            admin_user_id: adminUserId,
             sheet_csv_url: sheetCsvUrl,
             plan: plan
           })

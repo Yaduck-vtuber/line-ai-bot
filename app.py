@@ -67,9 +67,11 @@ ADMIN_SECRET_CODE = os.getenv("ADMIN_SECRET_CODE", "lumina8890").strip()
 ADMIN_LINE_USER_ID = os.getenv("ADMIN_LINE_USER_ID", "").strip()
 CRON_SECRET_TOKEN = os.getenv("CRON_SECRET_TOKEN", "lumina_cron_secret").strip()
 
-# 預設預約連結與管理員 LINE User ID (因應 LINE Notify 結束服務，全面改用 LINE Messaging API Push Message)
+# 預設預約連結、管理員 LINE User ID 與 Telegram 備援推播設定 (A+B+C 複合通知)
 DEFAULT_BOOKING_URL = os.getenv("BOOKING_URL", "").strip()
 DEFAULT_ADMIN_USER_ID = os.getenv("ADMIN_LINE_USER_ID", "").strip()
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+DEFAULT_TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
 # 外部雲端總表與 Make 自動化串接 (Google Sheets CSV / Make Webhook / Notion / Airtable)
 GOOGLE_SHEET_CSV_URL = os.getenv("GOOGLE_SHEET_CSV_URL", "").strip()
@@ -181,7 +183,7 @@ def get_tenant_config(tenant_id: str) -> dict:
 
 def send_messaging_api_push(channel_access_token: str, to_user_id: str, message: str) -> bool:
     """
-    【替代已結束服務之 LINE Notify】
+    【管道 A：替代已結束服務之 LINE Notify】
     使用官方 LINE Messaging API (push_message) 直接將專人轉接通知推播至店長/管理員的 LINE
     """
     if not channel_access_token or not to_user_id:
@@ -199,6 +201,25 @@ def send_messaging_api_push(channel_access_token: str, to_user_id: str, message:
         return True
     except Exception as e:
         logger.warning(f"LINE Messaging API push_message failed to {to_user_id}: {e}")
+        return False
+
+
+def send_telegram_alert(chat_id: str, message: str, bot_token: str = "") -> bool:
+    """
+    【管道 B：Telegram 免費無上限即時推播備援】
+    """
+    token = (bot_token or TELEGRAM_BOT_TOKEN).strip()
+    if not token or not chat_id:
+        return False
+    try:
+        resp = requests.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={"chat_id": chat_id.strip(), "text": message},
+            timeout=5,
+        )
+        return resp.status_code == 200
+    except Exception as e:
+        logger.warning(f"Telegram alert failed to {chat_id}: {e}")
         return False
 
 
@@ -666,7 +687,7 @@ def notify_admins_on_line(
     if configured_admin:
         target_admins.add(configured_admin)
 
-    # 透過官方 LINE Messaging API (push_message) 直接推播給所有綁定的店長/管理員手機
+    # 【管道 A】透過官方 LINE Messaging API (push_message) 直接推播給所有綁定的店長/管理員手機
     for admin_id in list(target_admins):
         if not admin_id:
             continue
@@ -677,9 +698,33 @@ def notify_admins_on_line(
                     messages=[TextMessage(text=alert_msg)],
                 )
             )
-            logger.info(f"[{tid}] Pushed handover summary card via Messaging API to admin {admin_id}.")
+            logger.info(f"[{tid}] [Channel A: LINE] Pushed handover summary card to admin {admin_id}.")
         except Exception as e:
             logger.warning(f"[{tid}] Failed to push alert via Messaging API to admin {admin_id}: {e}")
+
+    # 【管道 B】Telegram Chat ID 免費無上限即時推播備援
+    tg_chat_id = tenant_cfg.get("telegram_chat_id", "").strip() or DEFAULT_TELEGRAM_CHAT_ID
+    if tg_chat_id:
+        send_telegram_alert(tg_chat_id, alert_msg)
+
+    # 【管道 C】緊急通知 Email / Make 自動化 Webhook 同步發信
+    alert_email = tenant_cfg.get("alert_email", "") or tenant_cfg.get("email", "")
+    if CRM_WEBHOOK_URL and alert_email:
+        executor.submit(
+            requests.post,
+            CRM_WEBHOOK_URL,
+            json={
+                "type": "emergency_handover_email",
+                "tenant_id": tid,
+                "client_name": client_name,
+                "alert_email": alert_email,
+                "guest_name": guest_name,
+                "user_text": user_text,
+                "summary_card": summary_card,
+                "alert_msg": alert_msg,
+            },
+            timeout=5,
+        )
 
 
 # =============================================================
@@ -963,6 +1008,9 @@ def api_register_tenant():
         client_name = str(data.get("client_name", "")).strip() or tenant_id
         booking_url = str(data.get("booking_url", "")).strip()
         admin_user_id = str(data.get("admin_user_id", "")).strip()
+        telegram_chat_id = str(data.get("telegram_chat_id", "")).strip()
+        alert_email = str(data.get("alert_email", "")).strip() or email
+        notify_channels = data.get("notify_channels", ["LINE", "Telegram", "Email"])
         sheet_csv_url = str(data.get("sheet_csv_url", "")).strip()
 
         if not tenant_id or not channel_access_token or not channel_secret:
@@ -986,6 +1034,9 @@ def api_register_tenant():
                     "tenant_id": tenant_id,
                     "client_name": resolved_name,
                     "email": email,
+                    "alert_email": alert_email,
+                    "telegram_chat_id": telegram_chat_id,
+                    "notify_channels": notify_channels,
                     "status": "Active",
                     "channel_secret": channel_secret,
                     "channel_access_token": channel_access_token,
@@ -999,6 +1050,16 @@ def api_register_tenant():
                 }
 
             webhook_url = f"{base_url}/webhook/{tenant_id}"
+            test_msg = (
+                f"🎉【SmartHost 開通與多重通知測試成功】\n"
+                f"🏢 店家名稱：{resolved_name}\n"
+                f"🔗 專屬 Webhook：\n{webhook_url}\n"
+                f"✅ 您的 A+B+C 複合轉接通知管道已成功連線！"
+            )
+            if admin_user_id:
+                executor.submit(send_messaging_api_push, channel_access_token, admin_user_id, test_msg)
+            if telegram_chat_id:
+                executor.submit(send_telegram_alert, telegram_chat_id, test_msg)
             # 非同步寫入 Notion / Make 資料庫 (狀態 Active)
             executor.submit(
                 sync_crm_to_cloud_tables,

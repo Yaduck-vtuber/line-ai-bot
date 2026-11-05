@@ -277,19 +277,33 @@
       e.preventDefault();
       const pwd = document.getElementById("master-pwd").value.trim();
       const errEl = document.getElementById("login-err");
-      const res = await creatorFetch("/api/creator/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: pwd })
-      });
-      const data = await res.json();
-      if (res.ok && data.status === "success") {
-        if (data.token) setCreatorToken(data.token);
-        errEl.classList.add("hidden");
-        loadOverview();
-      } else {
-        errEl.textContent = data.message || "密碼錯誤";
+      errEl.classList.add("hidden");
+      const submitBtn = e.target.querySelector("button[type='submit']");
+      const origText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ 正在驗證並載入後台資料...";
+
+      try {
+        const res = await creatorFetch("/api/creator/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          if (data.token) setCreatorToken(data.token);
+          errEl.classList.add("hidden");
+          await loadOverview();
+        } else {
+          errEl.textContent = data.message || "密碼錯誤，請確認輸入 smarthost888";
+          errEl.classList.remove("hidden");
+        }
+      } catch (err) {
+        errEl.textContent = "連線異常，請稍候再試：" + (err.message || err);
         errEl.classList.remove("hidden");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origText;
       }
     });
 
@@ -301,23 +315,32 @@
     }
 
     async function loadOverview() {
-      const res = await creatorFetch("/api/creator/overview");
-      if (res.status === 401) {
-        document.getElementById("master-console").classList.add("hidden");
-        document.getElementById("login-gate").classList.remove("hidden");
-        return;
-      }
-      const data = await res.json();
-      document.getElementById("login-gate").classList.add("hidden");
-      const mc = document.getElementById("master-console");
-      mc.classList.remove("hidden");
-      mc.classList.add("flex");
+      try {
+        const res = await creatorFetch("/api/creator/overview");
+        if (res.status === 401) {
+          document.getElementById("master-console").classList.add("hidden");
+          document.getElementById("login-gate").classList.remove("hidden");
+          return;
+        }
+        if (!res.ok) {
+          const errEl = document.getElementById("login-err");
+          if (errEl) {
+            errEl.textContent = `伺服器讀取錯誤 (${res.status})，請重新整理頁面`;
+            errEl.classList.remove("hidden");
+          }
+          return;
+        }
+        const data = await res.json();
+        document.getElementById("login-gate").classList.add("hidden");
+        const mc = document.getElementById("master-console");
+        mc.classList.remove("hidden");
+        mc.classList.add("flex");
 
-      const tenants = data.tenants || [];
-      const users = data.users || [];
-      const orders = data.orders || [];
-      const messages = data.messages || [];
-      const s = data.settings || {};
+        const tenants = data.tenants || [];
+        const users = data.users || [];
+        const orders = data.orders || [];
+        const messages = data.messages || [];
+        const s = data.settings || {};
 
       document.getElementById("stat-tenants").textContent = tenants.length;
       document.getElementById("stat-users").textContent = users.length;

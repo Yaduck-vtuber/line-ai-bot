@@ -451,9 +451,15 @@ def get_tenant_config(tenant_id: str) -> dict:
         return TENANTS_REGISTRY["default"]
 
 
-def generate_one_time_line_bind_link(tenant_cfg: dict) -> dict:
-    """產生 30 分鐘有效、單次使用即銷毀的店長 LINE 帳號一鍵綁定連結與指令"""
-    tid = tenant_cfg["tenant_id"]
+def generate_one_time_line_bind_link(tenant_cfg_or_id: dict | str) -> dict:
+    """產生 30 分鐘有效、單次使用即銷毀的店長 LINE 帳號一鍵綁定連結與指令（容錯支援傳入字典或 tenant_id 字串）"""
+    if isinstance(tenant_cfg_or_id, str):
+        tid = tenant_cfg_or_id
+        tenant_cfg = get_tenant_config(tid)
+    else:
+        tenant_cfg = tenant_cfg_or_id or {}
+        tid = tenant_cfg.get("tenant_id", "default")
+
     token = "BIND-" + secrets.token_hex(6).upper()
     with _memory_lock:
         _one_time_line_bind_tokens[token] = {
@@ -2758,7 +2764,7 @@ def api_creator_overview():
                 "sheet_csv_url": tcfg.get("sheet_csv_url", ""),
                 "custom_kb_text": default_kb_preview,
                 "ignore_keywords": tcfg.get("ignore_keywords", ""),
-                "one_time_bind": generate_one_time_line_bind_link(tid),
+                "one_time_bind": generate_one_time_line_bind_link(tcfg),
                 "created_at": tcfg.get("created_at", ""),
             })
 

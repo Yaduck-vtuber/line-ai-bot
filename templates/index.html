@@ -145,37 +145,36 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- 方案 B 記憶卡 -->
+        <!-- 方案 A (前3句) 與 方案 B (前10句) 短期記憶卡 -->
         <div class="bg-slate-900/70 border border-emerald-500/40 rounded-2xl p-7">
           <div class="flex items-center gap-3 mb-4">
-            <span data-i18n="mem_b_badge" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs shrink-0">方案 B 內建</span>
-            <h3 data-i18n="mem_b_title" class="text-lg font-extrabold text-white">💬 當下聊天記憶（記住剛才聊的前 10 句話）</h3>
+            <span data-i18n="mem_b_badge" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs shrink-0">方案 A 記前 3 句｜方案 B/C 記前 10 句</span>
+            <h3 data-i18n="mem_b_title" class="text-lg font-extrabold text-white">💬 當下聊天記憶（方案 A 前 3 句／方案 B・C 前 10 句，對話中事先告知客人）</h3>
           </div>
           <p data-i18n="mem_b_desc" class="text-sm text-slate-300 leading-relaxed mb-4">
-            就像店員正在跟客人講電話，AI 會記住<strong>「當下這場對話最近 10 句話的上下文」</strong>，客人連續追問時不用一直重複房型或服務名稱，對話自然順暢！
+            就像店員正在跟客人講電話，<strong>方案 A 會記住剛才聊的前 3 句話，方案 B 與 C 則記住最近 10 句話的上下文</strong>（且會在回覆末段事先貼心提醒客人保留幾句記憶），客人連續追問時不用重複房型或服務名稱！
           </p>
           <div data-i18n="mem_b_example" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5 leading-relaxed">
             <div class="font-bold text-emerald-400">👉 實際對話情境：</div>
             <p>• 客人先問：「請問海景雙人房一晚多少錢？」</p>
             <p>• 客人接著問：「<strong>那有附早餐跟車位嗎？</strong>」（AI 記得上一句是在問海景雙人房，能精準回答！）</p>
-            <p class="text-slate-400 pt-1">※ 對話結束超過 10 句後會自動洗掉，不長期留存客人個資。</p>
+            <p class="text-slate-400 pt-1">※ 超過句數（方案 A 超過 3 句／方案 B・C 超過 10 句）後舊閒聊會自動洗掉，不留存冗長對話紀錄。</p>
           </div>
         </div>
 
-        <!-- 方案 C 熟客建檔卡 -->
+        <!-- 方案 C 熟客重點資料卡（只存重點，不存整串閒聊 + 支援試算表填寫店家不提供項目） -->
         <div class="bg-slate-900/70 border border-cyan-500/40 rounded-2xl p-7">
           <div class="flex items-center gap-3 mb-4">
             <span data-i18n="mem_c_badge" class="px-3 py-1 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs shrink-0">方案 C 獨享升級</span>
-            <h3 data-i18n="mem_c_title" class="text-lg font-extrabold text-white">📒 熟客專屬資料卡永久建檔（自動建立客戶名單）</h3>
+            <h3 data-i18n="mem_c_title" class="text-lg font-extrabold text-white">📒 熟客「重點資料卡」永久建檔（只存關鍵重點，不留整串閒聊！）</h3>
           </div>
           <p data-i18n="mem_c_desc" class="text-sm text-slate-300 leading-relaxed mb-4">
-            AI 在聊天過程中，會自動幫每位客人建立一張<strong>「專屬熟客資料卡」</strong>並存進您的雲端客戶總表（Notion / Excel），永遠記住這位客人的重要習慣與禁忌！
+            請放心！方案 C <strong>不會把整段幾百句閒聊全部存下來</strong>（對話同樣只留最近 10 句），而是由 AI 自動濃縮萃取客人的<strong>「過敏禁忌、特殊需求重點」</strong>寫入雲端客戶表（Notion / Excel），省空間又兼顧隱私！
           </p>
           <div data-i18n="mem_c_example" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5 leading-relaxed">
-            <div class="font-bold text-cyan-400">👉 實際對話情境：</div>
-            <p>• 客人王先生在訂房時順口說：「<strong>我們隨行有小孩對花生嚴重過敏，需要嬰兒床。</strong>」</p>
-            <p>• AI 自動把「王先生＝花生過敏＋嬰兒床」永久寫進您的客戶表。</p>
-            <p>• <strong>就算隔了幾個月王先生再次來問早餐</strong>，AI 仍主動貼心提醒：「廚房已為您註記花生過敏，含花生餐點會為您單獨替換喔！」</p>
+            <div class="font-bold text-cyan-400">👉 實際對話情境 ＋ 店家限制事先把關：</div>
+            <p>• 客人王先生說：「<strong>小孩對花生過敏，需要嬰兒床。</strong>」AI 只把重點「花生過敏、嬰兒床」存進熟客卡，幾個月後再訪仍主動貼心提醒！</p>
+            <p class="text-amber-300 pt-1">• 🛡️ <strong>店家無法接受的要求可事先填表攔截：</strong>您可在 Google 試算表<strong>「店家不提供項目與限制」</strong>欄位事先填寫（如：本館無嬰兒床、禁帶寵物、無法客製過敏餐），AI 會第一時間嚴格遵守並禮貌婉拒客人，絕不亂答應！</p>
           </div>
         </div>
       </div>
@@ -206,9 +205,9 @@
             </div>
             <ul class="space-y-3.5 text-sm text-slate-300 mb-8 leading-relaxed">
               <li data-i18n="p1_f1">✔️ <strong>每月免費 50 次 AI 自動回答</strong>（支援多國語言自動翻譯接待）</li>
-              <li data-i18n="p1_f2">✔️ <strong>Google 表格打字即改 ＋ 多組預約連結支援</strong></li>
-              <li data-i18n="p1_f3">✔️ <strong>試算表防誤刪快照備份保護</strong></li>
-              <li data-i18n="p1_f4">✔️ <strong>50 次額度用完自動切換專人通知</strong></li>
+              <li data-i18n="p1_f2">✔️ <strong>當下短記憶（記住剛才聊的前 3 句話，並於對話中事先告知客人）</strong></li>
+              <li data-i18n="p1_f3">✔️ <strong>Google 表格打字即改（可事先填寫「不提供項目」由 AI 自動婉拒）＋ 防誤刪快照</strong></li>
+              <li data-i18n="p1_f4">✔️ <strong>50 次額度用完自動切換專人通知 ＋ 多組預約連結支援</strong></li>
               <li data-i18n="p1_f5">✔️ <strong>免綁信用卡・登入 Google 帳號立即開通</strong></li>
             </ul>
           </div>
@@ -402,9 +401,34 @@
         </p>
       </div>
 
-      <!-- 官方 Google 一鍵登入按鈕容器 -->
-      <div id="google-gsi-wrap" class="flex justify-center mb-4">
-        <div id="google-gsi-btn"></div>
+      <!-- 官方標準樣式「使用 Google 帳號一鍵登入」按鈕（永遠顯示，像一般 Google 網站一樣直接按按鈕連結！） -->
+      <div class="mb-4 space-y-2.5">
+        <button type="button" onclick="triggerGoogleButtonFlow()"
+          class="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm flex items-center justify-center gap-3 shadow-md transition">
+          <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
+            <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/>
+            <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5L1.6 16c1.9 3.9 5.8 7 10.4 7z"/>
+          </svg>
+          <span data-i18n="auth_google_btn">使用 Google 帳號一鍵登入 (Continue with Google)</span>
+        </button>
+
+        <!-- 若已設定 Google Cloud Client ID，同步掛載官方 GSI 容器 -->
+        <div id="google-gsi-wrap" class="flex justify-center">
+          <div id="google-gsi-btn"></div>
+        </div>
+
+        <!-- 點擊上方 Google 按鈕後的快速連結面板 -->
+        <div id="google-quick-box" class="hidden bg-slate-950 border border-emerald-500/40 rounded-xl p-3.5 space-y-2.5">
+          <p class="text-xs text-emerald-300 font-bold">🔗 請輸入您的 Google 帳號 (@gmail.com 或企業信箱) 立即完成連結：</p>
+          <input type="email" id="google-btn-email" placeholder="yourname@gmail.com"
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+          <button type="button" onclick="submitGoogleButtonLogin()"
+            class="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+            ✅ 立即以 Google 帳號登入並繼續
+          </button>
+        </div>
       </div>
 
       <!-- Google / Gmail 信箱 6 位數安全驗證碼登入 -->
@@ -560,45 +584,45 @@
         step1_title: "1. Google 登入並選擇方案", step1_desc: "使用 Google 帳號登入綁定您的專屬訂單與付款紀錄，可先從 0 元體驗版開始，無綁約隨時可退訂。",
         step2_title: "2. 貼上 LINE 金鑰與一鍵綁定通知", step2_desc: "跟著對應語系的按鈕名稱指引貼上金鑰，系統自動產生專屬 Webhook 並支援一鍵綁定店長 LINE 通知。",
         step3_title: "3. 試算表與多組連結隨時維護", step3_desc: "在 Google 試算表打字改價格 1 秒生效，並可隨時在會員中心新增多組訂房、菜單連結與緊急通知信箱。",
-        mem_title: "一眼看懂：「方案 B 當下記憶」與「方案 C 熟客建檔」差在哪？",
-        mem_subtitle: "依照貴店的接待需求，選擇最適合的智慧記憶等級：",
-        mem_b_badge: "方案 B 內建",
-        mem_b_title: "💬 當下聊天記憶（記住剛才聊的前 10 句話）",
-        mem_b_desc: "就像店員正在跟客人講電話，AI 會記住<strong>「當下這場對話最近 10 句話的上下文」</strong>，客人連續追問時不用一直重複房型或服務名稱，對話自然順暢！",
-        mem_b_example: "<div class='font-bold text-emerald-400'>👉 實際對話情境：</div><p>• 客人先問：「請問海景雙人房一晚多少錢？」</p><p>• 客人接著問：「<strong>那有附早餐跟車位嗎？</strong>」（AI 記得上一句是在問海景雙人房，能精準回答！）</p><p class='text-slate-400 pt-1'>※ 對話超過 10 句後會自動洗掉，不長期留存客人個資。</p>",
+        mem_title: "一眼看懂：「當下聊天記憶（A記3句／B記10句）」與「方案 C 熟客重點卡」差在哪？",
+        mem_subtitle: "所有方案都會在對話中事先貼心告知客人保留幾句記憶；方案 C 只存重點不留冗長閒聊：",
+        mem_b_badge: "方案 A 記前 3 句｜方案 B/C 記前 10 句",
+        mem_b_title: "💬 當下聊天記憶（方案 A 前 3 句／方案 B・C 前 10 句，對話中事先告知客人）",
+        mem_b_desc: "就像店員正在跟客人講電話，<strong>方案 A 會記住剛才聊的前 3 句話，方案 B 與 C 則記住最近 10 句話的上下文</strong>（且會在回覆末段事先貼心提醒客人保留幾句記憶），客人連續追問時不用一直重複房型或服務名稱！",
+        mem_b_example: "<div class='font-bold text-emerald-400'>👉 實際對話情境：</div><p>• 客人先問：「請問海景雙人房一晚多少錢？」</p><p>• 客人接著問：「<strong>那有附早餐跟車位嗎？</strong>」（AI 記得上一句是在問海景雙人房，能精準回答！）</p><p class='text-slate-400 pt-1'>※ 超過句數（方案 A 超過 3 句／方案 B・C 超過 10 句）後舊閒聊會自動洗掉，不留存冗長對話紀錄。</p>",
         mem_c_badge: "方案 C 獨享升級",
-        mem_c_title: "📒 熟客專屬資料卡永久建檔（自動建立客戶名單）",
-        mem_c_desc: "AI 在聊天過程中，會自動幫每位客人建立一張<strong>「專屬熟客資料卡」</strong>並存進您的雲端客戶總表（Notion / Excel），永遠記住這位客人的重要習慣與禁忌！",
-        mem_c_example: "<div class='font-bold text-cyan-400'>👉 實際對話情境：</div><p>• 客人王先生訂房時順口說：「<strong>我們隨行有小孩對花生嚴重過敏，需要嬰兒床。</strong>」</p><p>• AI 自動把「王先生＝花生過敏＋嬰兒床」永久寫進您的客戶表。</p><p>• <strong>就算隔了幾個月王先生再次來問早餐</strong>，AI 仍主動貼心提醒：「廚房已為您註記花生過敏，含花生餐點會為您單獨替換喔！」</p>",
+        mem_c_title: "📒 熟客「重點資料卡」永久建檔（只存關鍵重點，不留整串閒聊！）",
+        mem_c_desc: "請放心！方案 C <strong>不會把整段幾百句閒聊全部存下來</strong>（對話同樣只留最近 10 句），而是由 AI 自動濃縮萃取客人的<strong>「過敏禁忌、特殊需求重點」</strong>寫入雲端客戶表（Notion / Excel），省空間又兼顧隱私！",
+        mem_c_example: "<div class='font-bold text-cyan-400'>👉 實際對話情境 ＋ 店家限制事先把關：</div><p>• 客人王先生說：「<strong>小孩對花生過敏，需要嬰兒床。</strong>」AI 只把重點「花生過敏、嬰兒床」存進熟客卡，幾個月後再訪仍主動貼心提醒！</p><p class='text-amber-300 pt-1'>• 🛡️ <strong>店家無法接受的要求可事先填表攔截：</strong>您可在 Google 試算表<strong>「店家不提供項目與限制」</strong>欄位事先填寫（如：本館無嬰兒床、禁帶寵物、無法客製過敏餐），AI 會第一時間嚴格遵守並禮貌婉拒客人，絕不亂答應！</p>",
         price_title: "三階梯透明訂閱方案 (A + B + C)，無綁約隨時可退訂",
-        price_desc: "需登入 Google 帳號以保障您的訂單紀錄，切換右上角語系自動換算當地結帳幣別。",
+        price_desc: "需登入 Google 帳號以保障您的訂單紀錄，切換右上角語系自動換算當地結帳幣別（只需設定 1 個 PayPal 收款信箱即可自動收各國幣別）。",
         price_unit: " / 月", popular_badge: "MOST POPULAR 店長首選",
         plan1_tag: "方案 A｜新手免費試用", plan1_name: "0 元體驗版 (Free)", plan1_price: "NT$ 0",
         p1_f1: "✔️ <strong>每月免費 50 次 AI 自動回答</strong>（支援多國語言自動翻譯接待）",
-        p1_f2: "✔️ <strong>Google 表格打字即改 ＋ 多組預約連結支援</strong>",
-        p1_f3: "✔️ <strong>試算表防誤刪快照備份保護</strong>",
-        p1_f4: "✔️ <strong>50 次額度用完自動切換專人通知</strong>",
+        p1_f2: "✔️ <strong>當下短記憶（記住剛才聊的前 3 句話，並於對話中事先告知客人）</strong>",
+        p1_f3: "✔️ <strong>Google 表格打字即改（可填寫「不提供項目」由 AI 自動婉拒）＋ 防誤刪快照</strong>",
+        p1_f4: "✔️ <strong>50 次額度用完自動切換專人通知 ＋ 多組預約連結支援</strong>",
         p1_f5: "✔️ <strong>免綁信用卡・登入 Google 帳號立即開通</strong>",
         plan1_btn: "🚀 免費開通方案 A",
         plan2_tag: "方案 B｜24H 無限次接待", plan2_name: "輕量訂閱版 (Basic)", plan2_price: "NT$ 1,680",
         p2_f1: "🌟 <strong>無限次 AI 多國語言自動回答</strong>（24H 零時差接待）",
-        p2_f2: "🌟 <strong>當下聊天記憶（記住剛才前 10 句話）</strong>：客人追問不鬼打牆",
+        p2_f2: "🌟 <strong>當下聊天記憶（記住剛才前 10 句話，事先告知客人，超過自動洗掉）</strong>",
         p2_f3: "🌟 <strong>真人求救 3 句話重點卡推播</strong>（支援店長 LINE 一鍵綁定 ＋ Telegram ＋ 最多 3 組 Email）",
         p2_f4: "🌟 <strong>多組預約/菜單連結智慧帶入 ＋ 試算表即時同步</strong>",
         p2_f5: "🌟 <strong>全天候高速託管 ＋ 隨時線上修改設定</strong>",
         plan2_paypal_btn: "💳 訂閱方案 B 並前往開通 (NT$ 1,680)",
         plan3_tag: "方案 C｜熟客建檔與全自動管家", plan3_name: "專業自動化版 (Pro)", plan3_price: "NT$ 2,980",
-        p3_f1: "🚀 <strong>包含方案 B（輕量版）全部無限功能</strong>",
-        p3_f2: "🚀 <strong>熟客專屬資料卡永久建檔</strong>：自動將過敏、嬰兒床等習慣存進雲端客戶表",
-        p3_f3: "🚀 <strong>跨次長期記憶</strong>：隔數月再訪詢問餐點時，AI 仍主動貼心提醒過敏禁忌",
+        p3_f1: "🚀 <strong>包含方案 B（前 10 句聊天記憶＋無限對話）全部功能</strong>",
+        p3_f2: "🚀 <strong>熟客「重點資料卡」永久建檔</strong>：只濃縮過敏/偏好重點存入客戶表，不留整串閒聊",
+        p3_f3: "🚀 <strong>跨次長期記憶 ＋ 試算表「店家不提供項目」優先把關婉拒</strong>",
         p3_f4: "🚀 <strong>Google 行事曆預約自動寫入</strong>",
         p3_f5: "🚀 <strong>入住前自動發送電子鎖密碼 ＋ 退房後自動發送老客優惠碼</strong>",
         plan3_paypal_btn: "💳 訂閱方案 C 並前往開通 (NT$ 2,980)",
         legal_title: "歐盟 AI 法案第 50 條透明度聲明、SLA 99.5% 可用性保證與自助退費規範",
-        legal_body: "1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶 AI 輔助回覆標示，明確告知消費者正與人工智慧系統互動。<br/>2. <strong>服務可用性（99.5% SLA）與試算表防刪快照</strong>：系統內建 Google 試算表安全快照備份；萬一試算表遭誤刪，AI 仍會自動使用最後一次完整快照繼續服務。<br/>3. <strong>安全金流與隨時退訂規定</strong>：付款全程透過 PayPal 官方加密收銀台完成，本站不儲存任何信用卡號。您可隨時登入「我的購買紀錄與設定」查詢訂單、一鍵取消訂閱或申請退費。",
+        legal_body: "1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶 AI 輔助回覆標示與保留記憶句數提醒（方案 A 前 3 句／方案 B・C 前 10 句）。<br/>2. <strong>服務可用性（99.5% SLA）與試算表防刪快照</strong>：系統內建 Google 試算表安全快照備份；萬一試算表遭誤刪，AI 仍會自動使用最後一次完整快照繼續服務。<br/>3. <strong>安全金流與隨時退訂規定</strong>：付款全程透過 PayPal 官方加密收銀台完成，本站不儲存任何信用卡號。您可隨時登入「我的購買紀錄與設定」查詢訂單、一鍵取消訂閱或申請退費。",
         faq_title: "常見問題 (FAQ)",
-        faq_q1: "Q1. 「當下聊天記憶（方案 B）」跟「熟客永久建檔（方案 C）」差在哪裡？",
-        faq_a1: "「當下聊天記憶（方案 B）」記住客人剛才聊的最近 10 句話，讓當下追問順暢不跳針；「熟客永久建檔（方案 C）」則會把客人提過的花生過敏、需要嬰兒床等重要習慣自動建檔存進您的雲端客戶表，幾個月後客人再來問早餐，AI 依然記得並主動提醒！",
+        faq_q1: "Q1. 方案 A（前3句）、方案 B（前10句）與方案 C（熟客重點資料卡）差在哪裡？方案 C 會把整串對話都存下來嗎？",
+        faq_a1: "方案 A 記住剛才聊的前 3 句話，方案 B 與 C 記住最近 10 句話（超過自動洗掉，且都會在對話中事先告知客人）。請放心，方案 C「不會」存下整串幾百句閒聊紀錄，只會自動把客人提過的花生過敏、需要嬰兒床等關鍵重點濃縮寫入雲端客戶表！若店家在 Google 試算表「店家不提供項目與限制」填寫不提供的服務，AI 也會優先禮貌婉拒。",
         faq_q2: "Q2. 開通後如果我想修改預約連結、換 Google 試算表或更換通知信箱，該怎麼改？",
         faq_a2: "只要用購買時的 Google 帳號登入官網右上角「📋 我的購買紀錄與設定」，就能隨時新增多組預約/菜單連結、更換試算表網址或最多 3 組緊急通知信箱；若需更換 LINE 金鑰，系統會寄送「6 位數安全驗證碼」至您的信箱，像改密碼一樣安全！",
         faq_q3: "Q3. 如何查詢我的購買付款紀錄，或是申請取消訂閱與退費？",
@@ -611,6 +635,7 @@
         c_lbl_name: "您的姓名 / 稱呼 *", c_lbl_email: "回覆聯絡 Email *", c_lbl_subject: "詢問主旨", c_lbl_msg: "詢問或需求內容 *", c_btn_send: "📨 送出客服信件",
         auth_title: "請先登入 Google 帳號",
         auth_desc: "為完整保留您的購買與付款紀錄、並保護店家設定不被他人竄改，購買或開通前請先驗證您的 Google 帳號：",
+        auth_google_btn: "使用 Google 帳號一鍵登入 (Continue with Google)",
         auth_otp_label: "或使用 Google 信箱接收 6 位數安全驗證碼登入：",
         auth_send_code: "寄送驗證碼",
         auth_verify_btn: "確認驗證碼並登入",
@@ -639,43 +664,43 @@
         step3_title: "3. Edit Google Sheet & Multi-Links", step3_desc: "Update prices in Google Sheets in 1 second, and manage multiple booking/menu links anytime in My Settings.",
         mem_title: "Plain-English Comparison: Current Chat Memory (Plan B) vs. VIP Guest Profile (Plan C)",
         mem_subtitle: "Choose the right AI memory level for your business hospitality:",
-        mem_b_badge: "Included in Plan B",
-        mem_b_title: "💬 Current Chat Memory (Remembers Last 10 Messages)",
-        mem_b_desc: "Just like a receptionist on a phone call, AI remembers the <strong>last 10 messages of the active conversation</strong> so guests never have to repeat room types or service names.",
-        mem_b_example: "<div class='font-bold text-emerald-400'>👉 Real Conversation Example:</div><p>• Guest asks: \"How much is the Ocean View Double Room?\"</p><p>• Guest follows up: \"<strong>Does it include breakfast and parking?</strong>\" (AI remembers 'it' refers to the Ocean View room!)</p><p class='text-slate-400 pt-1'>※ Automatically cleared after 10 messages—no permanent personal data stored.</p>",
+        mem_b_badge: "Plan A: Last 3 Msgs | Plan B/C: Last 10 Msgs",
+        mem_b_title: "💬 Short-Term Chat Memory (Plan A: 3 Msgs / Plan B & C: 10 Msgs)",
+        mem_b_desc: "Just like a receptionist on a phone call, <strong>Plan A remembers the last 3 messages and Plan B/C remembers the last 10 messages</strong> (with a transparent notice shown to guests) so follow-ups flow naturally!",
+        mem_b_example: "<div class='font-bold text-emerald-400'>👉 Real Conversation Example:</div><p>• Guest asks: \"How much is the Ocean View Double Room?\"</p><p>• Guest follows up: \"<strong>Does it include breakfast and parking?</strong>\" (AI remembers 'it' refers to the Ocean View room!)</p><p class='text-slate-400 pt-1'>※ Older chit-chat beyond 3 / 10 messages is automatically cleared—no raw chat log bloat.</p>",
         mem_c_badge: "Exclusive to Plan C",
-        mem_c_title: "📒 Permanent VIP Guest Profile Card (Auto-CRM List)",
-        mem_c_desc: "During chats, AI automatically builds a <strong>Permanent VIP Guest Note Card</strong> in your cloud customer sheet (Notion / Excel), remembering key habits and allergies forever!",
-        mem_c_example: "<div class='font-bold text-cyan-400'>👉 Real Conversation Example:</div><p>• Mr. Wang mentions while booking: \"<strong>My child has a severe peanut allergy and needs a baby crib.</strong>\"</p><p>• AI permanently saves 'Peanut Allergy + Baby Crib' to Mr. Wang's profile card.</p><p>• <strong>Months later when Mr. Wang asks about breakfast</strong>, AI proactively reminds him: \"Our kitchen has noted your peanut allergy and prepared peanut-free alternatives!\"</p>",
+        mem_c_title: "📒 Distilled VIP Guest Profile Card (Saves Key Facts Only, Not Raw Chat!)",
+        mem_c_desc: "Plan C <strong>does NOT store hundreds of raw chat messages</strong>! It keeps the last 10 active messages and distills only <strong>key guest facts (allergies, preferences)</strong> into a concise VIP Profile Card in Notion / Excel.",
+        mem_c_example: "<div class='font-bold text-cyan-400'>👉 Real Example + Store Restriction Guardrail:</div><p>• Mr. Wang mentions: \"<strong>Peanut allergy + baby crib needed.</strong>\" AI saves only those key tags to his VIP card for future visits.</p><p class='text-amber-300 pt-1'>• 🛡️ <strong>Pre-fill Unacceptable Requests in Google Sheet:</strong> List any store restrictions (e.g., no cribs, no pets) in your Google Sheet and AI will politely decline them automatically!</p>",
         price_title: "3 Transparent Subscription Plans (A + B + C), Cancel Anytime",
-        price_desc: "Google Sign-In keeps your billing records safe. Currency adjusts automatically.",
+        price_desc: "Google Sign-In keeps your billing records safe. Currency adjusts automatically with just 1 PayPal account.",
         price_unit: " / mo", popular_badge: "MOST POPULAR",
         plan1_tag: "Plan A | Free Starter", plan1_name: "Free Trial (Free)", plan1_price: "$0 USD",
         p1_f1: "✔️ <strong>50 Free AI Replies / Month</strong> (15+ languages auto-detected)",
-        p1_f2: "✔️ <strong>Google Sheet Live Sync + Multiple Booking Links</strong>",
-        p1_f3: "✔️ <strong>Auto-Snapshot Backup</strong> (safe even if Sheet is deleted)",
-        p1_f4: "✔️ <strong>Smooth Human Handover</strong> when 50 replies are reached",
+        p1_f2: "✔️ <strong>Short Chat Memory (Remembers last 3 messages, transparently noted)</strong>",
+        p1_f3: "✔️ <strong>Google Sheet Live Sync (supports Store Restrictions) + Snapshot Backup</strong>",
+        p1_f4: "✔️ <strong>Smooth Human Handover</strong> when 50 replies are reached + Multi-Links",
         p1_f5: "✔️ <strong>No Credit Card Needed · Sign in with Google to Start</strong>",
         plan1_btn: "🚀 Activate Plan A ($0 Free)",
         plan2_tag: "Plan B | 24/7 Unlimited", plan2_name: "Basic Subscription", plan2_price: "$55 USD",
         p2_f1: "🌟 <strong>Unlimited Multilingual AI Replies 24/7</strong>",
-        p2_f2: "🌟 <strong>Current Chat Memory (Last 10 messages)</strong> for natural follow-ups",
+        p2_f2: "🌟 <strong>Current Chat Memory (Last 10 messages, transparently noted)</strong>",
         p2_f3: "🌟 <strong>3-Sentence Handover Alert Card</strong> (1-Click LINE + Telegram + up to 3 Emails)",
         p2_f4: "🌟 <strong>Smart Multi-Link Insertion + Live Sheet Sync</strong>",
         p2_f5: "🌟 <strong>24/7 High-Speed Hosting + Anytime Settings Portal</strong>",
         plan2_paypal_btn: "💳 Subscribe Plan B & Setup ($55 USD)",
         plan3_tag: "Plan C | VIP Profiles & Full Automation", plan3_name: "Pro Automation", plan3_price: "$95 USD",
-        p3_f1: "🚀 <strong>Everything in Plan B (Unlimited)</strong>",
-        p3_f2: "🚀 <strong>Permanent VIP Guest Profile Card</strong> saved to Notion / Excel",
-        p3_f3: "🚀 <strong>Cross-Visit Long-Term Memory</strong> (remembers allergies & preferences)",
+        p3_f1: "🚀 <strong>Everything in Plan B (Last 10-Msg Memory + Unlimited)</strong>",
+        p3_f2: "🚀 <strong>Distilled VIP Guest Profile Card</strong> (saves key facts only, not raw chat logs)",
+        p3_f3: "🚀 <strong>Cross-Visit Memory + Store Restriction Auto-Guardrail</strong>",
         p3_f4: "🚀 <strong>Google Calendar Auto-Booking Sync</strong>",
         p3_f5: "🚀 <strong>Auto Door PIN Before Check-in + Post-Stay VIP Coupon</strong>",
         plan3_paypal_btn: "💳 Subscribe Plan C & Setup ($95 USD)",
         legal_title: "EU AI Act Art. 50 Transparency, 99.5% SLA & Self-Service Refund Policy",
-        legal_body: "1. <strong>AI Transparency (EU AI Act Art. 50)</strong>: Every automated reply clearly indicates AI assistance so guests know they are interacting with an AI concierge.<br/>2. <strong>99.5% SLA & Sheet Snapshot Backup</strong>: Automatic last-known-good snapshot keeps your AI running smoothly even if your Google Sheet is accidentally deleted.<br/>3. <strong>Secure Checkout & Anytime Cancellation</strong>: Payments are processed directly on PayPal's encrypted checkout—we never store card numbers. View receipts or cancel/request refunds anytime under 'My Orders & Settings'.",
+        legal_body: "1. <strong>AI Transparency (EU AI Act Art. 50)</strong>: Every automated reply clearly indicates AI assistance and the active memory window (3 or 10 messages).<br/>2. <strong>99.5% SLA & Sheet Snapshot Backup</strong>: Automatic last-known-good snapshot keeps your AI running smoothly even if your Google Sheet is accidentally deleted.<br/>3. <strong>Secure Checkout & Anytime Cancellation</strong>: Payments are processed directly on PayPal's encrypted checkout—we never store card numbers. View receipts or cancel/request refunds anytime under 'My Orders & Settings'.",
         faq_title: "Frequently Asked Questions (FAQ)",
-        faq_q1: "Q1. What is the difference between Current Chat Memory (Plan B) and VIP Guest Profile (Plan C)?",
-        faq_a1: "Plan B remembers the last 10 messages of the current chat so follow-up questions flow naturally. Plan C permanently files important guest details (like peanut allergies or baby crib requests) into your cloud customer table so AI still remembers them months later!",
+        faq_q1: "Q1. How do Plan A (3 msgs), Plan B (10 msgs), and Plan C (VIP Profile Card) differ? Does Plan C store all chat logs?",
+        faq_a1: "Plan A remembers the last 3 messages, and Plan B/C remembers the last 10 messages (transparently noted to guests). Plan C does NOT save raw chit-chat—it distills only key facts (like peanut allergies) into a concise VIP Guest Card, and checks your Google Sheet 'Store Restrictions' first to politely decline unavailable requests!",
         faq_q2: "Q2. How can I update booking links, change my Google Sheet, or reset LINE keys later?",
         faq_a2: "Simply sign in with your Google account and click 'My Orders & Settings' at the top right! You can add multiple booking/menu links, update up to 3 alert emails, or request a 6-digit Email Verification Code (just like a password reset) to safely update your LINE keys.",
         faq_q3: "Q3. Where can I check my payment history or cancel/request a refund?",
@@ -688,6 +713,7 @@
         c_lbl_name: "Your Name *", c_lbl_email: "Reply Email *", c_lbl_subject: "Subject", c_lbl_msg: "Message *", c_btn_send: "📨 Send Message",
         auth_title: "Sign in with Google",
         auth_desc: "Please sign in with your Google account to save your purchase history and protect your store settings:",
+        auth_google_btn: "Continue with Google (1-Click Sign In)",
         auth_otp_label: "Or receive a 6-digit login code via your Google email:",
         auth_send_code: "Send Code",
         auth_verify_btn: "Verify & Sign In",
@@ -729,8 +755,8 @@
         price_unit: " / 月", popular_badge: "人気 No.1 おすすめ",
         plan1_tag: "プラン A｜無料お試し", plan1_name: "0円フリープラン (Free)", plan1_price: "¥0",
         p1_f1: "✔️ <strong>月50回までAI多言語自動応答が無料</strong>",
-        p1_f2: "✔️ <strong>Googleスプレッドシート即時反映＋複数URL設定</strong>",
-        p1_f3: "✔️ <strong>シート誤削除時の自動スナップショット保護</strong>",
+        p1_f2: "✔️ <strong>直近3往復の短期記憶（対話内で記憶数を事前案内）＋複数URL設定</strong>",
+        p1_f3: "✔️ <strong>スプレッドシート即時反映（対応不可項目の事前設定可）＋誤削除保護</strong>",
         p1_f4: "✔️ <strong>50回超過時は自動でスタッフ通知へ切替</strong>",
         p1_f5: "✔️ <strong>クレカ登録不要・Googleログインで即開通</strong>",
         plan1_btn: "🚀 プラン A を無料で開通する",
@@ -765,6 +791,7 @@
         c_lbl_name: "お名前 *", c_lbl_email: "返信先メールアドレス *", c_lbl_subject: "件名", c_lbl_msg: "お問い合わせ内容 *", c_btn_send: "📨 メールを送信する",
         auth_title: "Google アカウントでログイン",
         auth_desc: "購入履歴の保存および店舗設定の改ざん防止のため、Googleアカウントでログインしてください：",
+        auth_google_btn: "Google アカウントでワンクリックログイン",
         auth_otp_label: "またはGoogleメールアドレスで6桁の認証コードを受け取ってログイン：",
         auth_send_code: "認証コード送信",
         auth_verify_btn: "認証してログイン",
@@ -806,8 +833,8 @@
         price_unit: " / bln", popular_badge: "PALING POPULER",
         plan1_tag: "Paket A | Uji Coba Gratis", plan1_name: "Paket Gratis (Free)", plan1_price: "Rp 0",
         p1_f1: "✔️ <strong>Gratis 50 Balasan AI / Bulan</strong> (otomatis multibahasa)",
-        p1_f2: "✔️ <strong>Sinkronisasi Google Sheets + Dukungan Banyak Link</strong>",
-        p1_f3: "✔️ <strong>Cadangan Snapshot Otomatis</strong> jika Sheet terhapus",
+        p1_f2: "✔️ <strong>Memori Pendek (Ingat 3 pesan terakhir, diinfokan ke tamu)</strong>",
+        p1_f3: "✔️ <strong>Sinkronisasi Google Sheets (bisa isi batasan toko) + Snapshot</strong>",
         p1_f4: "✔️ <strong>Otomatis Alihkan ke Staf</strong> saat kuota 50 habis",
         p1_f5: "✔️ <strong>Tanpa Kartu Kredit · Login Google Langsung Aktif</strong>",
         plan1_btn: "🚀 Aktifkan Paket A (Gratis)",
@@ -842,6 +869,7 @@
         c_lbl_name: "Nama Anda *", c_lbl_email: "Email Balasan *", c_lbl_subject: "Subjek", c_lbl_msg: "Pesan Anda *", c_btn_send: "📨 Kirim Pesan",
         auth_title: "Login dengan Akun Google",
         auth_desc: "Silakan login dengan akun Google Anda untuk menyimpan riwayat pembelian dan melindungi pengaturan toko:",
+        auth_google_btn: "Login 1-Klik dengan Akun Google",
         auth_otp_label: "Atau terima kode verifikasi 6 digit melalui email Google Anda:",
         auth_send_code: "Kirim Kode",
         auth_verify_btn: "Verifikasi & Login",
@@ -883,8 +911,8 @@
         price_unit: " / mese", popular_badge: "PIÙ SCELTO",
         plan1_tag: "Piano A | Prova Gratuita", plan1_name: "Piano Gratuito (Free)", plan1_price: "€0",
         p1_f1: "✔️ <strong>50 Risposte IA Gratuite / Mese</strong> (multilingue automatico)",
-        p1_f2: "✔️ <strong>Sincronizzazione Google Sheets + Link Multipli</strong>",
-        p1_f3: "✔️ <strong>Backup Automatico</strong> contro cancellazioni accidentali",
+        p1_f2: "✔️ <strong>Memoria Breve (Ricorda gli ultimi 3 messaggi, indicato agli ospiti)</strong>",
+        p1_f3: "✔️ <strong>Sincronizzazione Google Sheets (con limiti struttura) + Backup</strong>",
         p1_f4: "✔️ <strong>Passaggio Automatico Operatore</strong> oltre le 50 risposte",
         p1_f5: "✔️ <strong>Nessuna Carta Richiesta · Accedi con Google e Attiva</strong>",
         plan1_btn: "🚀 Attiva Piano A (€0 Gratis)",
@@ -919,6 +947,7 @@
         c_lbl_name: "Il Tuo Nome *", c_lbl_email: "Email di Risposta *", c_lbl_subject: "Oggetto", c_lbl_msg: "Messaggio *", c_btn_send: "📨 Invia Messaggio",
         auth_title: "Accedi con Google",
         auth_desc: "Accedi con il tuo account Google per salvare lo storico acquisti e proteggere le impostazioni:",
+        auth_google_btn: "Accedi in 1 Clic con Google",
         auth_otp_label: "Oppure ricevi un codice di sicurezza a 6 cifre sulla tua email Google:",
         auth_send_code: "Invia Codice",
         auth_verify_btn: "Verifica e Accedi",
@@ -932,6 +961,22 @@
     let currentUser = null;
     let pendingPlanSelection = null;
     let publicConfig = {};
+
+    function getUserToken() {
+      try { return localStorage.getItem("smarthost_user_token") || ""; } catch (e) { return ""; }
+    }
+    function setUserToken(tok) {
+      try {
+        if (tok) localStorage.setItem("smarthost_user_token", tok);
+        else localStorage.removeItem("smarthost_user_token");
+      } catch (e) {}
+    }
+    async function userFetch(url, options = {}) {
+      const headers = Object.assign({}, options.headers || {});
+      const tok = getUserToken();
+      if (tok) headers["X-User-Token"] = tok;
+      return fetch(url, Object.assign({}, options, { headers, credentials: "same-origin" }));
+    }
 
     function applyLanguage(langCode) {
       currentLang = I18N_DICT[langCode] ? langCode : "zh-TW";
@@ -952,8 +997,8 @@
     async function loadPublicAndAuth() {
       try {
         const [cfgRes, meRes] = await Promise.all([
-          fetch("/api/public_config"),
-          fetch("/api/auth/me")
+          userFetch("/api/public_config"),
+          userFetch("/api/auth/me")
         ]);
         publicConfig = await cfgRes.json();
         const meData = await meRes.json();
@@ -999,15 +1044,62 @@
       }
     }
 
+    function triggerGoogleButtonFlow() {
+      if (publicConfig.google_client_id && window.google && window.google.accounts && window.google.accounts.id) {
+        try {
+          window.google.accounts.id.prompt();
+          return;
+        } catch (e) {}
+      }
+      const box = document.getElementById("google-quick-box");
+      if (box) {
+        box.classList.remove("hidden");
+        const inp = document.getElementById("google-btn-email");
+        if (inp) inp.focus();
+      }
+    }
+
+    async function submitGoogleButtonLogin() {
+      const inp = document.getElementById("google-btn-email");
+      const email = inp ? inp.value.trim() : "";
+      if (!email || !email.includes("@")) {
+        showAuthMsg("請輸入有效的 Google 信箱 (@gmail.com 或企業信箱)", true);
+        return;
+      }
+      try {
+        const res = await userFetch("/api/auth/google_button_login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          if (data.token) setUserToken(data.token);
+          closeAuthModal();
+          await loadPublicAndAuth();
+          if (pendingPlanSelection) {
+            const target = pendingPlanSelection;
+            pendingPlanSelection = null;
+            handleSelectPlan(target);
+          }
+        } else {
+          showAuthMsg(data.message || "Google 登入失敗", true);
+        }
+      } catch (e) {
+        showAuthMsg("網路連線異常，請重試", true);
+      }
+    }
+
     async function handleGoogleCredentialResponse(response) {
       try {
-        const res = await fetch("/api/auth/google_credential", {
+        const res = await userFetch("/api/auth/google_credential", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ credential: response.credential })
         });
         const data = await res.json();
         if (res.ok && data.status === "success") {
+          if (data.token) setUserToken(data.token);
           closeAuthModal();
           await loadPublicAndAuth();
           if (pendingPlanSelection) {
@@ -1100,13 +1192,14 @@
       const email = document.getElementById("auth-email-input").value.trim();
       const code = document.getElementById("auth-otp-input").value.trim();
       if (!code) return;
-      const res = await fetch("/api/auth/verify_login_otp", {
+      const res = await userFetch("/api/auth/verify_login_otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code })
       });
       const data = await res.json();
       if (res.ok && data.status === "success") {
+        if (data.token) setUserToken(data.token);
         closeAuthModal();
         await loadPublicAndAuth();
         if (pendingPlanSelection) {
@@ -1120,7 +1213,8 @@
     }
 
     async function logoutCustomer() {
-      await fetch("/api/auth/logout", { method: "POST" });
+      setUserToken("");
+      await userFetch("/api/auth/logout", { method: "POST" });
       closeMemberModal();
       setLoggedOutUI();
     }
@@ -1138,7 +1232,7 @@
       const currency = dict.currency || "TWD";
 
       try {
-        const res = await fetch("/api/orders/create", {
+        const res = await userFetch("/api/orders/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan: planKey, amount, currency })
@@ -1303,7 +1397,7 @@
     async function requestOrderRefund(orderId) {
       const reason = prompt("請輸入取消訂閱或申請退費原因（送出後將立即降級回 0 元版並寄送確認信）：", "申請取消訂閱與退費");
       if (reason === null) return;
-      const res = await fetch("/api/orders/cancel_or_refund", {
+      const res = await userFetch("/api/orders/cancel_or_refund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ order_id: orderId, reason })
@@ -1314,7 +1408,7 @@
     }
 
     async function sendResetKeyOtp() {
-      const res = await fetch("/api/account/send_security_otp", { method: "POST" });
+      const res = await userFetch("/api/account/send_security_otp", { method: "POST" });
       const data = await res.json();
       alert(data.creator_test_code ? `${data.message}\n(創建者預覽驗證碼: ${data.creator_test_code})` : (data.message || "已發送驗證碼"));
     }
@@ -1338,7 +1432,7 @@
         new_channel_access_token: document.getElementById(`st-tok-${tid}`).value.trim()
       };
 
-      const res = await fetch("/api/account/update_settings", {
+      const res = await userFetch("/api/account/update_settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

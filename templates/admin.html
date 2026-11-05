@@ -26,8 +26,18 @@
       <form id="creator-login-form" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1.5">總後台管理密碼</label>
-          <input type="password" id="master-pwd" required placeholder="請輸入創建者總後台密碼..."
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-400" />
+          <div class="relative">
+            <input type="password" id="master-pwd" required placeholder="請輸入創建者總後台密碼..."
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-4 pr-16 py-3 text-sm text-white focus:outline-none focus:border-emerald-400" />
+            <button type="button" onclick="const p=document.getElementById('master-pwd'); p.type=p.type==='password'?'text':'password';"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white">
+              顯示
+            </button>
+          </div>
+          <p class="text-[11px] text-emerald-400/90 mt-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+            💡 預設初始密碼為：<code class="font-mono font-bold text-white select-all">smarthost888</code><br/>
+            <span class="text-slate-400">（登入後可於「⚙️ 金流・Google 登入・自動寄信設定」分頁底部修改為您的專屬密碼，外人與 AI 皆無法得知！）</span>
+          </p>
         </div>
         <button type="submit" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
           解鎖進入總管理後台
@@ -217,6 +227,22 @@
   </div>
 
   <script>
+    function getCreatorToken() {
+      try { return localStorage.getItem("smarthost_creator_token") || ""; } catch (e) { return ""; }
+    }
+    function setCreatorToken(tok) {
+      try {
+        if (tok) localStorage.setItem("smarthost_creator_token", tok);
+        else localStorage.removeItem("smarthost_creator_token");
+      } catch (e) {}
+    }
+    async function creatorFetch(url, options = {}) {
+      const headers = Object.assign({}, options.headers || {});
+      const tok = getCreatorToken();
+      if (tok) headers["X-Creator-Token"] = tok;
+      return fetch(url, Object.assign({}, options, { headers, credentials: "same-origin" }));
+    }
+
     function showToast(msg) {
       const t = document.getElementById("toast-bar");
       t.textContent = msg;
@@ -240,13 +266,14 @@
       e.preventDefault();
       const pwd = document.getElementById("master-pwd").value.trim();
       const errEl = document.getElementById("login-err");
-      const res = await fetch("/api/creator/login", {
+      const res = await creatorFetch("/api/creator/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pwd })
       });
       const data = await res.json();
       if (res.ok && data.status === "success") {
+        if (data.token) setCreatorToken(data.token);
         errEl.classList.add("hidden");
         loadOverview();
       } else {
@@ -256,13 +283,14 @@
     });
 
     async function creatorLogout() {
-      await fetch("/api/creator/logout", { method: "POST" });
+      setCreatorToken("");
+      await creatorFetch("/api/creator/logout", { method: "POST" });
       document.getElementById("master-console").classList.add("hidden");
       document.getElementById("login-gate").classList.remove("hidden");
     }
 
     async function loadOverview() {
-      const res = await fetch("/api/creator/overview");
+      const res = await creatorFetch("/api/creator/overview");
       if (res.status === 401) {
         document.getElementById("master-console").classList.add("hidden");
         document.getElementById("login-gate").classList.remove("hidden");
@@ -315,9 +343,9 @@
 
             <select onchange="changeTenantPlan('${t.tenant_id}', this.value)"
               class="bg-slate-950 border-2 border-emerald-500/50 rounded-xl px-3 py-2 font-extrabold text-white focus:outline-none">
-              <option value="free" ${t.plan === 'free' ? 'selected' : ''}>方案 A：0元版 (單次問答)</option>
+              <option value="free" ${t.plan === 'free' ? 'selected' : ''}>方案 A：0元版 (前3句短記憶)</option>
               <option value="basic" ${t.plan === 'basic' ? 'selected' : ''}>方案 B：輕量版 (前10句記憶)</option>
-              <option value="pro" ${t.plan === 'pro' ? 'selected' : ''}>方案 C：專業版 (熟客永久建檔)</option>
+              <option value="pro" ${t.plan === 'pro' ? 'selected' : ''}>方案 C：專業版 (前10句+熟客重點卡)</option>
             </select>
           </div>
         </div>
@@ -388,7 +416,7 @@
     }
 
     async function changeTenantPlan(tid, newPlan) {
-      const res = await fetch("/api/creator/action", {
+      const res = await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set_plan", tenant_id: tid, plan: newPlan })
@@ -400,7 +428,7 @@
     }
 
     async function resetTenantQuota(tid) {
-      await fetch("/api/creator/action", {
+      await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "reset_quota", tenant_id: tid })
@@ -412,7 +440,7 @@
     async function createSimulatedPaidOrder() {
       const email = prompt("請輸入要綁定這筆測試訂單的信箱（用來讓您在前台測試『查看購買紀錄』與『申請退費』）：", document.getElementById("set-contact-email").value || "creator@smarthost-ai.com");
       if (!email) return;
-      const res = await fetch("/api/creator/action", {
+      const res = await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create_test_paid_order", email, plan: "pro" })
@@ -425,7 +453,7 @@
 
     async function markOrderRefunded(orderId) {
       if (!confirm(`確定將訂單 ${orderId} 標記為「已完成退費」並發送通知信給客戶嗎？`)) return;
-      await fetch("/api/creator/action", {
+      await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "mark_order_refunded", order_id: orderId })
@@ -435,7 +463,7 @@
     }
 
     async function markMsgRead(msgId) {
-      await fetch("/api/creator/action", {
+      await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "mark_message_read", msg_id: msgId })
@@ -445,11 +473,15 @@
 
     async function quickCreatorCustomerPreview() {
       const email = document.getElementById("set-contact-email").value || "creator@smarthost-ai.com";
-      await fetch("/api/creator/action", {
+      const res = await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "quick_creator_customer_login", email })
       });
+      const data = await res.json();
+      if (data && data.token) {
+        try { localStorage.setItem("smarthost_user_token", data.token); } catch (e) {}
+      }
       window.open("/index.html", "_blank");
     }
 
@@ -468,7 +500,7 @@
         official_service_hours: document.getElementById("set-service-hours").value.trim(),
         new_master_password: document.getElementById("set-new-master-pwd").value.trim()
       };
-      const res = await fetch("/api/creator/action", {
+      const res = await creatorFetch("/api/creator/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

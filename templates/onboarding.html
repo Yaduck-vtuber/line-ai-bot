@@ -349,7 +349,29 @@
         <h3 data-i18n="login_modal_title" class="text-lg font-extrabold text-white mb-1">登入 Google 帳號以綁定店家</h3>
         <p data-i18n="login_modal_desc" class="text-xs text-slate-400">登入後系統將自動連結您的購買紀錄與開通權限：</p>
       </div>
-      <div class="flex justify-center mb-4"><div id="google-gsi-onboard"></div></div>
+      <!-- 官方標準樣式「使用 Google 帳號一鍵登入」按鈕 -->
+      <div class="mb-4 space-y-2.5">
+        <button type="button" onclick="triggerOnboardGoogleBtn()"
+          class="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm flex items-center justify-center gap-3 shadow-md transition">
+          <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
+            <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/>
+            <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5L1.6 16c1.9 3.9 5.8 7 10.4 7z"/>
+          </svg>
+          <span>使用 Google 帳號一鍵登入 (Continue with Google)</span>
+        </button>
+        <div class="flex justify-center"><div id="google-gsi-onboard"></div></div>
+        <div id="ob-google-quick" class="hidden bg-slate-950 border border-emerald-500/40 rounded-xl p-3.5 space-y-2.5">
+          <p class="text-xs text-emerald-300 font-bold">🔗 請輸入您的 Google 帳號 (@gmail.com 或企業信箱) 立即完成連結：</p>
+          <input type="email" id="ob-google-btn-email" placeholder="yourname@gmail.com"
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+          <button type="button" onclick="submitOnboardGoogleBtn()"
+            class="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+            ✅ 立即以 Google 帳號登入並繼續
+          </button>
+        </div>
+      </div>
       <div class="border-t border-slate-800 pt-4 space-y-3">
         <div class="flex gap-2">
           <input type="email" id="ob-login-email" placeholder="yourname@gmail.com"
@@ -856,9 +878,25 @@
       applyOnboardingLang(selected);
     });
 
+    function getUserToken() {
+      try { return localStorage.getItem("smarthost_user_token") || ""; } catch (e) { return ""; }
+    }
+    function setUserToken(tok) {
+      try {
+        if (tok) localStorage.setItem("smarthost_user_token", tok);
+        else localStorage.removeItem("smarthost_user_token");
+      } catch (e) {}
+    }
+    async function userFetch(url, options = {}) {
+      const headers = Object.assign({}, options.headers || {});
+      const tok = getUserToken();
+      if (tok) headers["X-User-Token"] = tok;
+      return fetch(url, Object.assign({}, options, { headers, credentials: "same-origin" }));
+    }
+
     async function checkOnboardingAuth() {
       try {
-        const [cRes, mRes] = await Promise.all([fetch("/api/public_config"), fetch("/api/auth/me")]);
+        const [cRes, mRes] = await Promise.all([userFetch("/api/public_config"), userFetch("/api/auth/me")]);
         publicCfg = await cRes.json();
         const me = await mRes.json();
         if (me.authenticated && me.user) {
@@ -885,12 +923,14 @@
         window.google.accounts.id.initialize({
           client_id: publicCfg.google_client_id,
           callback: async (resp) => {
-            const r = await fetch("/api/auth/google_credential", {
+            const r = await userFetch("/api/auth/google_credential", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ credential: resp.credential })
             });
-            if (r.ok) {
+            const d = await r.json();
+            if (r.ok && d.status === "success") {
+              if (d.token) setUserToken(d.token);
               closeLoginModal();
               await checkOnboardingAuth();
             }
@@ -901,6 +941,38 @@
           { theme: "filled_black", size: "large", shape: "pill", width: 260 }
         );
       } catch (_) {}
+    }
+
+    function triggerOnboardGoogleBtn() {
+      if (publicCfg.google_client_id && window.google && window.google.accounts && window.google.accounts.id) {
+        try {
+          window.google.accounts.id.prompt();
+          return;
+        } catch (e) {}
+      }
+      const box = document.getElementById("ob-google-quick");
+      if (box) {
+        box.classList.remove("hidden");
+        const inp = document.getElementById("ob-google-btn-email");
+        if (inp) inp.focus();
+      }
+    }
+
+    async function submitOnboardGoogleBtn() {
+      const inp = document.getElementById("ob-google-btn-email");
+      const email = inp ? inp.value.trim() : "";
+      if (!email || !email.includes("@")) return;
+      const res = await userFetch("/api/auth/google_button_login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        if (data.token) setUserToken(data.token);
+        closeLoginModal();
+        await checkOnboardingAuth();
+      }
     }
 
     function openLoginModal() {
@@ -920,7 +992,7 @@
       const email = document.getElementById("ob-login-email").value.trim();
       const msg = document.getElementById("ob-login-msg");
       if (!email || !email.includes("@")) return;
-      const res = await fetch("/api/auth/send_login_otp", {
+      const res = await userFetch("/api/auth/send_login_otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })
@@ -941,16 +1013,17 @@
     async function verifyOnboardOtp() {
       const email = document.getElementById("ob-login-email").value.trim();
       const code = document.getElementById("ob-otp-code").value.trim();
-      const res = await fetch("/api/auth/verify_login_otp", {
+      const res = await userFetch("/api/auth/verify_login_otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code })
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        if (data.token) setUserToken(data.token);
         closeLoginModal();
         await checkOnboardingAuth();
       } else {
-        const data = await res.json();
         const msg = document.getElementById("ob-login-msg");
         msg.classList.remove("hidden");
         msg.className = "text-xs text-center text-rose-400 font-bold";
@@ -989,7 +1062,7 @@
       box.classList.remove("hidden");
       box.textContent = "⏳ 正在處理退訂與退費申請...";
       try {
-        const res = await fetch("/api/orders/cancel_or_refund", {
+        const res = await userFetch("/api/orders/cancel_or_refund", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ order_id: orderId, reason: "客戶於開通頁面申請一鍵取消訂閱 / 退費" })
@@ -1062,7 +1135,7 @@
       submitBtn.textContent = "⏳ Verifying with LINE Official Server...";
 
       try {
-        const res = await fetch("/api/register_tenant", {
+        const res = await userFetch("/api/register_tenant", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

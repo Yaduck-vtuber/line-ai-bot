@@ -532,8 +532,50 @@ def reply_to_line(tenant_cfg: dict, reply_token: str, text: str, user_id: str = 
                 )
 
 
+def _is_kb_row_disabled(key_col: str, val_col: str, status_col: str = "") -> bool:
+    """
+    判斷 Google 試算表或線上表單中的某一列是否被店家標記為「停用 / 不使用 / 關閉」：
+    - 支援在試算表第 3 欄（C 欄）填寫：停用、不使用、關閉、off、false、0
+    - 或直接在欄位名稱／內容開頭加上：[停用]、[不使用]、[關閉]、#、//
+    被標記停用的原 LINE 機器人回覆內容會自動被系統過濾排除，AI 絕不引用！
+    """
+    st = (status_col or "").strip().lower()
+    if st in ["停用", "不使用", "關閉", "暫停", "off", "false", "disabled", "no", "0"]:
+        return True
+    for text_part in [key_col.strip(), val_col.strip()]:
+        low = text_part.lower()
+        if low.startswith(("[停用]", "【停用】", "[不使用]", "【不使用】", "[關閉]", "【關閉】", "(停用)", "（停用）", "#", "//")):
+            return True
+    return False
+
+
+def get_tenant_ignore_keywords(tenant_cfg: dict, kb_fields: dict = None) -> list[str]:
+    """
+    取得店家設定之「原 LINE 機器人關鍵字（AI 自動靜音禮讓清單）」：
+    支援從後台設定 `ignore_keywords` 或從 Google 試算表／線上表單的
+    `原LINE機器人關鍵字`、`不回覆關鍵字`、`AI靜音關鍵字`、`禮讓關鍵字` 欄位自動讀取！
+    """
+    raw_list = []
+    cfg_kw = str(tenant_cfg.get("ignore_keywords", "") or "").strip()
+    if cfg_kw:
+        raw_list.append(cfg_kw)
+    if kb_fields:
+        for k_name in ["原LINE機器人關鍵字", "不回覆關鍵字", "AI靜音關鍵字", "禮讓關鍵字", "原機器人關鍵字"]:
+            if kb_fields.get(k_name):
+                raw_list.append(str(kb_fields[k_name]))
+    combined = ",".join(raw_list)
+    if not combined:
+        return []
+    keywords = []
+    for item in re.split(r"[,;，；、\n]+", combined):
+        w = item.strip()
+        if w and w not in keywords:
+            keywords.append(w)
+    return keywords
+
+
 def _refresh_sheet_cache_bg(tid: str, sheet_url: str):
-    """背景非阻塞更新 Google 試算表快取，確保客人訊息 0 毫秒等待"""
+    """背景非阻塞更新 Google 試算表快取，確保客人訊息 0 毫秒等待（自動過濾標記為停用之列）"""
     try:
         resp = requests.get(sheet_url, timeout=4)
         if resp.status_code == 200 and resp.text.strip():
@@ -545,7 +587,10 @@ def _refresh_sheet_cache_bg(tid: str, sheet_url: str):
                     continue
                 key_col = row[0].strip()
                 val_col = row[1].strip()
-                if idx == 0 and key_col in ["欄位名稱", "項目", "Key", "Field", "標題"]:
+                status_col = row[2].strip() if len(row) >= 3 else ""
+                if idx == 0 and key_col in ["欄位名稱", "項目", "Key", "Field", "標題", "關鍵字"]:
+                    continue
+                if _is_kb_row_disabled(key_col, val_col, status_col):
                     continue
                 if key_col and val_col:
                     parsed_sheet[key_col] = val_col
@@ -558,7 +603,7 @@ def _refresh_sheet_cache_bg(tid: str, sheet_url: str):
 
 
 def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
-    """三層防呆保護機制讀取 Google 試算表 ＋ 線上自填表單知識庫 ＋ 誤刪快照自動還原"""
+    """三層防呆保護機制讀取 Google 試算表 ＋ 線上自填表單知識庫 ＋ 停用列自動過濾 ＋ 誤刪快照自動還原"""
     tid = tenant_cfg["tenant_id"]
     sheet_url = (tenant_cfg.get("sheet_csv_url") or (GOOGLE_SHEET_CSV_URL if tid == "default" else "")).strip()
     custom_kb_text = (tenant_cfg.get("custom_kb_text") or "").strip()
@@ -587,13 +632,16 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
                             continue
                         key_col = row[0].strip()
                         val_col = row[1].strip()
-                        if idx == 0 and key_col in ["欄位名稱", "項目", "Key", "Field", "標題"]:
+                        status_col = row[2].strip() if len(row) >= 3 else ""
+                        if idx == 0 and key_col in ["欄位名稱", "項目", "Key", "Field", "標題", "關鍵字"]:
+                            continue
+                        if _is_kb_row_disabled(key_col, val_col, status_col):
                             continue
                         if key_col and val_col:
                             parsed_from_sheet[key_col] = val_col
                     if parsed_from_sheet:
                         _sheet_cache[tid] = {"ts": now, "data": parsed_from_sheet}
-                        _sheet_last_good_snapshot[tid] = dict(parsed_from_sheet)
+                        _sheet_last_good_snapshot[tid] = dict(parsed_sheet := parsed_from_sheet)
                         has_custom_sheet_data = True
                 elif tid in _sheet_last_good_snapshot:
                     parsed_from_sheet = dict(_sheet_last_good_snapshot[tid])
@@ -605,21 +653,27 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
                 else:
                     logger.warning(f"[{tid}] Google Sheet live fetch error ({e}).")
 
-    # 解析店家在後台直接填寫的「線上表單知識庫 (custom_kb_text)」(支援「欄位：內容」格式)
+    # 解析店家在後台直接填寫的「線上表單知識庫 (custom_kb_text)」(支援「欄位：內容」格式，自動排除 [停用] 列)
     parsed_custom_lines = {}
+    active_custom_kb_lines = []
     if custom_kb_text:
         for line in custom_kb_text.splitlines():
             clean_l = line.strip().lstrip("-•* ")
             if not clean_l:
                 continue
+            if _is_kb_row_disabled(clean_l, ""):
+                continue
+            active_custom_kb_lines.append(line)
             if "：" in clean_l:
                 k_part, v_part = clean_l.split("：", 1)
-                parsed_custom_lines[k_part.strip()] = v_part.strip()
+                if not _is_kb_row_disabled(k_part, v_part):
+                    parsed_custom_lines[k_part.strip()] = v_part.strip()
             elif ":" in clean_l and not clean_l.lower().startswith("http"):
                 k_part, v_part = clean_l.split(":", 1)
-                parsed_custom_lines[k_part.strip()] = v_part.strip()
+                if not _is_kb_row_disabled(k_part, v_part):
+                    parsed_custom_lines[k_part.strip()] = v_part.strip()
 
-    if has_custom_sheet_data or custom_kb_text:
+    if has_custom_sheet_data or active_custom_kb_lines:
         merged_fields = {}
         merged_fields["商家名稱"] = tenant_cfg.get("client_name", CLIENT_NAME)
         merged_fields.update(parsed_from_sheet)
@@ -640,13 +694,17 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
                 if clean_id.startswith("U") and len(clean_id) >= 20:
                     tenant_cfg.setdefault("admin_ids", set()).add(clean_id)
 
+    hidden_meta_keys = {
+        "電子鎖密碼", "管理員LINE_ID", "admin_user_id", "店長LINE_ID",
+        "原LINE機器人關鍵字", "不回覆關鍵字", "AI靜音關鍵字", "禮讓關鍵字", "原機器人關鍵字"
+    }
     custom_raw_kb = os.getenv("CLIENT_KNOWLEDGE_BASE", "").strip() if tid == "default" else ""
     kb_lines = ["---【店家正式授權之唯一知識庫表單（未列於下方之問題一律不得自行猜測，必須轉接專人！）】---"]
     for k, v in merged_fields.items():
-        if k not in ["電子鎖密碼", "管理員LINE_ID", "admin_user_id", "店長LINE_ID"]:
+        if k not in hidden_meta_keys:
             kb_lines.append(f"- {k}：{v}")
-    if custom_kb_text:
-        kb_lines.append("\n---【店家補充表單規定原文】---\n" + custom_kb_text)
+    if active_custom_kb_lines:
+        kb_lines.append("\n---【店家補充表單規定原文（已自動排除標記 [停用] 之項目）】---\n" + "\n".join(active_custom_kb_lines))
     if custom_raw_kb:
         kb_lines.append("\n---【補充說明資訊】---\n" + custom_raw_kb)
 
@@ -881,9 +939,13 @@ def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_histo
    - 若旅客告知預計抵達時間（例如「下午 4 點到」），請親切確認。
 {booking_instruction}
 
-# LINE MESSAGING DISPLAY RULES
+# LINE MESSAGING DISPLAY RULES & 100+ LANGUAGES AUTO-TRANSLATION (全球百國語系全自動偵測與雙向翻譯)
 1. 每封回覆控制在 3-5 句內，善用換行與 Emoji（🏨、🔑、🚗、⏰、💡）。
-2. 自動偵測旅客輸入的語言，並一律用「相同的語言」親切回覆。
+2. 🌐【全球 100+ 國語言全自動翻譯回覆】：
+   - 無論下方店家的 Google 試算表或表單是用繁體中文或哪種語言填寫，請「自動偵測旅客輸入的語言」（支援繁中、簡中、英文、日文、韓文、泰文、越南文、印尼文、馬來文、菲律賓文、法文、德文、西班牙文、義大利文、俄文、阿拉伯文等全球所有語言），並一律將知識庫內的答案「精準翻譯成該位旅客使用的語言」親切回覆！
+   - 同時，為了方便台灣/在地店家老闆閱讀，最末端隱藏 JSON 中的 `"handover_summary_3_sentences"`（給店長看的 3 句話問題摘要卡）請一律自動翻譯成「繁體中文」撰寫！
+3. 🔄【原 LINE 機器人回覆內容智慧接手】：
+   - 若店家將原本 LINE 機器人設定好的標準問答貼在下方知識庫中，請自動吸收其規則並依旅客提問語境自然調整語氣回覆（已被標記 [停用] 之項目系統已自動過濾，請勿提及）。
 
 # KNOWLEDGE BASE (店家正式填寫之唯一知識庫表單)
 所有回答必須 100% 嚴格基於以下資料，未列於下方之問題請一律禮貌告知「已通知專人客服為您確認」並觸發轉接真人：
@@ -893,7 +955,7 @@ def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_histo
 1. 只要遇到：(a) 知識庫表單未明確記載的問題、(b) 旅客主動要求找真人客服、(c) 設施故障、緊急狀況、複雜退改或客訴建議，請一律禮貌告知「已立即為您通知專人客服」，並在 JSON 設定 `"need_human": true`。
 
 # TRANSPARENCY NOTICE (必須事先清楚告知客戶記憶句數與真人求救方式)
-請務必在回覆訊息正文的最後加上以下提示標籤（在隱藏 JSON 之前，並依旅客語言翻譯）：
+請務必在回覆訊息正文的最後加上以下提示標籤（在隱藏 JSON 之前，並依旅客使用的語言自動翻譯）：
 🤖 本訊息由 {client_name} AI 智能管家自動回覆（💡 系統完整保留最近 {memory_limit} 句對話記憶；如需真人服務請隨時輸入「轉接專人」）
 
 # BACKEND JSON EXTRACTION (給後端系統攔截用，後端會自動切除不讓旅客看見)
@@ -1327,40 +1389,87 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                 reply_to_line(tenant_cfg, reply_token, id_reply, user_id)
                 return
 
-            # 0C. 錯誤與建議回報指令（支援客人在 LINE 直接輸入「/回報 ...」或「回報錯誤：...」）
-            if stripped.startswith("/回報") or stripped.startswith("回報錯誤") or stripped.startswith("錯誤回報") or stripped.startswith("建議回報"):
-                report_content = re.sub(r"^(/回報|回報錯誤|錯誤回報|建議回報)[：:\s]*", "", stripped).strip() or stripped
+            # 0C-1. 回報給「官網總管理員（創建者）」專用指令：輸入「/回報系統 ...」或「/回報官網 ...」直送您的 /admin 總後台，不打擾一般店家客人
+            if stripped.startswith("/回報系統") or stripped.startswith("/回報官網"):
+                sys_report = re.sub(r"^(/回報系統|/回報官網)[：:\s]*", "", stripped).strip() or stripped
                 now_str = datetime.now(TW_TZ).strftime("%Y-%m-%d %H:%M:%S")
                 with _db_lock:
                     SAAS_DB["messages"].append({
-                        "msg_id": f"REP-{secrets.token_hex(3).upper()}",
-                        "name": f"{guest_name} (LINE回報)",
-                        "email": f"LINE:{user_id[-8:] if user_id else 'guest'}",
-                        "subject": f"【LINE 錯誤/建議回報】({client_name})",
-                        "message": report_content,
+                        "msg_id": f"SYS-{secrets.token_hex(3).upper()}",
+                        "name": f"{guest_name} ({client_name})",
+                        "email": f"LINE:{user_id[-8:] if user_id else 'user'}",
+                        "subject": f"【系統錯誤/建議回報 → 官網總管理員】({client_name})",
+                        "message": sys_report,
                         "lang": "zh-TW",
                         "status": "Unread",
                         "created_at": now_str,
                     })
+                    official_email = SAAS_DB["settings"].get("official_contact_email", DEFAULT_OFFICIAL_EMAIL)
                 save_saas_db()
+                executor.submit(
+                    send_system_email,
+                    official_email,
+                    f"🐞【SmartHost 系統回報】來自 {client_name} ({guest_name})",
+                    f"<p>{sys_report}</p>",
+                    sys_report,
+                )
                 reply_to_line(
                     tenant_cfg,
                     reply_token,
-                    f"🙏 感謝您的寶貴回報與建議！\n我們已記錄您的訊息：「{report_content}」並立即轉交給專人與管理團隊處理！",
+                    f"✅ 您的系統建議與回報已直接送達【SmartHost 官網總管理團隊】！\n回報內容：「{sys_report}」",
+                    user_id,
+                )
+                return
+
+            # 0C-2. 客人回報給「該店家的店長（您的客戶）」：輸入「/回報 ...」或「回報錯誤：...」推播給該店店長（若為 default 測試頻道亦同步顯示於 /admin）
+            if stripped.startswith("/回報") or stripped.startswith("回報錯誤") or stripped.startswith("錯誤回報") or stripped.startswith("建議回報"):
+                report_content = re.sub(r"^(/回報店家|/回報|回報錯誤|錯誤回報|建議回報)[：:\s]*", "", stripped).strip() or stripped
+                now_str = datetime.now(TW_TZ).strftime("%Y-%m-%d %H:%M:%S")
+                if tid == "default":
+                    with _db_lock:
+                        SAAS_DB["messages"].append({
+                            "msg_id": f"REP-{secrets.token_hex(3).upper()}",
+                            "name": f"{guest_name} (LINE回報)",
+                            "email": f"LINE:{user_id[-8:] if user_id else 'guest'}",
+                            "subject": f"【LINE 錯誤/建議回報】({client_name})",
+                            "message": report_content,
+                            "lang": "zh-TW",
+                            "status": "Unread",
+                            "created_at": now_str,
+                        })
+                    save_saas_db()
+                reply_to_line(
+                    tenant_cfg,
+                    reply_token,
+                    f"🙏 感謝您的寶貴回報與建議！\n我們已記錄您的訊息：「{report_content}」並立即轉交給「{client_name}」店長與專人客服處理！",
                     user_id,
                 )
                 report_alert = {
                     "event": "service_request",
-                    "service_type": "錯誤與建議回報",
+                    "service_type": "店家意見與回報",
                     "details": report_content,
-                    "handover_summary_3_sentences": f"旅客 {guest_name} 於 LINE 提交錯誤或建議回報：「{report_content}」，系統已同步記錄至後台投信匣，請店長查閱。",
+                    "handover_summary_3_sentences": f"旅客 {guest_name} 於 LINE 提交店家意見或錯誤回報：「{report_content}」，請店長查閱協助。",
                     "need_human": True,
                 }
                 notify_admins_on_line(line_bot_api, tenant_cfg, guest_name, user_id, user_text, report_alert, get_guest_crm_profile(tid, user_id))
                 return
 
-            # 1. 已綁定管理員專用測試指令
-            fetch_google_sheet_kb_with_safeguards(tenant_cfg)
+            # 1. 讀取知識庫並檢查「🤖 禮讓原 LINE 機器人關鍵字模式（AI 自動靜音不搶話）」
+            _, kb_fields = fetch_google_sheet_kb_with_safeguards(tenant_cfg)
+            ignore_kws = get_tenant_ignore_keywords(tenant_cfg, kb_fields)
+            if ignore_kws:
+                for kw in ignore_kws:
+                    kw_clean = kw.strip()
+                    if not kw_clean:
+                        continue
+                    # 支援完全吻合（例如圖文選單按鈕文字「最新優惠」）或包含比對（以 * 開頭或結尾）
+                    if stripped.lower() == kw_clean.lower() or (
+                        kw_clean.startswith("*") and kw_clean.strip("*").lower() in stripped.lower()
+                    ):
+                        logger.info(f"[{tid}] [禮讓原 LINE 機器人模式] 訊息「{stripped}」命中設定之不回覆關鍵字「{kw_clean}」，AI 自動靜音不搶話、不扣額度！")
+                        return
+
+            # 已綁定管理員專用測試指令
             if user_id in tenant_cfg.get("admin_ids", set()):
                 if stripped == "/發送入住密碼":
                     send_pre_checkin_welcome(tenant_cfg, user_id)
@@ -1760,6 +1869,8 @@ def api_auth_me():
                     "admin_line_bound_count": len(tcfg.get("admin_ids", set())),
                     "booking_links": tcfg.get("booking_links") or tcfg.get("booking_url", ""),
                     "sheet_csv_url": tcfg.get("sheet_csv_url", ""),
+                    "custom_kb_text": tcfg.get("custom_kb_text", ""),
+                    "ignore_keywords": tcfg.get("ignore_keywords", ""),
                     "notify_channels": tcfg.get("notify_channels", ["LINE", "Telegram", "Email"]),
                     "one_time_bind": bind_helper,
                 })
@@ -2097,6 +2208,8 @@ def api_register_tenant():
         notify_channels = data.get("notify_channels", ["LINE", "Telegram", "Email"])
         booking_links = str(data.get("booking_links") or data.get("booking_url") or "").strip()
         sheet_csv_url = str(data.get("sheet_csv_url", "")).strip()
+        custom_kb_text = str(data.get("custom_kb_text", "")).strip()
+        ignore_keywords = str(data.get("ignore_keywords", "")).strip()
 
         # 向 LINE 官方伺服器驗證 Token 真偽並取得 Bot Basic ID（供一鍵綁定店長 LINE 使用）
         verify_resp = requests.get(
@@ -2144,6 +2257,8 @@ def api_register_tenant():
                 "booking_links": booking_links,
                 "admin_user_id": admin_user_id,
                 "sheet_csv_url": sheet_csv_url,
+                "custom_kb_text": custom_kb_text,
+                "ignore_keywords": ignore_keywords,
                 "kb_url": "",
                 "admin_ids": prev_admins,
                 "door_pin": DEFAULT_DOOR_PIN,
@@ -2359,6 +2474,10 @@ def api_account_update_settings():
         if "sheet_csv_url" in data:
             tcfg["sheet_csv_url"] = str(data["sheet_csv_url"]).strip()
             _sheet_cache.pop(tid, None)
+        if "custom_kb_text" in data:
+            tcfg["custom_kb_text"] = str(data["custom_kb_text"]).strip()
+        if "ignore_keywords" in data:
+            tcfg["ignore_keywords"] = str(data["ignore_keywords"]).strip()
         if "telegram_chat_id" in data:
             tcfg["telegram_chat_id"] = str(data["telegram_chat_id"]).strip()
         if "alert_emails" in data:
@@ -2638,6 +2757,7 @@ def api_creator_overview():
                 "booking_links": tcfg.get("booking_links") or tcfg.get("booking_url", ""),
                 "sheet_csv_url": tcfg.get("sheet_csv_url", ""),
                 "custom_kb_text": default_kb_preview,
+                "ignore_keywords": tcfg.get("ignore_keywords", ""),
                 "one_time_bind": generate_one_time_line_bind_link(tid),
                 "created_at": tcfg.get("created_at", ""),
             })
@@ -2696,6 +2816,8 @@ def api_creator_action():
                 tcfg["client_name"] = str(data["client_name"]).strip()
             if "custom_kb_text" in data:
                 tcfg["custom_kb_text"] = str(data["custom_kb_text"]).strip()
+            if "ignore_keywords" in data:
+                tcfg["ignore_keywords"] = str(data["ignore_keywords"]).strip()
             if "sheet_csv_url" in data:
                 tcfg["sheet_csv_url"] = str(data["sheet_csv_url"]).strip()
                 _sheet_cache.pop(tid, None)

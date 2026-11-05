@@ -332,6 +332,7 @@
         const safeKb = (t.custom_kb_text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const safeLinks = (t.booking_links || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const safeSheet = (t.sheet_csv_url || "").replace(/"/g, "&quot;");
+        const safeIgnore = (t.ignore_keywords || "").replace(/"/g, "&quot;");
         const safeEm = (t.alert_emails || []).join(", ").replace(/"/g, "&quot;");
 
         return `
@@ -425,10 +426,16 @@
                     class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">${safeLinks}</textarea>
                 </div>
                 <div>
-                  <label class="block text-slate-400 font-semibold mb-1">外部 Google 試算表 CSV 網址（選填，可與上方表單並用）</label>
+                  <label class="block text-slate-400 font-semibold mb-1">外部 Google 試算表 CSV 網址（選填，支援開頭加 [停用] 動態關閉特定回覆）</label>
                   <input type="url" id="adm-sheet-${t.tenant_id}" value="${safeSheet}" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
                     class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
                 </div>
+              </div>
+
+              <div>
+                <label class="block text-cyan-300 font-semibold mb-1">🤖 原 LINE 機器人關鍵字禮讓設定（選填・當客人輸入這些關鍵字時 AI 自動靜音不搶話、不扣額度）</label>
+                <input type="text" id="adm-ignore-${t.tenant_id}" value="${safeIgnore}" placeholder="例如：最新優惠, 集點卡, 抽獎活動（亦可於 Google 試算表新增一列『原LINE機器人關鍵字』設定）"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
               </div>
 
               <button type="button" onclick="saveTenantDetailsFromAdmin('${t.tenant_id}')"
@@ -534,7 +541,8 @@
         alert_emails: document.getElementById(`adm-em-${tid}`).value.trim(),
         custom_kb_text: document.getElementById(`adm-kb-${tid}`).value.trim(),
         booking_links: document.getElementById(`adm-links-${tid}`).value.trim(),
-        sheet_csv_url: document.getElementById(`adm-sheet-${tid}`).value.trim()
+        sheet_csv_url: document.getElementById(`adm-sheet-${tid}`).value.trim(),
+        ignore_keywords: (document.getElementById(`adm-ignore-${tid}`)?.value || "").trim()
       };
       const res = await creatorFetch("/api/creator/action", {
         method: "POST",

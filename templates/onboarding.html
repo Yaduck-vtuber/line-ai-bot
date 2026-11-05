@@ -312,7 +312,21 @@
                 <div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div>
                 <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
                 <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div>
-                <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：客人問任何沒寫在表單裡的問題，或主動要求找真人，AI 都會百分之百轉交給您，絕不擅自承諾！</div>
+                <div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：若您將原本 LINE 機器人的回覆內容貼進試算表，日後哪一條暫時不用，只要在該列開頭加上 <code>[停用]</code>（或在試算表第 3 欄填 <code>停用</code>），AI 就會自動排除不回答！</div>
+                <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！客人問任何沒寫在表單裡的問題，AI 都會百分之百轉交給您！</div>
+              </div>
+
+              <!-- 新增：保留原 LINE 關鍵字機器人「不打架禮讓設定」 -->
+              <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
+                <label class="block text-xs font-bold text-cyan-300">
+                  🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）
+                </label>
+                <input type="text" id="ignore_keywords"
+                  placeholder="填入您已在 LINE 後台設定過的關鍵字（以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動）"
+                  class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                  💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！
+                </p>
               </div>
             </div>
           </div>
@@ -1168,6 +1182,7 @@
       const bookingLinks = document.getElementById("booking_links").value.trim();
       const sheetCsvUrl = document.getElementById("sheet_csv_url").value.trim();
       const customKbText = (document.getElementById("custom_kb_text")?.value || "").trim();
+      const ignoreKeywords = (document.getElementById("ignore_keywords")?.value || "").trim();
 
       const notifyChannels = [];
       if (document.getElementById("chk_notify_line").checked) notifyChannels.push("LINE");
@@ -1217,6 +1232,7 @@
             booking_links: bookingLinks,
             sheet_csv_url: sheetCsvUrl,
             custom_kb_text: customKbText,
+            ignore_keywords: ignoreKeywords,
             plan: plan,
             order_id: orderId
           })

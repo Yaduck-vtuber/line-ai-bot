@@ -1489,6 +1489,16 @@
                 <textarea id="st-links-${s.tenant_id}" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">${s.booking_links || ""}</textarea>
               </div>
 
+              <div>
+                <label class="block text-emerald-300 font-semibold mb-1">📋 店家問答表單與不接受事項（可直接在每行開頭加 [停用] 暫停特定回覆）</label>
+                <textarea id="st-kb-${s.tenant_id}" rows="4" placeholder="項目：內容（未寫在此處或試算表內的問題，AI 會自動轉交專人）" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">${s.custom_kb_text || ""}</textarea>
+              </div>
+
+              <div>
+                <label class="block text-cyan-300 font-semibold mb-1">🤖 原 LINE 機器人關鍵字禮讓設定（選填・當客人輸入這些關鍵字時 AI 自動靜音不搶話）</label>
+                <input type="text" id="st-ignore-${s.tenant_id}" value="${(s.ignore_keywords || '').replace(/"/g, '&quot;')}" placeholder="以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+              </div>
+
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div>
                   <label class="block text-slate-400 mb-1">緊急通知信箱 1</label>
@@ -1560,6 +1570,8 @@
         client_name: document.getElementById(`st-name-${tid}`).value.trim(),
         sheet_csv_url: document.getElementById(`st-sheet-${tid}`).value.trim(),
         booking_links: document.getElementById(`st-links-${tid}`).value.trim(),
+        custom_kb_text: (document.getElementById(`st-kb-${tid}`)?.value || "").trim(),
+        ignore_keywords: (document.getElementById(`st-ignore-${tid}`)?.value || "").trim(),
         telegram_chat_id: document.getElementById(`st-tg-${tid}`).value.trim(),
         alert_emails: emails,
         otp_code: document.getElementById(`st-otp-${tid}`).value.trim(),

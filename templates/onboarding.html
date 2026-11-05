@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>統一自助開通與複合通知設定中心｜SmartHost 24H LINE 智慧 AI 管家</title>
+  <title>線上開通與通知設定中心｜SmartHost 24H LINE 智慧 AI 管家</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
@@ -14,15 +15,14 @@
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
 
-  <!-- 頂部導覽列 (含 5 國語系切換器與後台入口) -->
-  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <a href="/index.html" class="flex items-center gap-2.5">
+  <!-- 頂部導覽列 (5 國語系切換 + 會員設定入口 + 退訂救援，無內部測試後台連結) -->
+  <header class="border-b border-slate-800 bg-slate-900/85 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+      <a href="/index.html" class="flex items-center gap-2.5 shrink-0">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black">S</div>
-        <span data-i18n="header_title" class="font-extrabold text-white tracking-tight text-sm sm:text-base">SmartHost 統一自助開通中心</span>
+        <span data-i18n="header_title" class="font-extrabold text-white tracking-tight text-sm sm:text-base">SmartHost 線上開通中心</span>
       </a>
       <div class="flex items-center gap-2 sm:gap-3">
-        <!-- 5 國語言下拉選單 (切換時同步改變 LINE 後台教學按鈕名稱) -->
         <select id="lang-switcher" aria-label="Language" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-emerald-400">
           <option value="zh-TW">🇹🇼 繁體中文</option>
           <option value="en">🇺🇸 English</option>
@@ -31,37 +31,57 @@
           <option value="it">🇮🇹 Italiano</option>
         </select>
 
-        <a href="/admin" data-i18n="btn_admin" class="hidden sm:inline-block text-xs px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition">
-          📊 測試與診斷後台
+        <a href="/index.html" onclick="localStorage.setItem('open_portal','1')" data-i18n="btn_my_orders"
+          class="hidden sm:inline-block text-xs px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 font-bold transition">
+          📋 購買紀錄與設定修改
         </a>
-        <button onclick="openResilienceModal()" data-i18n="btn_rescue" class="text-xs px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 transition">
-          🛠️ 開通問題 / 退訂救援
+
+        <button type="button" onclick="openResilienceModal()" data-i18n="btn_rescue"
+          class="text-xs px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 font-semibold transition">
+          🛠️ 開通問題 / 取消訂閱
         </button>
-        <a href="/index.html" data-i18n="btn_home" class="text-xs text-slate-400 hover:text-white transition">← 返回首頁</a>
+
+        <a href="/index.html" data-i18n="btn_home" class="text-xs text-slate-400 hover:text-white transition">← 首頁</a>
       </div>
     </div>
   </header>
 
-  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14">
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-12">
 
-    <!-- 標題與狀態橫幅 -->
-    <div class="text-center max-w-3xl mx-auto mb-12">
-      <div id="plan-badge" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4">
-        ✅ 方案確認完成・開始 4 步統一安全綁定
-      </div>
+    <!-- 頁面主標題 (已移除多餘的 Plan A 徽章) -->
+    <div class="text-center max-w-3xl mx-auto mb-10">
       <h1 data-i18n="page_h1" class="text-2xl sm:text-4xl font-black text-white mb-3">
-        3 分鐘完成 LINE 官方帳號 AI 管家與多重通知串接
+        3 分鐘完成 LINE 官方帳號 AI 管家串接
       </h1>
-      <p data-i18n="page_sub" class="text-slate-400 text-sm sm:text-base">
-        以下教學已根據您選擇的語系，精準標示對應語言 LINE 後台的「真實按鈕名稱」，讓您不迷路快速找齊金鑰！
+      <p data-i18n="page_sub" class="text-slate-400 text-sm sm:text-base leading-relaxed">
+        以下 4 步教學已根據您選擇的語系，精準標示對應語言 LINE 後台的「真實按鈕名稱」，對照點擊即可快速完成！
       </p>
     </div>
 
-    <!-- 自助開通 4 步圖文指引 (依語系動態顯示對應語言 LINE 後台精確按鈕名稱) -->
-    <section class="mb-12">
-      <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
+    <!-- Google 帳號登入狀態提示列 -->
+    <div id="auth-banner-unlogged" class="hidden mb-8 bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+      <div class="text-xs sm:text-sm text-amber-200 font-medium" data-i18n="need_login_banner">
+        🔐 為保留您的購買紀錄與日後修改設定權限，請先登入您的 Google 帳號後再送出開通表單。
+      </div>
+      <button type="button" onclick="openLoginModal()" data-i18n="btn_login_now"
+        class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shrink-0 transition">
+        立即登入 Google 帳號
+      </button>
+    </div>
+
+    <div id="auth-banner-logged" class="hidden mb-8 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div>
+        <span class="text-emerald-400 font-bold" data-i18n="logged_as">✅ 已綁定 Google 會員帳號：</span>
+        <strong id="logged-email-display" class="text-white font-mono ml-1"></strong>
+      </div>
+      <span class="text-slate-400" data-i18n="logged_edit_hint">開通後隨時可於「購買紀錄與設定修改」更新預約連結、通知信箱或重設金鑰</span>
+    </div>
+
+    <!-- 自助開通 4 步圖文指引 (隨語系動態顯示 LINE 真實按鈕名稱) -->
+    <section class="mb-10">
+      <h2 class="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-2">
         <span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 text-xs font-black flex items-center justify-center">i</span>
-        <span data-i18n="guide_title">自助開通 4 步精準按鈕對照教學（隨右上角語言自動切換按鈕名稱）</span>
+        <span data-i18n="guide_title">LINE 官方後台 4 步按鈕名稱對照教學</span>
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
@@ -69,7 +89,7 @@
             <div class="text-xs font-bold text-emerald-400 mb-1">STEP 1</div>
             <h3 data-i18n="s1_title" class="font-bold text-white text-sm mb-2">啟用 Messaging API</h3>
             <p data-i18n="s1_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
-              進入 LINE 官方帳號後台，點右上角齿轮 <strong>「設定 (Settings)」</strong> ➔ 左側選單 <strong>「Messaging API」</strong> ➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。
+              進入 LINE 官方帳號後台，點右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong> ➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。
             </p>
           </div>
           <div class="flex flex-col gap-1 pt-2 border-t border-slate-800/80">
@@ -86,7 +106,7 @@
           <div class="text-xs font-bold text-emerald-400 mb-1">STEP 2</div>
           <h3 data-i18n="s2_title" class="font-bold text-white text-sm mb-2">複製 Channel Secret</h3>
           <p data-i18n="s2_desc" class="text-xs text-slate-300 leading-relaxed">
-            打開 LINE Developers Console 點選您的頻道 ➔ 點上方第一個分頁 <strong>「Basic settings（チャネル基本設定）」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊右側 <strong>「Copy（コピー）」</strong> 按鈕。
+            打開 LINE Developers Console 點選您的頻道 ➔ 點上方分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊 <strong>「Copy」</strong>。
           </p>
         </div>
 
@@ -94,15 +114,15 @@
           <div class="text-xs font-bold text-emerald-400 mb-1">STEP 3</div>
           <h3 data-i18n="s3_title" class="font-bold text-white text-sm mb-2">發行 Channel Access Token</h3>
           <p data-i18n="s3_desc" class="text-xs text-slate-300 leading-relaxed">
-            切換至上方分頁 <strong>「Messaging API（Messaging API設定）」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue（発行）」</strong> 按鈕 ➔ 點擊 <strong>「Copy（コピー）」</strong> 複製。
+            切換至上方分頁 <strong>「Messaging API」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue」</strong> ➔ 點擊 <strong>「Copy」</strong>。
           </p>
         </div>
 
         <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
           <div class="text-xs font-bold text-emerald-400 mb-1">STEP 4</div>
-          <h3 data-i18n="s4_title" class="font-bold text-white text-sm mb-2">貼回 Webhook 並開啟開關</h3>
+          <h3 data-i18n="s4_title" class="font-bold text-white text-sm mb-2">貼上 Webhook 並開啟開關</h3>
           <p data-i18n="s4_desc" class="text-xs text-slate-300 leading-relaxed">
-            送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁中間找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit（編集）」</strong> 貼上並按 <strong>「Update（更新）」</strong> ➔ 開啟 <strong>「Use webhook（Webhookの利用）」</strong> 綠色開關！
+            送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 貼上並按 <strong>「Update」</strong> ➔ 開啟 <strong>「Use webhook」</strong> 綠色開關！
           </p>
         </div>
       </div>
@@ -111,148 +131,161 @@
     <!-- 表單與結果雙欄區塊 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-      <!-- 左欄：統一全站加密自助開通表單 -->
+      <!-- 左欄：商業級安全開通表單 (免填英文代號，系統自動加密生成；防重複金鑰；支援3信箱與多連結) -->
       <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-6">
-          <h2 data-i18n="form_title" class="text-xl font-bold text-white">統一安全開通表單（HTTPS 加密防竄改保護）</h2>
+          <h2 data-i18n="form_title" class="text-lg sm:text-xl font-bold text-white">線上安全開通設定表單</h2>
           <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold" data-i18n="lock_badge">
-            🔒 綁定後帳號防竄改鎖定
+            🔒 防重複綁定 ＋ 信箱驗證修改保護
           </span>
         </div>
 
         <form id="onboarding-form" class="space-y-5" novalidate>
-          <!-- 基本商家識別資訊 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1.5">
-                <span data-i18n="lbl_client_name">商家 / 品牌名稱</span> <span class="text-rose-400">*</span>
-              </label>
-              <input type="text" id="client_name" required placeholder="澄光行旅 Lumina Hotel"
-                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1.5">
-                <span data-i18n="lbl_tenant_id">專屬店家英文代號 (tenant_id，綁定後鎖定不可竄改)</span> <span class="text-rose-400">*</span>
-              </label>
-              <input type="text" id="tenant_id" required placeholder="lumina_hotel"
-                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
-              <p id="err-tenant" class="hidden text-xs text-rose-400 mt-1">⚠️ 請輸入 3~30 碼英文小寫、數字或底線 (3~30 lowercase alphanumeric/underscore).</p>
-            </div>
-          </div>
-
+          <!-- 必填 1：商家名稱 (系統自動產生專屬加密 ID，客戶無須填寫 tenant_id) -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">
-              <span data-i18n="lbl_email">主要聯絡 Email（用於接收專屬 Webhook 與設定教學）</span> <span class="text-rose-400">*</span>
+              <span data-i18n="lbl_client_name">商家 / 品牌名稱（將顯示於 AI 管家接待問候語）</span> <span class="text-rose-400">*</span>
             </label>
-            <input type="email" id="email" required placeholder="owner@example.com"
+            <input type="text" id="client_name" required data-i18n-placeholder="ph_client_name" placeholder="例如：澄光行旅 Lumina Hotel"
               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
-            <p id="err-email" class="hidden text-xs text-rose-400 mt-1">⚠️ 請輸入有效的 Email 格式 (Invalid email).</p>
+            <p id="err-name" data-i18n="err_name" class="hidden text-xs text-rose-400 mt-1">⚠️ 請輸入貴店的商家或品牌名稱。</p>
           </div>
 
-          <!-- Channel Secret -->
+          <!-- 必填 2：Channel Secret -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">
               <span data-i18n="lbl_secret">LINE Channel Secret（Basic settings 分頁底部 32 碼英數）</span> <span class="text-rose-400">*</span>
             </label>
             <input type="text" id="channel_secret" required placeholder="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
               class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
-            <p id="err-secret" class="hidden text-xs text-rose-400 mt-1">
-              ❌ Channel Secret 應為 28～40 碼英數字串（位於 Basic settings / チャネル基本設定 分頁）。
+            <p id="err-secret" data-i18n="err_secret" class="hidden text-xs text-rose-400 mt-1">
+              ❌ Channel Secret 應為 28～40 碼英數字串（位於 Basic settings 分頁底部）。
             </p>
           </div>
 
-          <!-- Channel Access Token -->
+          <!-- 必填 3：Channel Access Token -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">
               <span data-i18n="lbl_token">LINE Channel Access Token（Messaging API 分頁底部約 170+ 碼）</span> <span class="text-rose-400">*</span>
             </label>
-            <textarea id="channel_access_token" rows="3" required placeholder="貼上點擊 Issue (発行) 後複製之長效 Channel access token..."
+            <textarea id="channel_access_token" rows="3" required data-i18n-placeholder="ph_token" placeholder="貼上點擊 Issue 後複製之長效 Channel access token..."
               class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 transition"></textarea>
-            <p id="err-token" class="hidden text-xs text-rose-400 mt-1">
-              ❌ Channel Access Token 長度應超過 100 字元（結尾常有 = 號），請點擊 Copy 按鈕完整複製。
+            <p id="err-token" data-i18n="err_token" class="hidden text-xs text-rose-400 mt-1">
+              ❌ Channel Access Token 長度應超過 100 字元，且不可與 Channel Secret 相同。
             </p>
           </div>
 
-          <!-- 1. 複合轉接通知設定區塊 (A+B+C 多重通知設定) -->
+          <!-- 複合轉接通知設定區塊 (全數標明選填、後續可隨時修改，且完整展開說明不遮擋) -->
           <div class="pt-4 border-t border-slate-800 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <h3 data-i18n="notify_title" class="text-sm font-extrabold text-emerald-400">
-                🔔 複合轉接通知設定區塊（A + B + C 多重通知設定）
+                🔔 真人客服轉接通知設定（A + B + C 多重管道）
               </h3>
-              <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
-                官方 Messaging API + 免費備援
+              <span data-i18n="opt_later_badge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-cyan-300 font-semibold">
+                選填・開通後隨時可於會員設定修改
               </span>
             </div>
 
-            <!-- 管道 A：LINE User ID -->
-            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
-              <label class="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" id="chk_notify_line" checked class="w-4 h-4 rounded accent-emerald-500" />
-                <span data-i18n="chk_a_label" class="text-xs sm:text-sm font-bold text-white">方案 A：店長 LINE User ID（預設推播至個人 LINE，免密碼零盜綁風險）</span>
+            <!-- 管道 A：店長 LINE 帳號綁定 (支援開通後一鍵打開 LINE 自動綁定！文字放在輸入框下方完整顯示不遮擋) -->
+            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <label class="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" id="chk_notify_line" checked class="mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0" />
+                <span data-i18n="chk_a_label" class="text-xs sm:text-sm font-bold text-white">
+                  管道 A：店長個人 LINE 推播通知（推薦・支援開通後「一鍵打開 LINE 自動綁定」）
+                </span>
               </label>
-              <input type="text" id="admin_user_id" placeholder="選填 (U開頭33碼)，亦可開通後在 LINE 輸入 /id 查詢並貼入 Google 試算表「管理員LINE_ID」"
-                class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+              <p data-i18n="chk_a_help" class="text-xs text-slate-300 leading-relaxed pl-6">
+                💡 <strong>免手動查代碼！</strong>此欄現在可先留空，送出下方表單完成驗證後，畫面會出現<strong>「📲 一鍵打開 LINE 自動綁定店長通知」</strong>按鈕，點擊即可直接綁定您的 LINE 帳號！（若您已有 U 開頭 33 碼 User ID 亦可直接填入下方）：
+              </p>
+              <div class="pl-6">
+                <input type="text" id="admin_user_id" data-i18n-placeholder="ph_line_uid" placeholder="選填（可留空，送出表單後點按鈕直接一鍵綁定 LINE）"
+                  class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+              </div>
             </div>
 
-            <!-- 管道 B：Telegram Chat ID -->
-            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
-              <label class="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" id="chk_notify_tg" checked class="w-4 h-4 rounded accent-cyan-500" />
-                <span data-i18n="chk_b_label" class="text-xs sm:text-sm font-bold text-white">方案 B：Telegram Chat ID（選填，免費無上限即時推播備援）</span>
+            <!-- 管道 B：Telegram Chat ID (附完整 30 秒取得教學 + 標註選填後續可改) -->
+            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <label class="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" id="chk_notify_tg" checked class="mt-0.5 w-4 h-4 rounded accent-cyan-500 shrink-0" />
+                <span data-i18n="chk_b_label" class="text-xs sm:text-sm font-bold text-white">
+                  管道 B：Telegram 即時推播備援（選填・免費無則數上限，後續可隨時修改）
+                </span>
               </label>
-              <input type="text" id="telegram_chat_id" placeholder="123456789 / -100123456789"
-                class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
+              <div class="pl-6 space-y-2">
+                <input type="text" id="telegram_chat_id" data-i18n-placeholder="ph_tg_id" placeholder="選填，例如：123456789（開通後亦可隨時補填）"
+                  class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
+                <div data-i18n="chk_b_tutorial" class="bg-slate-900/80 border border-slate-800/90 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed">
+                  📖 <strong>30 秒取得 Telegram Chat ID 教學：</strong><br/>
+                  1. 打開 Telegram 搜尋官方查詢機器人 <code>@userinfobot</code> 並點擊 <strong>Start</strong>。<br/>
+                  2. 機器人會立即回覆一串純數字 <strong>Id</strong>（例如 <code>123456789</code>），複製填入上方欄位即可！
+                </div>
+              </div>
             </div>
 
-            <!-- 管道 C：緊急通知 Email -->
-            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
-              <label class="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" id="chk_notify_email" checked class="w-4 h-4 rounded accent-indigo-500" />
-                <span data-i18n="chk_c_label" class="text-xs sm:text-sm font-bold text-white">方案 C：緊急通知 Email（預設同步寄送通知）</span>
+            <!-- 管道 C：最多 3 組緊急通知 Email -->
+            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <label class="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" id="chk_notify_email" checked class="mt-0.5 w-4 h-4 rounded accent-indigo-500 shrink-0" />
+                <span data-i18n="chk_c_label" class="text-xs sm:text-sm font-bold text-white">
+                  管道 C：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）
+                </span>
               </label>
-              <input type="email" id="alert_email" placeholder="alert@example.com"
-                class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+              <div class="pl-6 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input type="email" id="alert_email_1" data-i18n-placeholder="ph_em1" placeholder="通知信箱 1 (主信箱)"
+                  class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+                <input type="email" id="alert_email_2" data-i18n-placeholder="ph_em2" placeholder="通知信箱 2 (選填)"
+                  class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+                <input type="email" id="alert_email_3" data-i18n-placeholder="ph_em3" placeholder="通知信箱 3 (選填)"
+                  class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+              </div>
             </div>
           </div>
 
-          <!-- 進階選填設定：預約連結、Google Sheet -->
-          <div class="pt-3 border-t border-slate-800 space-y-4">
-            <p data-i18n="opt_title" class="text-xs font-bold text-cyan-400">✨ 商用知識庫與預約連結設定（內建試算表誤刪快照備份保護）</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label data-i18n="lbl_booking" class="block text-xs text-slate-400 mb-1">線上預約 / 訂房連結 (booking_url)</label>
-                <input type="url" id="booking_url" placeholder="https://inline.app/booking/..."
-                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
-              </div>
-              <div>
-                <label data-i18n="lbl_sheet" class="block text-xs text-slate-400 mb-1">Google 試算表知識庫 CSV 網址 (sheet_csv_url)</label>
-                <input type="url" id="sheet_csv_url" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
-                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
-              </div>
+          <!-- 多組預約/菜單連結 與 Google 試算表設定 (清楚標明選填、後續可修改) -->
+          <div class="pt-4 border-t border-slate-800 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p data-i18n="opt_title" class="text-xs sm:text-sm font-extrabold text-cyan-400">✨ 多組預約/菜單連結 ＆ Google 試算表知識庫</p>
+              <span data-i18n="opt_later_badge2" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                選填・日後隨時可修改
+              </span>
+            </div>
+
+            <div>
+              <label data-i18n="lbl_booking" class="block text-xs font-semibold text-slate-300 mb-1">
+                線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組，AI 會依客人問題自動提供對應網址）
+              </label>
+              <textarea id="booking_links" rows="3" data-i18n-placeholder="ph_booking"
+                placeholder="例如：&#10;線上訂房預約：https://inline.app/booking/...&#10;餐廳菜單介紹：https://example.com/menu"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
+            </div>
+
+            <div>
+              <label data-i18n="lbl_sheet" class="block text-xs font-semibold text-slate-300 mb-1">
+                Google 試算表知識庫 CSV 網址（內建試算表誤刪自動快照備份）
+              </label>
+              <input type="url" id="sheet_csv_url" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
             </div>
           </div>
 
           <button type="submit" id="submit-btn" data-i18n="btn_submit"
-            class="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/20 transition">
-            🔍 立即驗證 LINE 金鑰、發送測試通知並生成專屬 Webhook
+            class="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-emerald-500/20 transition">
+            🔍 立即驗證 LINE 金鑰並生成專屬 Webhook 網址
           </button>
         </form>
       </div>
 
-      <!-- 右欄：即時驗證結果與 Webhook 產生器 -->
+      <!-- 右欄：驗證成功結果卡（含一鍵打開 LINE 自動綁定店長帳號）與資安承諾卡 -->
       <div class="lg:col-span-5 space-y-6">
         <div id="webhook-success-card" class="hidden bg-emerald-950/30 border-2 border-emerald-500 rounded-2xl p-6 shadow-2xl">
           <div class="flex items-center gap-2.5 text-emerald-400 font-extrabold text-lg mb-2">
             <span>🎉</span>
-            <span data-i18n="success_title">LINE Token 驗證通過！帳號已綁定鎖定</span>
+            <span data-i18n="success_title">LINE 金鑰驗證成功！專屬管家已就緒</span>
           </div>
 
-          <div id="test-notify-badge" class="mb-3 px-3 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-xs text-emerald-300 font-semibold">
-            ✅ 已發送測試通知至您的管道（LINE / Telegram / Email）！
-          </div>
-
-          <p class="text-xs text-slate-300 mb-4">
-            📧 <strong>Webhook URL & Guide sent to: <span id="confirmed-email" class="text-emerald-300"></span></strong>
+          <p class="text-xs text-slate-300 mb-4 leading-relaxed">
+            📧 <span data-i18n="sent_email_note">系統已同步將專屬 Webhook 網址與設定指南寄送至：</span>
+            <strong id="confirmed-email" class="text-emerald-300"></strong>
           </p>
 
           <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
@@ -267,30 +300,38 @@
             </div>
           </div>
 
-          <div class="space-y-2 text-xs text-slate-300 bg-slate-900/80 rounded-xl p-4 mb-4">
-            <div class="font-bold text-white mb-1" data-i18n="final_step_title">最後一步：貼回 LINE 後台（對照按鈕名稱只需 15 秒）</div>
-            <p data-i18n="final_step_1">1. 回到 LINE 後台 <strong>「Messaging API（Messaging API設定）」</strong> 分頁中間的 <strong>「Webhook settings（Webhook設定）」</strong>，點擊 <strong>「Edit（編集）」</strong> 貼上網址並按 <strong>「Update（更新）」</strong>。</p>
-            <p data-i18n="final_step_2">2. 將下方的 <strong>「Use webhook（Webhookの利用）」</strong> 開關切換為開啟（綠色）。</p>
-            <p data-i18n="final_step_3">3. 🔒 在 LINE 對機器人輸入 <code>/我的ID</code>（或 <code>/id</code>、<code>/マイID</code>）取得您的 <code>U...</code> ID，貼入 Google 試算表 <strong>「管理員LINE_ID」</strong> 欄位即完成專人推播設定！</p>
+          <div class="space-y-2 text-xs text-slate-300 bg-slate-900/80 rounded-xl p-4 mb-4 leading-relaxed">
+            <div class="font-bold text-white mb-1" data-i18n="final_step_title">最後一步：貼回 LINE 後台並一鍵綁定店長 LINE</div>
+            <p data-i18n="final_step_1">1. 回到 LINE Developers 的 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong>，點 <strong>「Edit」</strong> 貼上上方網址並按 <strong>「Update」</strong>。</p>
+            <p data-i18n="final_step_2">2. 將下方的 <strong>「Use webhook」</strong> 開關切換為開啟（綠色）。</p>
+            <p data-i18n="final_step_3">3. 完成上面兩步後，點擊下方按鈕即可<strong>直接打開 LINE 自動綁定您的個人 LINE 接收客服通知</strong>：</p>
           </div>
 
-          <a id="go-admin-btn" href="/admin" class="block w-full text-center py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs transition">
-            📊 前往視覺化後台測試 AI 對話與查看額度 →
-          </a>
+          <!-- 一鍵打開 LINE 綁定店長帳號區塊 -->
+          <div id="one-click-line-box" class="space-y-2">
+            <a id="one-click-line-link" href="#" target="_blank" data-i18n="btn_oneclick_line"
+              class="hidden w-full text-center py-3.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-extrabold text-xs sm:text-sm shadow-lg transition block">
+              📲 點此一鍵打開 LINE 自動綁定店長通知帳號
+            </a>
+            <div id="manual-bind-cmd-box" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300">
+              <span data-i18n="bind_cmd_hint">或直接用手機對您的店家 LINE 傳送這行一次性授權碼完成綁定：</span>
+              <code id="one-time-bind-cmd" class="block mt-1 font-mono text-emerald-400 font-bold text-xs select-all"></code>
+            </div>
+          </div>
         </div>
 
-        <!-- 網頁資安防護與防刪快照承諾卡 -->
+        <!-- 商業資安與修改保障卡 (全 5 國語系完整翻譯，移除內部測試後台連結) -->
         <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-          <h3 data-i18n="safe_card_title" class="font-bold text-white text-base mb-3">🛡️ 銀行級網頁資安防護 ＋ 綁定帳號防竄改鎖定</h3>
+          <h3 data-i18n="safe_card_title" class="font-bold text-white text-base mb-3">🛡️ 商業級資安保護與售後修改保障</h3>
           <ul class="space-y-2.5 text-xs text-slate-400 leading-relaxed">
-            <li data-i18n="safe_li1">• <strong>綁定帳號鎖定保護 (Immutable Lock)</strong>：一旦完成首次綁定，系統即鎖定該店家代號與 LINE 頻道對應關係，禁止他人覆蓋、竄改或刪除綁定資料。</li>
-            <li data-i18n="safe_li2">• <strong>Google 試算表誤刪快照備份</strong>：每次讀取試算表成功時自動保存安全快照；萬一試算表被誤刪，AI 自動使用最後一次完整快照繼續服務！</li>
-            <li data-i18n="safe_li3">• <strong>HTTPS 加密與防 XSS / 防嵌入保護</strong>：全站啟用嚴格 Security Headers，絕不公開顯示任何店家金鑰或客戶資料。</li>
+            <li data-i18n="safe_li1">• <strong>防重複與防盜綁保護</strong>：同一組 LINE 官方帳號金鑰一經綁定即受系統保護，他人無法重複註冊或覆蓋您的頻道。</li>
+            <li data-i18n="safe_li2">• <strong>收信驗證安全修改機制</strong>：日後您可隨時登入修改預約連結與通知信箱；若需更換 LINE 金鑰，系統將發送「6 位數信箱驗證碼」確認本人身分。</li>
+            <li data-i18n="safe_li3">• <strong>Google 試算表誤刪快照備份</strong>：每次成功讀取試算表皆自動保存安全快照；萬一表格誤刪，AI 自動以最新快照繼續服務。</li>
           </ul>
           <div class="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between">
-            <a href="/admin" class="text-xs font-bold text-cyan-400 hover:underline">📊 開啟視覺化診斷與測試後台 →</a>
-            <button type="button" onclick="openResilienceModal()" class="text-xs font-bold text-rose-400 hover:underline">
-              開啟除錯與退訂彈窗 →
+            <a href="/index.html#contact" data-i18n="link_contact_us" class="text-xs font-bold text-emerald-400 hover:underline">📩 聯絡客服投信 →</a>
+            <button type="button" onclick="openResilienceModal()" data-i18n="link_open_rescue" class="text-xs font-bold text-rose-400 hover:underline">
+              開通除錯 / 取消訂閱 →
             </button>
           </div>
         </div>
@@ -299,39 +340,119 @@
     </div>
   </main>
 
-  <!-- 右下角浮動「💬 AI 開通客服小幫手（0 成本題庫優先 + 3 道防刷爆鎖）」 -->
-  <div class="fixed bottom-5 right-5 z-50">
+  <!-- Google 登入彈窗 -->
+  <div id="login-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+      <button type="button" onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
+      <div class="text-center mb-5">
+        <div class="text-3xl mb-2">🔐</div>
+        <h3 data-i18n="login_modal_title" class="text-lg font-extrabold text-white mb-1">登入 Google 帳號以綁定店家</h3>
+        <p data-i18n="login_modal_desc" class="text-xs text-slate-400">登入後系統將自動連結您的購買紀錄與開通權限：</p>
+      </div>
+      <div class="flex justify-center mb-4"><div id="google-gsi-onboard"></div></div>
+      <div class="border-t border-slate-800 pt-4 space-y-3">
+        <div class="flex gap-2">
+          <input type="email" id="ob-login-email" placeholder="yourname@gmail.com"
+            class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
+          <button type="button" id="ob-btn-otp" onclick="sendOnboardOtp()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs shrink-0">
+            寄送驗證碼
+          </button>
+        </div>
+        <div id="ob-otp-row" class="hidden space-y-2">
+          <input type="text" id="ob-otp-code" maxlength="6" placeholder="輸入 6 位數驗證碼"
+            class="w-full text-center tracking-widest font-mono bg-slate-950 border border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          <button type="button" onclick="verifyOnboardOtp()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs">
+            確認登入
+          </button>
+        </div>
+        <p id="ob-login-msg" class="hidden text-xs text-center"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自助除錯與真實退訂/退費彈窗 (全 5 國語系翻譯 + 真實串接後端退費 API) -->
+  <div id="resilience-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
+      <button type="button" onclick="closeResilienceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl">⚠️</div>
+        <div>
+          <h3 data-i18n="modal_title" class="text-lg font-extrabold text-white">開通檢查清單與取消訂閱中心</h3>
+          <p id="modal-error-reason" data-i18n="modal_sub" class="text-xs text-rose-400">請選擇下方自我檢查指引，或隨時申請取消訂閱與退費。</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 mb-5">
+        <button type="button" onclick="showChecklistSection()"
+          class="w-full text-left p-4 rounded-xl bg-slate-950 hover:bg-slate-800/80 border border-emerald-500/40 transition flex items-start gap-3">
+          <span class="text-lg">🔍</span>
+          <div>
+            <div data-i18n="opt_a_title" class="font-bold text-emerald-400 text-sm">選項 A：檢視 LINE 金鑰常見複製錯誤檢查清單</div>
+            <div data-i18n="opt_a_desc" class="text-xs text-slate-400 mt-0.5">確認是否誤貼成純數字 Channel ID，或漏點 Issue 按鈕。</div>
+          </div>
+        </button>
+
+        <button type="button" onclick="triggerRealCancelOrRefund()"
+          class="w-full text-left p-4 rounded-xl bg-slate-950 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/40 transition flex items-start gap-3">
+          <span class="text-lg">💳</span>
+          <div>
+            <div data-i18n="opt_b_title" class="font-bold text-rose-300 text-sm">選項 B：一鍵取消訂閱 / 申請退費並切換回方案 A（0 元體驗版）</div>
+            <div data-i18n="opt_b_desc" class="text-xs text-slate-400 mt-0.5">立即將帳號降級回 0 元免費版、建立退費紀錄並寄送確認信至您的信箱。</div>
+          </div>
+        </button>
+      </div>
+
+      <div id="checklist-box" data-i18n="checklist_html" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2 mb-4 leading-relaxed">
+        <div class="font-bold text-emerald-400 mb-1">✅ LINE 金鑰常見 3 大錯誤檢查：</div>
+        <p>1. <strong>誤把 Channel ID 當成 Channel Secret</strong>：Channel ID 是純數字；Channel Secret 是位於 <code>Basic settings</code> 最底部的 32 碼英數字串。</p>
+        <p>2. <strong>Secret 與 Token 貼成同一個</strong>：請確認兩格分別貼上 32 碼 Secret 與 170+ 碼 Access Token。</p>
+        <p>3. <strong>此組 LINE 金鑰已綁定過</strong>：若要修改已綁定店家的設定，請點選上方「購買紀錄與設定修改」。</p>
+      </div>
+
+      <div id="cancel-box" class="hidden bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-4 text-xs text-emerald-300 mb-4 leading-relaxed"></div>
+
+      <div class="flex justify-end">
+        <button type="button" onclick="closeResilienceModal()" data-i18n="btn_close_modal" class="px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition">
+          關閉視窗
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右下角真實 Gemini AI 客服視窗 (全 5 國語系翻譯，移除所有內部技術字眼) -->
+  <div class="fixed bottom-5 right-5 z-40">
     <div id="support-widget" class="hidden mb-3 w-80 sm:w-96 bg-slate-900 border-2 border-emerald-500/60 rounded-2xl shadow-2xl overflow-hidden flex-col">
       <div class="bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 text-slate-950 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="text-lg">🤖</span>
           <div>
-            <div class="font-extrabold text-xs sm:text-sm leading-tight">SmartHost AI 開通客服小幫手</div>
-            <div class="text-[10px] font-semibold opacity-80">0 成本瞬時題庫 ＋ 防刷爆保護</div>
+            <div data-i18n="sup_header" class="font-extrabold text-xs sm:text-sm leading-tight">SmartHost AI 開通客服顧問</div>
+            <div data-i18n="sup_sub" class="text-[11px] font-semibold opacity-85">24H 多國語言即時協助</div>
           </div>
         </div>
         <button onclick="toggleSupportWidget()" class="text-slate-950 font-black text-lg leading-none hover:opacity-70">✕</button>
       </div>
 
       <div id="support-messages" class="p-3.5 h-60 overflow-y-auto space-y-2.5 bg-slate-950 text-xs">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 leading-relaxed">
-          👋 找不到 LINE 後台的按鈕嗎？您可以點擊下方按鈕或直接打字問我喔！
+        <div data-i18n="sup_welcome" class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 leading-relaxed">
+          👋 找不到 LINE 後台的按鈕，或想知道怎麼填寫多組連結與通知信箱嗎？直接打字問我吧！
         </div>
       </div>
 
       <div class="px-3 py-2 bg-slate-900/90 border-t border-slate-800 flex flex-wrap gap-1.5">
-        <button onclick="askSupport('請問 LINE 金鑰 Secret 跟 Token 在哪裡找？')" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300">
+        <button type="button" onclick="askQuickOnboard(1)" data-i18n="sup_q1" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300">
           🔑 金鑰按鈕在哪裡？
         </button>
-        <button onclick="askSupport('方案 B 跟方案 C 的記憶跟歸戶差在哪？')" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300">
-          💡 記憶跟歸戶是什麼？
+        <button type="button" onclick="askQuickOnboard(2)" data-i18n="sup_q2" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300">
+          🔗 有很多預約連結怎麼填？
         </button>
       </div>
 
       <form id="support-form" class="p-2.5 bg-slate-900 border-t border-slate-800 flex gap-1.5">
-        <input type="text" id="support-input" maxlength="150" placeholder="輸入問題（限150字）..."
+        <input type="text" id="support-input" maxlength="180" data-i18n-placeholder="sup_placeholder" placeholder="請輸入您的問題..."
           class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
-        <button type="submit" class="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shrink-0">
+        <button type="submit" id="support-send-btn" data-i18n="sup_send" class="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shrink-0">
           送出
         </button>
       </form>
@@ -339,270 +460,391 @@
 
     <button onclick="toggleSupportWidget()" class="ml-auto flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-500/30 hover:scale-105 transition">
       <span class="text-base">💬</span>
-      <span>AI 開通客服小幫手</span>
+      <span data-i18n="support_btn">AI 開通客服</span>
     </button>
   </div>
 
-  <!-- 自助除錯與退款彈窗 -->
-  <div id="resilience-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
-      <button type="button" onclick="closeResilienceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
-
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl">⚠️</div>
-        <div>
-          <h3 data-i18n="modal_title" class="text-lg font-extrabold text-white">LINE Token 驗證失敗・自助救援中心</h3>
-          <p id="modal-error-reason" class="text-xs text-rose-400">系統偵測到您輸入的 LINE 金鑰無效或此店家代號已被鎖定保護。</p>
-        </div>
-      </div>
-
-      <div class="space-y-3 mb-6">
-        <button type="button" onclick="showChecklistSection()"
-          class="w-full text-left p-4 rounded-xl bg-slate-950 hover:bg-slate-800/80 border border-emerald-500/40 transition flex items-start gap-3">
-          <span class="text-lg">🔍</span>
-          <div>
-            <div data-i18n="opt_a_title" class="font-bold text-emerald-400 text-sm">選項 A：檢視 Token 複製常見錯誤自我檢查清單</div>
-            <div class="text-xs text-slate-400 mt-0.5">確認是否誤貼成 Channel ID 或漏點 Issue (発行) 按鈕。</div>
-          </div>
-        </button>
-
-        <button type="button" onclick="triggerCancelOrDowngrade()"
-          class="w-full text-left p-4 rounded-xl bg-slate-950 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/40 transition flex items-start gap-3">
-          <span class="text-lg">💳</span>
-          <div>
-            <div data-i18n="opt_b_title" class="font-bold text-rose-300 text-sm">選項 B：一鍵取消訂閱 / 切換回方案 A（0 元體驗版）</div>
-            <div class="text-xs text-slate-400 mt-0.5">無須人工審核，立即降級回 0 元免費版或申請 PayPal 原路退刷。</div>
-          </div>
-        </button>
-      </div>
-
-      <div id="checklist-box" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2 mb-4">
-        <div class="font-bold text-emerald-400 mb-1">✅ Token 複製常見 3 大錯誤自我檢查：</div>
-        <p>1. <strong>誤把 Channel ID 當成 Channel Secret</strong>：Channel ID 是純數字，而 Channel Secret 是位於 <code>Basic settings (チャネル基本設定)</code> 底部的 32 碼「英文+數字」。</p>
-        <p>2. <strong>Access Token 複製不完整</strong>：請在 <code>Messaging API (Messaging API設定)</code> 底部點擊 <code>Issue (発行)</code> 後，按旁邊的 <code>Copy (コピー)</code> 按鈕完整複製。</p>
-        <p>3. <strong>店家代號 (tenant_id) 已被鎖定保護</strong>：為防止帳號被外人覆蓋竄改，若要更新同一店家的設定，請輸入與首次開通一致的 Channel Secret。</p>
-      </div>
-
-      <div id="cancel-box" class="hidden bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-4 text-xs text-emerald-300 mb-4">
-        ✅ 已將您的帳號切換為「<strong>方案 A：0 元免費體驗版</strong>」並送出退訂保護通知！您不會被收取任何月費。
-      </div>
-
-      <div class="flex justify-end">
-        <button type="button" onclick="closeResilienceModal()" class="px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition">
-          Close / 返回表單
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5 國語系翻譯字典（含各語系 LINE 後台精確按鈕名稱對照） -->
+  <!-- 5 國語系完整字典（含 LINE 真實按鈕名稱、Telegram 教學、資安承諾卡、退訂彈窗與 AI 客服） -->
   <script>
     const ONBOARD_I18N = {
       "zh-TW": {
-        header_title: "SmartHost 統一自助開通中心",
-        btn_admin: "📊 測試與診斷後台",
-        btn_rescue: "🛠️ 開通問題 / 退訂救援",
-        btn_home: "← 返回首頁",
-        page_h1: "3 分鐘完成 LINE 官方帳號 AI 管家與多重通知串接",
-        page_sub: "以下教學已根據您選擇的語系，精準標示對應語言 LINE 後台的「真實按鈕名稱」，讓您不迷路快速找齊金鑰！",
-        guide_title: "自助開通 4 步精準按鈕對照教學（隨右上角語言自動切換按鈕名稱）",
+        header_title: "SmartHost 線上開通中心",
+        btn_my_orders: "📋 購買紀錄與設定修改", btn_rescue: "🛠️ 開通問題 / 取消訂閱", btn_home: "← 首頁",
+        page_h1: "3 分鐘完成 LINE 官方帳號 AI 管家串接",
+        page_sub: "以下 4 步教學已根據您選擇的語系，精準標示對應語言 LINE 後台的「真實按鈕名稱」，對照點擊即可快速完成！",
+        need_login_banner: "🔐 為保留您的購買紀錄與日後修改設定權限，請先登入您的 Google 帳號後再送出開通表單。",
+        btn_login_now: "立即登入 Google 帳號",
+        logged_as: "✅ 已綁定 Google 會員帳號：",
+        logged_edit_hint: "開通後隨時可於「購買紀錄與設定修改」更新預約連結、通知信箱或重設金鑰",
+        guide_title: "LINE 官方後台 4 步按鈕名稱對照教學",
         s1_title: "啟用 Messaging API",
-        s1_desc: "進入 LINE 官方帳號後台 (LINE Official Account Manager)，點右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong> ➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。",
+        s1_desc: "進入 LINE 官方帳號後台 (Official Account Manager)，點右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong> ➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。",
         s2_title: "複製 Channel Secret",
-        s2_desc: "打開 LINE Developers Console 點選您的頻道 ➔ 點上方第一個分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊右側 <strong>「Copy」</strong> 按鈕。",
+        s2_desc: "打開 LINE Developers Console 點選您的頻道 ➔ 點上方分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊 <strong>「Copy」</strong>。",
         s3_title: "發行 Channel Access Token",
-        s3_desc: "切換至上方分頁 <strong>「Messaging API」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue」</strong> 按鈕 ➔ 點擊 <strong>「Copy」</strong> 複製。",
-        s4_title: "貼回 Webhook 並開啟開關",
-        s4_desc: "送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁中間找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 貼上並按 <strong>「Update」</strong> ➔ 開啟 <strong>「Use webhook」</strong> 綠色開關！",
-        form_title: "統一安全開通表單（HTTPS 加密防竄改保護）",
-        lock_badge: "🔒 綁定後帳號防竄改鎖定",
-        lbl_client_name: "商家 / 品牌名稱",
-        lbl_tenant_id: "專屬店家英文代號 (tenant_id，綁定後鎖定不可竄改)",
-        lbl_email: "主要聯絡 Email（用於接收專屬 Webhook 與設定教學）",
+        s3_desc: "切換至上方分頁 <strong>「Messaging API」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue」</strong> ➔ 點擊 <strong>「Copy」</strong>。",
+        s4_title: "貼上 Webhook 並開啟開關",
+        s4_desc: "送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 貼上並按 <strong>「Update」</strong> ➔ 開啟 <strong>「Use webhook」</strong> 綠色開關！",
+        form_title: "線上安全開通設定表單",
+        lock_badge: "🔒 防重複綁定 ＋ 信箱驗證修改保護",
+        lbl_client_name: "商家 / 品牌名稱（將顯示於 AI 管家接待問候語）", ph_client_name: "例如：澄光行旅 Lumina Hotel",
+        err_name: "⚠️ 請輸入貴店的商家或品牌名稱。",
         lbl_secret: "LINE Channel Secret（Basic settings 分頁底部 32 碼英數）",
-        lbl_token: "LINE Channel Access Token（Messaging API 分頁底部約 170+ 碼）",
-        notify_title: "🔔 複合轉接通知設定區塊（A + B + C 多重通知設定）",
-        chk_a_label: "方案 A：店長 LINE User ID（預設推播至個人 LINE，免密碼零盜綁風險）",
-        chk_b_label: "方案 B：Telegram Chat ID（選填，免費無上限即時推播備援）",
-        chk_c_label: "方案 C：緊急通知 Email（預設同步寄送通知）",
-        opt_title: "✨ 商用知識庫與預約連結設定（內建試算表誤刪快照備份保護）",
-        lbl_booking: "線上預約 / 訂房連結 (booking_url)",
-        lbl_sheet: "Google 試算表知識庫 CSV 網址 (sheet_csv_url)",
-        btn_submit: "🔍 立即驗證 LINE 金鑰、發送測試通知並生成專屬 Webhook",
-        success_title: "LINE Token 驗證通過！帳號已綁定鎖定",
+        err_secret: "❌ Channel Secret 應為 28～40 碼英數字串（位於 Basic settings 分頁底部）。",
+        lbl_token: "LINE Channel Access Token（Messaging API 分頁底部約 170+ 碼）", ph_token: "貼上點擊 Issue 後複製之長效 Channel access token...",
+        err_token: "❌ Channel Access Token 長度應超過 100 字元，且不可與 Channel Secret 相同。",
+        notify_title: "🔔 真人客服轉接通知設定（A + B + C 多重管道）",
+        opt_later_badge: "選填・開通後隨時可於會員設定修改", opt_later_badge2: "選填・日後隨時可修改",
+        chk_a_label: "管道 A：店長個人 LINE 推播通知（推薦・支援開通後「一鍵打開 LINE 自動綁定」）",
+        chk_a_help: "💡 <strong>免手動查代碼！</strong>此欄現在可先留空，送出下方表單完成驗證後，畫面會出現<strong>「📲 一鍵打開 LINE 自動綁定店長通知」</strong>按鈕，點擊即可直接綁定您的 LINE 帳號！（若您已有 U 開頭 33 碼 User ID 亦可直接填入下方）：",
+        ph_line_uid: "選填（可留空，送出表單後點按鈕直接一鍵綁定 LINE）",
+        chk_b_label: "管道 B：Telegram 即時推播備援（選填・免費無則數上限，後續可隨時修改）",
+        ph_tg_id: "選填，例如：123456789（開通後亦可隨時補填）",
+        chk_b_tutorial: "📖 <strong>30 秒取得 Telegram Chat ID 教學：</strong><br/>1. 打開 Telegram 搜尋官方查詢機器人 <code>@userinfobot</code> 並點擊 <strong>Start</strong>。<br/>2. 機器人會立即回覆一串純數字 <strong>Id</strong>（例如 <code>123456789</code>），複製填入上方欄位即可！",
+        chk_c_label: "管道 C：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）",
+        ph_em1: "通知信箱 1 (主信箱)", ph_em2: "通知信箱 2 (選填)", ph_em3: "通知信箱 3 (選填)",
+        opt_title: "✨ 多組預約/菜單連結 ＆ Google 試算表知識庫",
+        lbl_booking: "線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組，AI 會依客人問題自動提供對應網址）",
+        ph_booking: "例如：\n線上訂房預約：https://inline.app/booking/...\n餐廳菜單介紹：https://example.com/menu",
+        lbl_sheet: "Google 試算表知識庫 CSV 網址（內建試算表誤刪自動快照備份）",
+        btn_submit: "🔍 立即驗證 LINE 金鑰並生成專屬 Webhook 網址",
+        success_title: "LINE 金鑰驗證成功！專屬管家已就緒",
+        sent_email_note: "系統已同步將專屬 Webhook 網址與設定指南寄送至：",
         btn_copy: "複製網址",
-        final_step_title: "最後一步：貼回 LINE 後台（對照按鈕名稱只需 15 秒）",
-        final_step_1: "1. 回到 LINE Developers 的 <strong>「Messaging API」</strong> 分頁中間找到 <strong>「Webhook settings」</strong>，點擊 <strong>「Edit」</strong> 貼上上方網址並按 <strong>「Update」</strong>。",
+        final_step_title: "最後一步：貼回 LINE 後台並一鍵綁定店長 LINE",
+        final_step_1: "1. 回到 LINE Developers 的 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong>，點 <strong>「Edit」</strong> 貼上上方網址並按 <strong>「Update」</strong>。",
         final_step_2: "2. 將下方的 <strong>「Use webhook」</strong> 開關切換為開啟（綠色）。",
-        final_step_3: "3. 🔒 在手機 LINE 對機器人傳送 <code>/我的ID</code> 取得您的 <code>U...</code> ID，貼入 Google 試算表 <strong>「管理員LINE_ID」</strong> 欄位即完成專人通知設定！"
+        final_step_3: "3. 完成上面兩步後，點擊下方按鈕即可<strong>直接打開 LINE 自動綁定您的個人 LINE 接收客服通知</strong>：",
+        btn_oneclick_line: "📲 點此一鍵打開 LINE 自動綁定店長通知帳號",
+        bind_cmd_hint: "或直接用手機對您的店家 LINE 傳送這行一次性授權碼完成綁定：",
+        safe_card_title: "🛡️ 商業級資安保護與售後修改保障",
+        safe_li1: "• <strong>防重複與防盜綁保護</strong>：同一組 LINE 官方帳號金鑰一經綁定即受系統保護，他人無法重複註冊或覆蓋您的頻道。",
+        safe_li2: "• <strong>收信驗證安全修改機制</strong>：日後您可隨時登入修改預約連結與通知信箱；若需更換 LINE 金鑰，系統將發送「6 位數信箱驗證碼」確認本人身分。",
+        safe_li3: "• <strong>Google 試算表誤刪快照備份</strong>：每次成功讀取試算表皆自動保存安全快照；萬一表格誤刪，AI 自動以最新快照繼續服務。",
+        link_contact_us: "📩 聯絡客服投信 →", link_open_rescue: "開通除錯 / 取消訂閱 →",
+        modal_title: "開通檢查清單與取消訂閱中心",
+        modal_sub: "請選擇下方自我檢查指引，或隨時申請取消訂閱與退費。",
+        opt_a_title: "選項 A：檢視 LINE 金鑰常見複製錯誤檢查清單",
+        opt_a_desc: "確認是否誤貼成純數字 Channel ID，或漏點 Issue 按鈕。",
+        opt_b_title: "選項 B：一鍵取消訂閱 / 申請退費並切換回方案 A（0 元體驗版）",
+        opt_b_desc: "立即將帳號降級回 0 元免費版、建立退費紀錄並寄送確認信至您的信箱。",
+        checklist_html: "<div class='font-bold text-emerald-400 mb-1'>✅ LINE 金鑰常見 3 大錯誤檢查：</div><p>1. <strong>誤把 Channel ID 當成 Channel Secret</strong>：Channel ID 是純數字；Channel Secret 是位於 <code>Basic settings</code> 最底部的 32 碼英數字串。</p><p>2. <strong>Secret 與 Token 貼成同一個</strong>：請確認兩格分別貼上 32 碼 Secret 與 170+ 碼 Access Token。</p><p>3. <strong>此組 LINE 金鑰已綁定過</strong>：若要修改已綁定店家的設定，請點選上方「購買紀錄與設定修改」。</p>",
+        btn_close_modal: "關閉視窗",
+        support_btn: "AI 開通客服", sup_header: "SmartHost AI 開通客服顧問", sup_sub: "24H 多國語言即時協助",
+        sup_welcome: "👋 找不到 LINE 後台的按鈕，或想知道怎麼填寫多組連結與通知信箱嗎？直接打字問我吧！",
+        sup_q1: "🔑 金鑰按鈕在哪裡？", sup_q1_text: "請問 LINE Developers 後台的 Channel secret 跟 Access token 按鈕在哪裡找？",
+        sup_q2: "🔗 有很多預約連結怎麼填？", sup_q2_text: "請問如果我們有訂房、菜單跟 IG 很多個連結，要怎麼填寫以及之後怎麼修改？",
+        sup_placeholder: "請輸入您的問題...", sup_send: "送出",
+        login_modal_title: "登入 Google 帳號以綁定店家",
+        login_modal_desc: "登入後系統將自動連結您的購買紀錄與開通權限："
       },
       "en": {
-        header_title: "SmartHost Unified Onboarding Center",
-        btn_admin: "📊 Admin & Test Console",
-        btn_rescue: "🛠️ Troubleshoot / Cancel",
-        btn_home: "← Back to Home",
+        header_title: "SmartHost Onboarding Center",
+        btn_my_orders: "📋 My Orders & Settings", btn_rescue: "🛠️ Help / Cancel Subscription", btn_home: "← Home",
         page_h1: "Connect Your LINE Official Account in 3 Minutes",
         page_sub: "Step-by-step instructions with exact button names matching the English LINE Official Account Manager & LINE Developers Console.",
+        need_login_banner: "🔐 Please sign in with your Google account first so your purchase history and store settings are safely linked to you.",
+        btn_login_now: "Sign in with Google",
+        logged_as: "✅ Signed in with Google:",
+        logged_edit_hint: "You can edit booking links, alert emails, or reset keys anytime in 'My Orders & Settings'.",
         guide_title: "4-Step Guide with Exact LINE Console Button Names",
         s1_title: "Enable Messaging API",
-        s1_desc: "In LINE Official Account Manager, click top-right gear icon <strong>\"Settings\"</strong> ➔ Left menu <strong>\"Messaging API\"</strong> ➔ Click green button <strong>\"Enable Messaging API\"</strong>.",
+        s1_desc: "In LINE Official Account Manager, click top-right gear <strong>\"Settings\"</strong> ➔ Left menu <strong>\"Messaging API\"</strong> ➔ Click green button <strong>\"Enable Messaging API\"</strong>.",
         s2_title: "Copy Channel Secret",
-        s2_desc: "Open LINE Developers Console and select your channel ➔ Click the <strong>\"Basic settings\"</strong> tab ➔ Scroll to bottom <strong>\"Channel secret\"</strong> ➔ Click <strong>\"Copy\"</strong>.",
+        s2_desc: "Open LINE Developers Console & select your channel ➔ Click <strong>\"Basic settings\"</strong> tab ➔ Scroll to bottom <strong>\"Channel secret\"</strong> ➔ Click <strong>\"Copy\"</strong>.",
         s3_title: "Issue Channel Access Token",
-        s3_desc: "Switch to the <strong>\"Messaging API\"</strong> tab ➔ Scroll to bottom <strong>\"Channel access token (long-lived)\"</strong> ➔ Click <strong>\"Issue\"</strong> ➔ Click <strong>\"Copy\"</strong>.",
-        s4_title: "Set Webhook & Turn On Switch",
-        s4_desc: "After submitting the form below, go to <strong>\"Messaging API\"</strong> tab ➔ Find <strong>\"Webhook settings\"</strong> ➔ Click <strong>\"Edit\"</strong>, paste URL & click <strong>\"Update\"</strong> ➔ Toggle ON <strong>\"Use webhook\"</strong> (green)!",
-        form_title: "Unified Secure Onboarding Form (HTTPS & Immutable Lock)",
-        lock_badge: "🔒 Immutable Account Lock",
-        lbl_client_name: "Business / Brand Name",
-        lbl_tenant_id: "Unique Store ID (tenant_id, locked after binding)",
-        lbl_email: "Primary Email (for Webhook URL & guide)",
-        lbl_secret: "LINE Channel Secret (32 chars under Basic settings tab)",
-        lbl_token: "LINE Channel Access Token (170+ chars under Messaging API tab)",
-        notify_title: "🔔 A + B + C Composite Handover Alert Channels",
-        chk_a_label: "Channel A: Owner LINE User ID (Push alerts to owner's personal LINE)",
-        chk_b_label: "Channel B: Telegram Chat ID (Optional, free unlimited backup push)",
-        chk_c_label: "Channel C: Emergency Alert Email (Default sync alert)",
-        opt_title: "✨ Knowledge Base & Booking Link (with Google Sheet Auto-Snapshot Backup)",
-        lbl_booking: "Online Booking URL (booking_url)",
-        lbl_sheet: "Google Sheet CSV URL (sheet_csv_url)",
-        btn_submit: "🔍 Verify LINE Keys, Send Test Alert & Generate Webhook",
-        success_title: "LINE Token Verified! Account Bound & Locked",
+        s3_desc: "Switch to <strong>\"Messaging API\"</strong> tab ➔ Scroll to bottom <strong>\"Channel access token (long-lived)\"</strong> ➔ Click <strong>\"Issue\"</strong> ➔ Click <strong>\"Copy\"</strong>.",
+        s4_title: "Paste Webhook & Toggle On",
+        s4_desc: "After submitting below, go to <strong>\"Messaging API\"</strong> tab ➔ <strong>\"Webhook settings\"</strong> ➔ Click <strong>\"Edit\"</strong>, paste URL & click <strong>\"Update\"</strong> ➔ Toggle ON <strong>\"Use webhook\"</strong> (green)!",
+        form_title: "Secure Store Setup Form",
+        lock_badge: "🔒 Duplicate Protection + Email OTP Security",
+        lbl_client_name: "Business / Brand Name (shown in AI greetings)", ph_client_name: "e.g., Lumina Boutique Hotel",
+        err_name: "⚠️ Please enter your business or brand name.",
+        lbl_secret: "LINE Channel Secret (32 chars at bottom of Basic settings tab)",
+        err_secret: "❌ Channel Secret must be 28–40 alphanumeric characters.",
+        lbl_token: "LINE Channel Access Token (170+ chars at bottom of Messaging API tab)", ph_token: "Paste the long-lived Channel access token after clicking Issue...",
+        err_token: "❌ Channel Access Token must exceed 100 chars and cannot match Channel Secret.",
+        notify_title: "🔔 Human Handover Alert Channels (A + B + C Multi-Channel)",
+        opt_later_badge: "Optional · Editable anytime in My Settings", opt_later_badge2: "Optional · Editable anytime",
+        chk_a_label: "Channel A: Owner Personal LINE Push Alerts (Supports 1-Click LINE Binding after verification)",
+        chk_a_help: "💡 <strong>No manual ID lookup needed!</strong> Leave this blank for now—once verified, you'll get a <strong>'📲 1-Click Open LINE to Bind Owner Alerts'</strong> button! (Or paste your 33-char U... User ID below if you already have it):",
+        ph_line_uid: "Optional (Leave blank to use 1-Click LINE Binding after submitting)",
+        chk_b_label: "Channel B: Telegram Instant Backup Push (Optional · Free unlimited alerts, editable later)",
+        ph_tg_id: "Optional, e.g. 123456789 (editable anytime)",
+        chk_b_tutorial: "📖 <strong>30-Sec Guide to Find Telegram Chat ID:</strong><br/>1. Open Telegram, search <code>@userinfobot</code>, and tap <strong>Start</strong>.<br/>2. Copy the numeric <strong>Id</strong> (e.g. <code>123456789</code>) and paste it above!",
+        chk_c_label: "Channel C: Emergency Alert & Webhook Guide Emails (Up to 3 emails, editable anytime)",
+        ph_em1: "Alert Email 1 (Primary)", ph_em2: "Alert Email 2 (Optional)", ph_em3: "Alert Email 3 (Optional)",
+        opt_title: "✨ Multiple Booking/Menu Links & Google Sheet Knowledge Base",
+        lbl_booking: "Multiple Booking / Reservation / Menu URLs (One per line—AI automatically picks the right link)",
+        ph_booking: "Example:\nRoom Booking: https://...\nRestaurant Menu: https://...",
+        lbl_sheet: "Google Sheet CSV URL (Protected by automatic anti-delete snapshot backup)",
+        btn_submit: "🔍 Verify LINE Keys & Generate Dedicated Webhook URL",
+        success_title: "LINE Keys Verified! Your AI Concierge is Ready",
+        sent_email_note: "We have also sent your Webhook URL & setup guide to:",
         btn_copy: "Copy URL",
-        final_step_title: "Final Step: Paste into LINE Console (15 Seconds)",
+        final_step_title: "Final Step: Paste into LINE Console & 1-Click Bind Owner LINE",
         final_step_1: "1. In LINE Developers <strong>\"Messaging API\"</strong> tab, find <strong>\"Webhook settings\"</strong>, click <strong>\"Edit\"</strong>, paste the URL above, and click <strong>\"Update\"</strong>.",
         final_step_2: "2. Toggle ON the <strong>\"Use webhook\"</strong> switch (turns green).",
-        final_step_3: "3. 🔒 Send <code>/id</code> to your LINE bot to view your <code>U...</code> ID and paste it into your Google Sheet <strong>admin_user_id</strong> row!"
+        final_step_3: "3. Once enabled, click below to <strong>automatically bind your personal LINE account for handover alerts</strong>:",
+        btn_oneclick_line: "📲 1-Click Open LINE to Bind Owner Alert Account",
+        bind_cmd_hint: "Or send this one-time authorization command directly to your store's LINE bot:",
+        safe_card_title: "🛡️ Enterprise Security & Easy Post-Setup Updates",
+        safe_li1: "• <strong>Anti-Duplicate Binding</strong>: Once bound, nobody else can re-register or hijack your LINE channel keys.",
+        safe_li2: "• <strong>Email OTP Key Reset</strong>: Update links & emails anytime; changing LINE keys requires a 6-digit Email OTP just like resetting a password.",
+        safe_li3: "• <strong>Google Sheet Auto-Snapshot</strong>: Automatic backup ensures zero downtime even if your Sheet is accidentally deleted.",
+        link_contact_us: "📩 Contact Support →", link_open_rescue: "Troubleshoot / Cancel Plan →",
+        modal_title: "Setup Checklist & Cancellation Center",
+        modal_sub: "Review common key mistakes below, or cancel/downgrade your subscription anytime.",
+        opt_a_title: "Option A: Check Common LINE Key Copy Mistakes",
+        opt_a_desc: "Make sure you didn't copy the numeric Channel ID instead of Channel Secret.",
+        opt_b_title: "Option B: 1-Click Cancel Subscription / Request Refund & Switch to Free Plan A",
+        opt_b_desc: "Immediately downgrade to $0 Free Plan, log your refund request, and email your confirmation.",
+        checklist_html: "<div class='font-bold text-emerald-400 mb-1'>✅ Top 3 LINE Key Checks:</div><p>1. <strong>Channel ID vs Channel Secret</strong>: Channel ID is digits only; Channel Secret is 32 alphanumeric chars at the bottom of <code>Basic settings</code>.</p><p>2. <strong>Different Values</strong>: Secret (32 chars) and Access Token (170+ chars) must not be identical.</p><p>3. <strong>Already Bound</strong>: To edit an existing store, click 'My Orders & Settings' at the top right.</p>",
+        btn_close_modal: "Close",
+        support_btn: "AI Setup Help", sup_header: "SmartHost AI Setup Advisor", sup_sub: "24/7 Multilingual Live Help",
+        sup_welcome: "👋 Need help finding LINE Console buttons, adding multiple links, or setting up alerts? Ask me anything!",
+        sup_q1: "🔑 Where are the LINE keys?", sup_q1_text: "Where can I find Channel secret and Channel access token in LINE Developers Console?",
+        sup_q2: "🔗 Multiple booking links?", sup_q2_text: "How do I add multiple booking and menu links, and can I edit them later?",
+        sup_placeholder: "Ask a question...", sup_send: "Send",
+        login_modal_title: "Sign in with Google to Bind Store",
+        login_modal_desc: "Signing in links your purchase history and store management permissions:"
       },
       "ja": {
-        header_title: "SmartHost 統一セルフ開通センター",
-        btn_admin: "📊 管理・テスト画面",
-        btn_rescue: "🛠️ トラブル解決・解約",
-        btn_home: "← ホームへ戻る",
-        page_h1: "3分で完了！LINE公式アカウント＆多重通知設定",
-        page_sub: "日本語版の「LINE Official Account Manager」および「LINE Developers コンソール」の実際のボタン名に合わせて手順を表示しています。",
-        guide_title: "日本のLINE管理画面ボタン名に完全対応した4ステップガイド",
+        header_title: "SmartHost オンライン開通センター",
+        btn_my_orders: "📋 購入履歴・設定変更", btn_rescue: "🛠️ トラブル解決・解約申請", btn_home: "← ホーム",
+        page_h1: "3分で完了！LINE公式アカウント AIコンシェルジュ連携",
+        page_sub: "日本語版の「LINE Official Account Manager」および「LINE Developers」の実際のボタン名に合わせて手順を表示しています。",
+        need_login_banner: "🔐 購入履歴の保存および設定保護のため、フォーム送信前にGoogleアカウントでログインしてください。",
+        btn_login_now: "Googleでログイン",
+        logged_as: "✅ Googleアカウント連携済み：",
+        logged_edit_hint: "開通後も「購入履歴・設定変更」からいつでも予約URL・通知メール・キー変更が可能です",
+        guide_title: "日本のLINE管理画面ボタン名に完全対応した4ステップ手順",
         s1_title: "Messaging APIを有効化",
-        s1_desc: "LINE公式アカウント管理画面（Official Account Manager）右上の歯車マーク<strong>「設定」</strong> ➔ 左メニュー<strong>「Messaging API」</strong> ➔ 緑色のボタン<strong>「Messaging APIを利用する」</strong>をクリックします。",
+        s1_desc: "LINE公式アカウント管理画面の右上歯車<strong>「設定」</strong> ➔ 左メニュー<strong>「Messaging API」</strong> ➔ 緑色のボタン<strong>「Messaging APIを利用する」</strong>をクリック。",
         s2_title: "チャネルシークレットをコピー",
-        s2_desc: "LINE Developersコンソールでチャネルを選択 ➔ 上部タブ<strong>「チャネル基本設定 (Basic settings)」</strong>を開く ➔ 一番下の<strong>「チャネルシークレット (Channel secret)」</strong>横の<strong>「コピー (Copy)」</strong>をクリック。",
+        s2_desc: "LINE Developersでチャネルを選択 ➔ 上部タブ<strong>「チャネル基本設定 (Basic settings)」</strong> ➔ 最下部の<strong>「チャネルシークレット (Channel secret)」</strong>横の<strong>「コピー (Copy)」</strong>をクリック。",
         s3_title: "アクセストークン（長期）を発行",
-        s3_desc: "上部タブ<strong>「Messaging API設定 (Messaging API)」</strong>を開く ➔ 一番下の<strong>「チャネルアクセストークン（長期）」</strong>にある<strong>「発行 (Issue)」</strong>ボタンをクリックして<strong>「コピー (Copy)」</strong>します。",
+        s3_desc: "上部タブ<strong>「Messaging API設定 (Messaging API)」</strong> ➔ 最下部の<strong>「チャネルアクセストークン（長期）」</strong>で<strong>「発行 (Issue)」</strong>を押し<strong>「コピー (Copy)」</strong>をクリック。",
         s4_title: "Webhook設定＆利用オン",
-        s4_desc: "下のフォーム送信後、<strong>「Messaging API設定」</strong>タブ内の<strong>「Webhook設定」</strong> ➔ <strong>「編集 (Edit)」</strong>にURLを貼り付けて<strong>「更新 (Update)」</strong>し、<strong>「Webhookの利用 (Use webhook)」</strong>をオン（緑色）にします！",
-        form_title: "統一セキュリティ開通フォーム（アカウント改ざん防止ロック付）",
-        lock_badge: "🔒 アカウント改ざん防止保護",
-        lbl_client_name: "店舗・ブランド名",
-        lbl_tenant_id: "店舗専用ID (tenant_id・登録後は改ざん不可)",
-        lbl_email: "連絡先メールアドレス（Webhook URL送付用）",
+        s4_desc: "下のフォーム送信後、<strong>「Messaging API設定」</strong>タブ内の<strong>「Webhook設定」</strong> ➔ <strong>「編集 (Edit)」</strong>にURLを貼り付けて<strong>「更新 (Update)」</strong>し、<strong>「Webhookの利用 (Use webhook)」</strong>をオン（緑）にします！",
+        form_title: "セキュリティ開通設定フォーム",
+        lock_badge: "🔒 重複登録防止＋メール認証変更保護",
+        lbl_client_name: "店舗・ブランド名（AIの挨拶に表示されます）", ph_client_name: "例：澄光ホテル Lumina Hotel",
+        err_name: "⚠️ 店舗・ブランド名を入力してください。",
         lbl_secret: "LINE チャネルシークレット（チャネル基本設定タブ最下部の32文字）",
-        lbl_token: "LINE チャネルアクセストークン（Messaging API設定タブ最下部の170文字以上）",
-        notify_title: "🔔 複合スタッフ引き継ぎ通知設定（A + B + C 多重通知）",
-        chk_a_label: "プラン A：オーナーのLINE User ID（個人のLINEへ直接プッシュ通知）",
-        chk_b_label: "プラン B：Telegram Chat ID（任意・無料無制限のバックアップ通知）",
-        chk_c_label: "プラン C：緊急通知メールアドレス（同時送信）",
-        opt_title: "✨ 予約リンク＆Googleスプレッドシート設定（自動バックアップ保護付）",
-        lbl_booking: "オンライン予約URL (booking_url)",
-        lbl_sheet: "GoogleスプレッドシートCSV URL (sheet_csv_url)",
-        btn_submit: "🔍 LINEキーを検証し、テスト通知と専用Webhookを生成する",
-        success_title: "LINEトークン検証成功！専用Webhookが発行されました",
+        err_secret: "❌ チャネルシークレットは28〜40文字の英数字です。",
+        lbl_token: "LINE チャネルアクセストークン（Messaging API設定タブ最下部の170文字以上）", ph_token: "「発行 (Issue)」クリック後にコピーした長期アクセストークンを貼り付け...",
+        err_token: "❌ アクセストークンは100文字以上であり、シークレットと同じ値は入力できません。",
+        notify_title: "🔔 有人引き継ぎ通知設定（A + B + C マルチ通知）",
+        opt_later_badge: "任意・開通後もマイページからいつでも変更可能", opt_later_badge2: "任意・後からいつでも変更可能",
+        chk_a_label: "通知 A：オーナー個人のLINEへプッシュ通知（開通後に「ワンクリックLINE自動連携」が可能！）",
+        chk_a_help: "💡 <strong>IDの手動検索は不要です！</strong>ここは空欄のまま送信して構いません。認証完了後に表示される<strong>「📲 ワンクリックでLINEを開いてオーナー通知を連携」</strong>ボタンを押すだけで自動登録できます！",
+        ph_line_uid: "任意（空欄のままでOK・送信後にワンクリック連携ボタンが表示されます）",
+        chk_b_label: "通知 B：Telegram 無料バックアップ通知（任意・無制限・後から変更可能）",
+        ph_tg_id: "任意（例：123456789・後から追加可能）",
+        chk_b_tutorial: "📖 <strong>30秒でわかる Telegram Chat ID 確認方法：</strong><br/>1. Telegramで公式ボット <code>@userinfobot</code> を検索し <strong>Start</strong> を押します。<br/>2. 表示された数字の <strong>Id</strong>（例：<code>123456789</code>）を上の欄に貼り付けるだけで完了です！",
+        chk_c_label: "通知 C：緊急通知＆Webhook案内送付メールアドレス（最大3件まで登録可能・後から変更可）",
+        ph_em1: "通知メール 1 (メイン)", ph_em2: "通知メール 2 (任意)", ph_em3: "通知メール 3 (任意)",
+        opt_title: "✨ 複数の予約・メニューURL ＆ Googleスプレッドシート連携",
+        lbl_booking: "予約サイト・メニュー・料金表などの複数URL（1行に1つ入力・AIが質問に応じて案内します）",
+        ph_booking: "例：\n宿泊予約：https://...\nレストランメニュー：https://...",
+        lbl_sheet: "Googleスプレッドシート CSV URL（誤削除時の自動バックアップ保護付）",
+        btn_submit: "🔍 LINEキーを検証して専用Webhook URLを発行する",
+        success_title: "LINEキー検証成功！AIコンシェルジュの準備が整いました",
+        sent_email_note: "専用Webhook URLと設定ガイドを以下のメールにも送信しました：",
         btn_copy: "URLをコピー",
-        final_step_title: "最後のステップ：LINE管理画面へ貼り付け（15秒）",
-        final_step_1: "1. LINE Developersの<strong>「Messaging API設定」</strong>タブ内にある<strong>「Webhook設定」</strong>の<strong>「編集 (Edit)」</strong>をクリックし、上のURLを貼り付けて<strong>「更新 (Update)」</strong>を押します。",
-        final_step_2: "2. すぐ下の<strong>「Webhookの利用 (Use webhook)」</strong>スイッチをオン（緑色）に切り替えます。",
-        final_step_3: "3. 🔒 LINEボットに <code>/マイID</code> と送信して表示された <code>U...</code> から始まるIDを、Googleスプレッドシートの<strong>「管理員LINE_ID」</strong>欄に貼り付ければ完了です！"
+        final_step_title: "最後のステップ：LINE管理画面へ貼り付け＆ワンクリック連携",
+        final_step_1: "1. LINE Developersの<strong>「Messaging API設定」</strong>タブ内の<strong>「Webhook設定」</strong>で<strong>「編集 (Edit)」</strong>を押し、上のURLを貼り付けて<strong>「更新 (Update)」</strong>をクリック。",
+        final_step_2: "2. すぐ下の<strong>「Webhookの利用 (Use webhook)」</strong>スイッチをオン（緑色）にします。",
+        final_step_3: "3. 上記完了後、下のボタンを押すと<strong>オーナー個人のLINEをワンクリックで自動連携</strong>できます：",
+        btn_oneclick_line: "📲 ワンクリックでLINEを開いてオーナー通知を自動連携",
+        bind_cmd_hint: "または、店舗のLINE公式アカウントへ以下のワンタイム認証コードを送信してください：",
+        safe_card_title: "🛡️ 商用レベルのセキュリティ＆開通後の柔軟な設定変更",
+        safe_li1: "• <strong>重複登録・乗っ取り防止</strong>：一度連携されたLINEキーは保護され、第三者が重複登録や上書きすることはできません。",
+        safe_li2: "• <strong>メール認証コードによる安全な変更</strong>：予約URLや通知メールはいつでも変更可能。LINEキーの再設定時はパスワード変更と同様に「6桁のメール認証コード」で本人確認を行います。",
+        safe_li3: "• <strong>シート誤削除バックアップ</strong>：Googleスプレッドシートが誤って削除されても、最新のスナップショットから自動復旧します。",
+        link_contact_us: "📩 サポートへメール相談 →", link_open_rescue: "トラブル診断・解約申請 →",
+        modal_title: "開通チェックリスト＆解約・返金センター",
+        modal_sub: "キー入力エラーの確認、または解約・返金申請がいつでも行えます。",
+        opt_a_title: "選択肢 A：LINEキーのよくある入力ミスを確認する",
+        opt_a_desc: "数字のみのChannel IDを誤って貼り付けていないか確認します。",
+        opt_b_title: "選択肢 B：ワンクリック解約・返金申請（0円フリープランへ切替）",
+        opt_b_desc: "即座に0円プランへ切り替え、返金申請の受付完了メールを送信します。",
+        checklist_html: "<div class='font-bold text-emerald-400 mb-1'>✅ LINEキー確認ポイント：</div><p>1. <strong>Channel IDとの混同</strong>：Channel IDは数字のみです。<code>チャネル基本設定</code>最下部の32文字の英数字（チャネルシークレット）をコピーしてください。</p><p>2. <strong>重複入力チェック</strong>：シークレットとアクセストークンに同じ文字列は入力できません。</p><p>3. <strong>設定変更の場合</strong>：登録済み店舗の変更は上部の「購入履歴・設定変更」から行えます。</p>",
+        btn_close_modal: "閉じる",
+        support_btn: "AI 開通サポート", sup_header: "SmartHost AI 開通アドバイザー", sup_sub: "24時間 多言語リアルタイム案内",
+        sup_welcome: "👋 LINE管理画面のボタンの場所や、複数URL・通知メールの設定方法など、何でもご質問ください！",
+        sup_q1: "🔑 キーはどこにありますか？", sup_q1_text: "LINE Developersでチャネルシークレットとアクセストークンはどこにありますか？",
+        sup_q2: "🔗 複数のリンクを登録したい", sup_q2_text: "予約ページやメニューなど複数のURLを登録する方法と、後から変更する方法を教えてください。",
+        sup_placeholder: "質問を入力してください...", sup_send: "送信",
+        login_modal_title: "Google アカウントでログインして店舗連携",
+        login_modal_desc: "ログインすると購入履歴と開通権限が自動で紐付けられます："
       },
       "id": {
-        header_title: "Pusat Aktivasi Mandiri SmartHost",
-        btn_admin: "📊 Konsol Tes & Admin",
-        btn_rescue: "🛠️ Bantuan / Batal",
-        btn_home: "← Kembali",
-        page_h1: "3 Menit Aktivasi AI LINE & Notifikasi Multi-Saluran",
-        page_sub: "Panduan lengkap dengan nama tombol resmi di LINE Official Account Manager & LINE Developers Console.",
+        header_title: "Pusat Aktivasi Online SmartHost",
+        btn_my_orders: "📋 Pesanan & Pengaturan", btn_rescue: "🛠️ Bantuan / Batalkan Paket", btn_home: "← Beranda",
+        page_h1: "Hubungkan Akun Resmi LINE Anda dalam 3 Menit",
+        page_sub: "Panduan 4 langkah sesuai nama tombol resmi di LINE Official Account Manager & LINE Developers Console.",
+        need_login_banner: "🔐 Silakan login dengan akun Google Anda terlebih dahulu agar riwayat pesanan dan hak akses toko tersimpan aman.",
+        btn_login_now: "Login dengan Google",
+        logged_as: "✅ Terhubung dengan Akun Google:",
+        logged_edit_hint: "Anda dapat mengubah link booking, email darurat, atau reset kunci kapan saja di 'Pesanan & Pengaturan'.",
         guide_title: "Panduan 4 Langkah sesuai Nama Tombol Resmi LINE Console",
         s1_title: "Aktifkan Messaging API",
-        s1_desc: "Buka LINE Official Account Manager ➔ Klik ikon roda gigi <strong>\"Settings (Pengaturan)\"</strong> di kanan atas ➔ Menu kiri <strong>\"Messaging API\"</strong> ➔ Klik tombol hijau <strong>\"Enable Messaging API\"</strong>.",
+        s1_desc: "Di LINE Official Account Manager, klik ikon roda gigi <strong>\"Settings\"</strong> ➔ Menu kiri <strong>\"Messaging API\"</strong> ➔ Klik tombol hijau <strong>\"Enable Messaging API\"</strong>.",
         s2_title: "Salin Channel Secret",
-        s2_desc: "Buka LINE Developers Console & pilih channel Anda ➔ Buka tab <strong>\"Basic settings\"</strong> ➔ Gulir ke paling bawah <strong>\"Channel secret\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
+        s2_desc: "Buka LINE Developers Console & pilih channel ➔ Tab <strong>\"Basic settings\"</strong> ➔ Gulir ke bawah <strong>\"Channel secret\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
         s3_title: "Terbitkan Access Token",
-        s3_desc: "Buka tab <strong>\"Messaging API\"</strong> ➔ Gulir ke paling bawah <strong>\"Channel access token (long-lived)\"</strong> ➔ Klik tombol <strong>\"Issue\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
+        s3_desc: "Buka tab <strong>\"Messaging API\"</strong> ➔ Gulir ke bawah <strong>\"Channel access token (long-lived)\"</strong> ➔ Klik <strong>\"Issue\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
         s4_title: "Tempel Webhook & Aktifkan",
-        s4_desc: "Setelah mengirim formulir di bawah, kembali ke tab <strong>\"Messaging API\"</strong> ➔ Bagian <strong>\"Webhook settings\"</strong> ➔ Klik <strong>\"Edit\"</strong>, tempel URL & klik <strong>\"Update\"</strong> ➔ Nyalakan sakelar <strong>\"Use webhook\"</strong> (hijau)!",
-        form_title: "Formulir Aktivasi Terpadu (Dilindungi Kunci Keamanan)",
-        lock_badge: "🔒 Kunci Akun Aman",
-        lbl_client_name: "Nama Bisnis / Brand",
-        lbl_tenant_id: "ID Toko Unik (tenant_id, dikunci setelah aktif)",
-        lbl_email: "Email Utama",
-        lbl_secret: "LINE Channel Secret (32 karakter di tab Basic settings)",
-        lbl_token: "LINE Channel Access Token (170+ karakter di tab Messaging API)",
-        notify_title: "🔔 Pengaturan Notifikasi Gabungan (A + B + C)",
-        chk_a_label: "Saluran A: LINE User ID Pemilik (Notifikasi ke LINE pribadi)",
-        chk_b_label: "Saluran B: Telegram Chat ID (Opsional, cadangan gratis tanpa batas)",
-        chk_c_label: "Saluran C: Email Darurat",
-        opt_title: "✨ Tautan Booking & Google Sheets (Dilindungi Cadangan Otomatis)",
-        lbl_booking: "URL Booking Online (booking_url)",
-        lbl_sheet: "URL CSV Google Sheets (sheet_csv_url)",
-        btn_submit: "🔍 Verifikasi Kunci LINE, Kirim Tes & Buat Webhook",
-        success_title: "Token LINE Terverifikasi! Webhook Siap Digunakan",
-        btn_copy: "Salin URL"
+        s4_desc: "Setelah kirim formulir, buka tab <strong>\"Messaging API\"</strong> ➔ <strong>\"Webhook settings\"</strong> ➔ Klik <strong>\"Edit\"</strong>, tempel URL & klik <strong>\"Update\"</strong> ➔ Nyalakan <strong>\"Use webhook\"</strong> (hijau)!",
+        form_title: "Formulir Pengaturan Toko Aman",
+        lock_badge: "🔒 Anti-Duplikat + Verifikasi OTP Email",
+        lbl_client_name: "Nama Bisnis / Brand (ditampilkan pada sapaan AI)", ph_client_name: "Contoh: Lumina Boutique Hotel",
+        err_name: "⚠️ Silakan masukkan nama bisnis Anda.",
+        lbl_secret: "LINE Channel Secret (32 karakter di bawah tab Basic settings)",
+        err_secret: "❌ Channel Secret harus 28–40 karakter huruf/angka.",
+        lbl_token: "LINE Channel Access Token (170+ karakter di bawah tab Messaging API)", ph_token: "Tempel Channel access token setelah klik Issue...",
+        err_token: "❌ Access Token harus lebih dari 100 karakter dan tidak boleh sama dengan Secret.",
+        notify_title: "🔔 Pengaturan Notifikasi Staf (Saluran A + B + C)",
+        opt_later_badge: "Opsional · Dapat diubah kapan saja", opt_later_badge2: "Opsional · Dapat diubah nanti",
+        chk_a_label: "Saluran A: Notifikasi LINE Pribadi Pemilik (Mendukung Ikat LINE Otomatis 1-Klik setelah verifikasi)",
+        chk_a_help: "💡 <strong>Tidak perlu cari ID manual!</strong> Kosongkan kolom ini sekarang—setelah verifikasi selesai, klik tombol <strong>'📲 Buka LINE 1-Klik untuk Ikat Notifikasi Pemilik'</strong>!",
+        ph_line_uid: "Opsional (Kosongkan untuk ikat otomatis 1-klik setelah kirim)",
+        chk_b_label: "Saluran B: Cadangan Telegram Gratis Tanpa Batas (Opsional · Dapat diubah kapan saja)",
+        ph_tg_id: "Opsional, misal: 123456789",
+        chk_b_tutorial: "📖 <strong>Cara Cek Telegram Chat ID (30 Detik):</strong><br/>1. Buka Telegram, cari <code>@userinfobot</code> lalu tekan <strong>Start</strong>.<br/>2. Salin angka <strong>Id</strong> (misal <code>123456789</code>) dan tempel di kolom atas!",
+        chk_c_label: "Saluran C: Email Darurat & Panduan Webhook (Maksimal 3 email, dapat diubah kapan saja)",
+        ph_em1: "Email Notifikasi 1 (Utama)", ph_em2: "Email Notifikasi 2 (Opsional)", ph_em3: "Email Notifikasi 3 (Opsional)",
+        opt_title: "✨ Banyak Link Booking/Menu & Google Sheets",
+        lbl_booking: "Link Booking / Reservasi / Menu (Satu per baris—AI otomatis memilih link yang sesuai)",
+        ph_booking: "Contoh:\nBooking Kamar: https://...\nMenu Restoran: https://...",
+        lbl_sheet: "URL CSV Google Sheets (Dilindungi cadangan otomatis anti-terhapus)",
+        btn_submit: "🔍 Verifikasi Kunci LINE & Buat URL Webhook",
+        success_title: "Kunci LINE Terverifikasi! Asisten AI Siap Digunakan",
+        sent_email_note: "URL Webhook & panduan juga telah dikirim ke email:",
+        btn_copy: "Salin URL",
+        final_step_title: "Langkah Terakhir: Tempel di LINE Console & Ikat LINE Pemilik",
+        final_step_1: "1. Di tab <strong>\"Messaging API\"</strong> LINE Developers, cari <strong>\"Webhook settings\"</strong>, klik <strong>\"Edit\"</strong>, tempel URL di atas lalu klik <strong>\"Update\"</strong>.",
+        final_step_2: "2. Aktifkan sakelar <strong>\"Use webhook\"</strong> hingga berwarna hijau.",
+        final_step_3: "3. Setelah aktif, klik tombol di bawah untuk <strong>menghubungkan LINE pribadi Anda secara otomatis</strong>:",
+        btn_oneclick_line: "📲 Buka LINE 1-Klik untuk Ikat Akun Pemilik",
+        bind_cmd_hint: "Atau kirim kode otorisasi sekali pakai ini ke akun LINE toko Anda:",
+        safe_card_title: "🛡️ Keamanan Bisnis & Kemudahan Ubah Data",
+        safe_li1: "• <strong>Perlindungan Anti-Duplikat</strong>: Kunci LINE yang sudah terikat tidak dapat didaftarkan ulang oleh pihak lain.",
+        safe_li2: "• <strong>Reset Kunci dengan OTP Email</strong>: Ubah link & email kapan saja; penggantian kunci LINE dilindungi kode OTP 6 digit ke email Anda.",
+        safe_li3: "• <strong>Backup Otomatis Google Sheets</strong>: AI tetap berjalan lancar menggunakan snapshot terakhir meskipun Sheet tidak sengaja terhapus.",
+        link_contact_us: "📩 Hubungi Kami →", link_open_rescue: "Bantuan / Batalkan Paket →",
+        modal_title: "Daftar Periksa & Pembatalan Langganan",
+        modal_sub: "Periksa panduan kunci LINE atau ajukan pembatalan/refund kapan saja.",
+        opt_a_title: "Opsi A: Cek Kesalahan Umum Penyalinan Kunci LINE",
+        opt_a_desc: "Pastikan tidak salah menyalin Channel ID angka ke kolom Channel Secret.",
+        opt_b_title: "Opsi B: Batalkan Langganan / Ajukan Refund & Kembali ke Paket Gratis",
+        opt_b_desc: "Langsung kembali ke Paket A (Rp 0), catat refund, dan kirim email konfirmasi.",
+        checklist_html: "<div class='font-bold text-emerald-400 mb-1'>✅ 3 Pemeriksaan Kunci LINE:</div><p>1. <strong>Channel ID vs Secret</strong>: Secret terdiri dari 32 huruf/angka di bawah tab <code>Basic settings</code>.</p><p>2. <strong>Tidak Boleh Sama</strong>: Secret dan Access Token adalah dua kode berbeda.</p><p>3. <strong>Ubah Pengaturan</strong>: Gunakan menu 'Pesanan & Pengaturan' di atas untuk mengubah toko yang sudah aktif.</p>",
+        btn_close_modal: "Tutup",
+        support_btn: "Bantuan AI", sup_header: "Konsultan Aktivasi AI", sup_sub: "Bantuan Langsung Multibahasa",
+        sup_welcome: "👋 Bingung mencari tombol di LINE Console atau cara mengisi banyak link booking? Tanyakan langsung di sini!",
+        sup_q1: "🔑 Lokasi tombol kunci LINE?", sup_q1_text: "Di mana letak tombol Channel secret dan Access token di LINE Developers?",
+        sup_q2: "🔗 Cara isi banyak link?", sup_q2_text: "Bagaimana cara memasukkan banyak link booking/menu dan mengubahnya nanti?",
+        sup_placeholder: "Tulis pertanyaan Anda...", sup_send: "Kirim",
+        login_modal_title: "Login dengan Google untuk Ikat Toko",
+        login_modal_desc: "Login akan menghubungkan riwayat pembelian dan izin pengelolaan toko Anda:"
       },
       "it": {
-        header_title: "Centro di Attivazione Unificato SmartHost",
-        btn_admin: "📊 Console Test e Admin",
-        btn_rescue: "🛠️ Supporto / Disdici",
-        btn_home: "← Home",
-        page_h1: "Attiva il Concierge IA LINE in 3 Minuti",
-        page_sub: "Guida passo-passo con i nomi esatti dei pulsanti della console ufficiale LINE Developers.",
+        header_title: "Centro di Attivazione SmartHost",
+        btn_my_orders: "📋 Ordini e Impostazioni", btn_rescue: "🛠️ Supporto / Disdici", btn_home: "← Home",
+        page_h1: "Collega il Tuo Account Ufficiale LINE in 3 Minuti",
+        page_sub: "Guida in 4 passaggi con i nomi esatti dei pulsanti ufficiali di LINE Official Account Manager e LINE Developers Console.",
+        need_login_banner: "🔐 Accedi prima con il tuo account Google per associare in sicurezza ordini e impostazioni del negozio.",
+        btn_login_now: "Accedi con Google",
+        logged_as: "✅ Account Google collegato:",
+        logged_edit_hint: "Puoi modificare link, email o reimpostare le chiavi in qualsiasi momento da 'Ordini e Impostazioni'.",
         guide_title: "Guida in 4 Passaggi con i Nomi Esatti dei Pulsanti LINE",
         s1_title: "Abilita Messaging API",
-        s1_desc: "In LINE Official Account Manager, clicca in alto a destra su <strong>\"Settings\"</strong> ➔ Menu a sinistra <strong>\"Messaging API\"</strong> ➔ Clicca il pulsante verde <strong>\"Enable Messaging API\"</strong>.",
+        s1_desc: "In LINE Official Account Manager, clicca in alto a destra su <strong>\"Settings\"</strong> ➔ Menu a sinistra <strong>\"Messaging API\"</strong> ➔ Pulsante verde <strong>\"Enable Messaging API\"</strong>.",
         s2_title: "Copia Channel Secret",
-        s2_desc: "Apri LINE Developers Console e seleziona il tuo canale ➔ Scheda <strong>\"Basic settings\"</strong> ➔ Scorri in fondo fino a <strong>\"Channel secret\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
+        s2_desc: "Apri LINE Developers Console e seleziona il canale ➔ Scheda <strong>\"Basic settings\"</strong> ➔ Scorri fino a <strong>\"Channel secret\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
         s3_title: "Genera Access Token",
-        s3_desc: "Passa alla scheda <strong>\"Messaging API\"</strong> ➔ Scorri in fondo fino a <strong>\"Channel access token (long-lived)\"</strong> ➔ Clicca <strong>\"Issue\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
-        s4_title: "Imposta Webhook e Attiva",
-        s4_desc: "Dopo aver inviato il modulo, nella scheda <strong>\"Messaging API\"</strong> trova <strong>\"Webhook settings\"</strong> ➔ Clicca <strong>\"Edit\"</strong>, incolla l'URL e clicca <strong>\"Update\"</strong> ➔ Attiva l'interruttore <strong>\"Use webhook\"</strong> (verde)!",
-        form_title: "Modulo di Attivazione Sicuro Unificato (HTTPS)",
-        lock_badge: "🔒 Account Protetto",
-        lbl_client_name: "Nome Azienda / Hotel",
-        lbl_tenant_id: "ID Univoco (tenant_id, bloccato dopo l'attivazione)",
-        lbl_email: "Email Principale",
-        lbl_secret: "LINE Channel Secret (32 caratteri nella scheda Basic settings)",
-        lbl_token: "LINE Channel Access Token (170+ caratteri nella scheda Messaging API)",
-        notify_title: "🔔 Configurazione Notifiche Multiple (A + B + C)",
-        chk_a_label: "Canale A: LINE User ID Titolare",
-        chk_b_label: "Canale B: Telegram Chat ID (Opzionale, gratuito illimitato)",
-        chk_c_label: "Canale C: Email di Emergenza",
-        opt_title: "✨ Link Prenotazione e Google Sheets (con Backup Automatico)",
-        lbl_booking: "URL Prenotazione (booking_url)",
-        lbl_sheet: "URL CSV Google Sheets (sheet_csv_url)",
-        btn_submit: "🔍 Verifica Chiavi LINE, Invia Test e Genera Webhook",
-        success_title: "Token LINE Verificato! Account Attivato",
-        btn_copy: "Copia URL"
+        s3_desc: "Passa alla scheda <strong>\"Messaging API\"</strong> ➔ Scorri fino a <strong>\"Channel access token (long-lived)\"</strong> ➔ Clicca <strong>\"Issue\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
+        s4_title: "Incolla Webhook e Attiva",
+        s4_desc: "Dopo l'invio del modulo, nella scheda <strong>\"Messaging API\"</strong> trova <strong>\"Webhook settings\"</strong> ➔ Clicca <strong>\"Edit\"</strong>, incolla l'URL e premi <strong>\"Update\"</strong> ➔ Attiva <strong>\"Use webhook\"</strong> (verde)!",
+        form_title: "Modulo Sicuro di Configurazione",
+        lock_badge: "🔒 Protezione Duplicati + Verifica OTP Email",
+        lbl_client_name: "Nome Azienda / Hotel (mostrato nei saluti IA)", ph_client_name: "Es: Lumina Boutique Hotel",
+        err_name: "⚠️ Inserisci il nome della tua attività.",
+        lbl_secret: "LINE Channel Secret (32 caratteri in fondo alla scheda Basic settings)",
+        err_secret: "❌ Il Channel Secret deve contenere 28–40 caratteri alfanumerici.",
+        lbl_token: "LINE Channel Access Token (170+ caratteri in fondo alla scheda Messaging API)", ph_token: "Incolla il Channel access token generato con Issue...",
+        err_token: "❌ L'Access Token deve superare i 100 caratteri e non può coincidere col Secret.",
+        notify_title: "🔔 Notifiche di Passaggio Operatore (Canali A + B + C)",
+        opt_later_badge: "Opzionale · Modificabile in ogni momento", opt_later_badge2: "Opzionale · Modificabile dopo",
+        chk_a_label: "Canale A: Notifiche Push sul LINE Personale del Titolare (Collegamento in 1 Clic dopo la verifica)",
+        chk_a_help: "💡 <strong>Nessuna ricerca manuale dell'ID!</strong> Puoi lasciare vuoto questo campo: dopo la verifica apparirà il pulsante <strong>'📲 Apri LINE in 1 Clic per Collegare le Notifiche'</strong>!",
+        ph_line_uid: "Opzionale (Lascia vuoto per usare il collegamento in 1 clic dopo l'invio)",
+        chk_b_label: "Canale B: Notifiche Backup Gratuite su Telegram (Opzionale · Illimitato, modificabile dopo)",
+        ph_tg_id: "Opzionale, es: 123456789",
+        chk_b_tutorial: "📖 <strong>Come Trovare il Telegram Chat ID in 30 Secondi:</strong><br/>1. Apri Telegram, cerca <code>@userinfobot</code> e premi <strong>Start</strong>.<br/>2. Copia il numero <strong>Id</strong> (es. <code>123456789</code>) e incollalo qui sopra!",
+        chk_c_label: "Canale C: Email di Emergenza e Invio Guida Webhook (Fino a 3 email, modificabili dopo)",
+        ph_em1: "Email Notifica 1 (Principale)", ph_em2: "Email Notifica 2 (Opzionale)", ph_em3: "Email Notifica 3 (Opzionale)",
+        opt_title: "✨ Link Multipli Prenotazione/Menu e Foglio Google",
+        lbl_booking: "Link Multipli di Prenotazione / Menu / Listino (Uno per riga: l'IA sceglie il link giusto)",
+        ph_booking: "Esempio:\nPrenotazione Camere: https://...\nMenu Ristorante: https://...",
+        lbl_sheet: "URL CSV Google Sheets (Con backup automatico contro cancellazioni)",
+        btn_submit: "🔍 Verifica Chiavi LINE e Genera URL Webhook",
+        success_title: "Chiavi LINE Verificate! Il Concierge IA è Pronto",
+        sent_email_note: "Abbiamo inviato l'URL Webhook e la guida anche a:",
+        btn_copy: "Copia URL",
+        final_step_title: "Ultimo Passo: Incolla in LINE Console e Collega il Tuo LINE",
+        final_step_1: "1. Nella scheda <strong>\"Messaging API\"</strong> di LINE Developers trova <strong>\"Webhook settings\"</strong>, clicca <strong>\"Edit\"</strong>, incolla l'URL qui sopra e premi <strong>\"Update\"</strong>.",
+        final_step_2: "2. Attiva l'interruttore <strong>\"Use webhook\"</strong> (diventa verde).",
+        final_step_3: "3. Fatto ciò, clicca qui sotto per <strong>collegare automaticamente il tuo account LINE personale</strong>:",
+        btn_oneclick_line: "📲 Apri LINE in 1 Clic per Collegare il Titolare",
+        bind_cmd_hint: "Oppure invia questo codice monouso alla chat LINE del tuo negozio:",
+        safe_card_title: "🛡️ Sicurezza Aziendale e Modifiche Protette",
+        safe_li1: "• <strong>Blocco Duplicati</strong>: Le chiavi LINE collegate non possono essere registrate o sovrascritte da terzi.",
+        safe_li2: "• <strong>Modifica con Codice OTP Email</strong>: Modifica link ed email quando vuoi; il cambio chiavi LINE richiede un codice OTP a 6 cifre via email.",
+        safe_li3: "• <strong>Backup Foglio Google</strong>: Snapshot automatico garantisce continuità anche se il foglio viene eliminato.",
+        link_contact_us: "📩 Contatta il Supporto →", link_open_rescue: "Supporto / Disdici Abbonamento →",
+        modal_title: "Controllo Configurazione e Disdetta",
+        modal_sub: "Controlla gli errori comuni sulle chiavi o richiedi disdetta/rimborso in qualsiasi momento.",
+        opt_a_title: "Opzione A: Verifica Errori Comuni Chiavi LINE",
+        opt_a_desc: "Assicurati di non aver incollato il Channel ID numerico al posto del Channel Secret.",
+        opt_b_title: "Opzione B: Annulla Abbonamento / Richiedi Rimborso e Passa al Piano Gratuito",
+        opt_b_desc: "Passa subito al Piano A (€0), registra il rimborso e ricevi conferma via email.",
+        checklist_html: "<div class='font-bold text-emerald-400 mb-1'>✅ 3 Controlli Rapidi Chiavi LINE:</div><p>1. <strong>Channel ID vs Secret</strong>: Il Secret ha 32 caratteri alfanumerici in fondo a <code>Basic settings</code>.</p><p>2. <strong>Valori Diversi</strong>: Secret e Access Token non devono essere uguali.</p><p>3. <strong>Modifiche</strong>: Usa 'Ordini e Impostazioni' in alto per aggiornare un negozio già attivo.</p>",
+        btn_close_modal: "Chiudi",
+        support_btn: "Supporto IA", sup_header: "Consulente Attivazione IA", sup_sub: "Assistenza Multilingue 24/7",
+        sup_welcome: "👋 Non trovi un pulsante su LINE Console o vuoi inserire più link di prenotazione? Scrivimi pure!",
+        sup_q1: "🔑 Dove trovo le chiavi LINE?", sup_q1_text: "Dove si trovano Channel secret e Access token nella console LINE Developers?",
+        sup_q2: "🔗 Come inserire più link?", sup_q2_text: "Come posso aggiungere più link di prenotazione/menu e modificarli in seguito?",
+        sup_placeholder: "Scrivi la tua domanda...", sup_send: "Invia",
+        login_modal_title: "Accedi con Google per Collegare il Negozio",
+        login_modal_desc: "L'accesso associa automaticamente lo storico acquisti e i permessi:"
       }
     };
 
     const params = new URLSearchParams(window.location.search);
     const plan = (params.get("plan") || "free").toLowerCase();
-    const paidVia = params.get("paid") || "";
+    const orderId = params.get("order_id") || "";
     const urlLang = params.get("lang");
     let currentLang = "zh-TW";
+    let currentUser = null;
+    let publicCfg = {};
 
     function applyOnboardingLang(langCode) {
       currentLang = ONBOARD_I18N[langCode] ? langCode : "zh-TW";
       const dict = ONBOARD_I18N[currentLang];
+      document.documentElement.lang = currentLang;
       document.querySelectorAll("[data-i18n]").forEach(el => {
         const k = el.getAttribute("data-i18n");
         if (dict[k]) el.innerHTML = dict[k];
       });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        const k = el.getAttribute("data-i18n-placeholder");
+        if (dict[k]) el.setAttribute("placeholder", dict[k]);
+      });
       document.getElementById("lang-switcher").value = currentLang;
-      const planNames = {
-        free: "Plan A (Free / 0元體驗版)",
-        basic: "Plan B (Basic / 輕量無限版)",
-        pro: "Plan C (Pro / 專業熟客建檔版)"
-      };
-      const paidBadge = paidVia === "paypal" ? " [PayPal 已授權]" : "";
-      document.getElementById("plan-badge").textContent = `✅ ${planNames[plan] || planNames.free}${paidBadge}`;
     }
 
     const initLang = urlLang || localStorage.getItem("smarthost_lang") || "zh-TW";
@@ -614,6 +856,260 @@
       applyOnboardingLang(selected);
     });
 
+    async function checkOnboardingAuth() {
+      try {
+        const [cRes, mRes] = await Promise.all([fetch("/api/public_config"), fetch("/api/auth/me")]);
+        publicCfg = await cRes.json();
+        const me = await mRes.json();
+        if (me.authenticated && me.user) {
+          currentUser = me.user;
+          document.getElementById("auth-banner-unlogged").classList.add("hidden");
+          document.getElementById("auth-banner-logged").classList.remove("hidden");
+          document.getElementById("logged-email-display").textContent = me.user.email;
+          const em1 = document.getElementById("alert_email_1");
+          if (!em1.value) em1.value = me.user.email;
+        } else {
+          currentUser = null;
+          document.getElementById("auth-banner-logged").classList.add("hidden");
+          document.getElementById("auth-banner-unlogged").classList.remove("hidden");
+        }
+        renderOnboardGsi();
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function renderOnboardGsi() {
+      if (!publicCfg.google_client_id || !window.google || !window.google.accounts) return;
+      try {
+        window.google.accounts.id.initialize({
+          client_id: publicCfg.google_client_id,
+          callback: async (resp) => {
+            const r = await fetch("/api/auth/google_credential", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ credential: resp.credential })
+            });
+            if (r.ok) {
+              closeLoginModal();
+              await checkOnboardingAuth();
+            }
+          }
+        });
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-gsi-onboard"),
+          { theme: "filled_black", size: "large", shape: "pill", width: 260 }
+        );
+      } catch (_) {}
+    }
+
+    function openLoginModal() {
+      renderOnboardGsi();
+      const m = document.getElementById("login-modal");
+      m.classList.remove("hidden");
+      m.classList.add("flex");
+    }
+
+    function closeLoginModal() {
+      const m = document.getElementById("login-modal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+
+    async function sendOnboardOtp() {
+      const email = document.getElementById("ob-login-email").value.trim();
+      const msg = document.getElementById("ob-login-msg");
+      if (!email || !email.includes("@")) return;
+      const res = await fetch("/api/auth/send_login_otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      msg.classList.remove("hidden");
+      if (res.ok) {
+        document.getElementById("ob-otp-row").classList.remove("hidden");
+        if (data.creator_test_code) document.getElementById("ob-otp-code").value = data.creator_test_code;
+        msg.className = "text-xs text-center text-emerald-400 font-bold";
+        msg.textContent = data.creator_test_code ? `驗證碼已產生（預覽：${data.creator_test_code}）` : "✅ 6 位數驗證碼已寄出！";
+      } else {
+        msg.className = "text-xs text-center text-rose-400 font-bold";
+        msg.textContent = data.message || "寄送失敗";
+      }
+    }
+
+    async function verifyOnboardOtp() {
+      const email = document.getElementById("ob-login-email").value.trim();
+      const code = document.getElementById("ob-otp-code").value.trim();
+      const res = await fetch("/api/auth/verify_login_otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code })
+      });
+      if (res.ok) {
+        closeLoginModal();
+        await checkOnboardingAuth();
+      } else {
+        const data = await res.json();
+        const msg = document.getElementById("ob-login-msg");
+        msg.classList.remove("hidden");
+        msg.className = "text-xs text-center text-rose-400 font-bold";
+        msg.textContent = data.message || "驗證碼錯誤";
+      }
+    }
+
+    function openResilienceModal(reasonText) {
+      if (reasonText) {
+        document.getElementById("modal-error-reason").textContent = reasonText;
+      }
+      const modal = document.getElementById("resilience-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeResilienceModal() {
+      const modal = document.getElementById("resilience-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function showChecklistSection() {
+      document.getElementById("checklist-box").classList.remove("hidden");
+      document.getElementById("cancel-box").classList.add("hidden");
+    }
+
+    async function triggerRealCancelOrRefund() {
+      if (!currentUser) {
+        closeResilienceModal();
+        openLoginModal();
+        return;
+      }
+      const box = document.getElementById("cancel-box");
+      document.getElementById("checklist-box").classList.add("hidden");
+      box.classList.remove("hidden");
+      box.textContent = "⏳ 正在處理退訂與退費申請...";
+      try {
+        const res = await fetch("/api/orders/cancel_or_refund", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id: orderId, reason: "客戶於開通頁面申請一鍵取消訂閱 / 退費" })
+        });
+        const data = await res.json();
+        box.textContent = "✅ " + (data.message || "已切換回方案 A（0 元免費版）並完成退訂申請！");
+      } catch (e) {
+        box.textContent = "連線異常，請稍後再試。";
+      }
+    }
+
+    function copyWebhookUrl() {
+      const input = document.getElementById("generated-webhook-url");
+      navigator.clipboard.writeText(input.value);
+      alert("✅ Webhook URL Copied!");
+    }
+
+    document.getElementById("onboarding-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!currentUser) {
+        openLoginModal();
+        return;
+      }
+
+      const clientName = document.getElementById("client_name").value.trim();
+      const secret = document.getElementById("channel_secret").value.trim();
+      const token = document.getElementById("channel_access_token").value.trim();
+      const adminUserId = document.getElementById("admin_user_id").value.trim();
+      const telegramChatId = document.getElementById("telegram_chat_id").value.trim();
+      const alertEmails = [
+        document.getElementById("alert_email_1").value.trim(),
+        document.getElementById("alert_email_2").value.trim(),
+        document.getElementById("alert_email_3").value.trim()
+      ].filter(Boolean);
+      const bookingLinks = document.getElementById("booking_links").value.trim();
+      const sheetCsvUrl = document.getElementById("sheet_csv_url").value.trim();
+
+      const notifyChannels = [];
+      if (document.getElementById("chk_notify_line").checked) notifyChannels.push("LINE");
+      if (document.getElementById("chk_notify_tg").checked) notifyChannels.push("Telegram");
+      if (document.getElementById("chk_notify_email").checked) notifyChannels.push("Email");
+
+      const secretRegex = /^[a-zA-Z0-9]{28,40}$/;
+      const tokenRegex = /^[a-zA-Z0-9+/=_-]{80,350}$/;
+
+      let hasError = false;
+      const setFieldState = (inputId, errId, isValid) => {
+        const inputEl = document.getElementById(inputId);
+        const errEl = document.getElementById(errId);
+        if (!isValid) {
+          inputEl.classList.add("border-rose-500", "ring-2", "ring-rose-500/30");
+          if (errEl) errEl.classList.remove("hidden");
+          hasError = true;
+        } else {
+          inputEl.classList.remove("border-rose-500", "ring-2", "ring-rose-500/30");
+          if (errEl) errEl.classList.add("hidden");
+        }
+      };
+
+      setFieldState("client_name", "err-name", clientName.length >= 1);
+      setFieldState("channel_secret", "err-secret", secretRegex.test(secret));
+      setFieldState("channel_access_token", "err-token", tokenRegex.test(token) && token !== secret);
+
+      if (hasError) return;
+
+      const submitBtn = document.getElementById("submit-btn");
+      const origText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Verifying with LINE Official Server...";
+
+      try {
+        const res = await fetch("/api/register_tenant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_name: clientName,
+            channel_secret: secret,
+            channel_access_token: token,
+            admin_user_id: adminUserId,
+            telegram_chat_id: telegramChatId,
+            alert_emails: alertEmails,
+            notify_channels: notifyChannels,
+            booking_links: bookingLinks,
+            sheet_csv_url: sheetCsvUrl,
+            plan: plan,
+            order_id: orderId
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          document.getElementById("confirmed-email").textContent = (data.alert_emails || [currentUser.email]).join(", ");
+          document.getElementById("generated-webhook-url").value = data.webhook_url;
+
+          if (data.one_time_bind) {
+            document.getElementById("one-time-bind-cmd").textContent = data.one_time_bind.bind_command;
+            const linkBtn = document.getElementById("one-click-line-link");
+            if (data.one_time_bind.line_deep_link) {
+              linkBtn.href = data.one_time_bind.line_deep_link;
+              linkBtn.classList.remove("hidden");
+            } else {
+              linkBtn.classList.add("hidden");
+            }
+          }
+
+          document.getElementById("webhook-success-card").classList.remove("hidden");
+          document.getElementById("webhook-success-card").scrollIntoView({ behavior: "smooth" });
+        } else {
+          openResilienceModal(data.message || "LINE Token 驗證失敗，請檢查金鑰是否正確。");
+        }
+      } catch (err) {
+        openResilienceModal("伺服器連線異常，請稍後重試。");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origText;
+      }
+    });
+
+    // 右下角真實 Gemini AI 開通客服視窗
     function toggleSupportWidget() {
       const w = document.getElementById("support-widget");
       if (w.classList.contains("hidden")) {
@@ -636,10 +1132,19 @@
       div.textContent = text;
       box.appendChild(div);
       box.scrollTop = box.scrollHeight;
+      return div;
+    }
+
+    function askQuickOnboard(idx) {
+      const dict = ONBOARD_I18N[currentLang] || ONBOARD_I18N["zh-TW"];
+      askSupport(idx === 1 ? dict.sup_q1_text : dict.sup_q2_text);
     }
 
     async function askSupport(questionText) {
       appendSupportMsg("user", questionText);
+      const btn = document.getElementById("support-send-btn");
+      btn.disabled = true;
+      const loadingDiv = appendSupportMsg("ai", "...");
       try {
         const res = await fetch("/api/site_support_chat", {
           method: "POST",
@@ -647,9 +1152,11 @@
           body: JSON.stringify({ question: questionText, lang: currentLang })
         });
         const data = await res.json();
-        appendSupportMsg("ai", data.reply || "請參考上方 4 步驟教學喔！");
+        loadingDiv.textContent = data.reply || "請參考上方 4 步驟教學喔！";
       } catch (e) {
-        appendSupportMsg("ai", "🔑 請在 LINE Developers 的「Basic settings」底部複製 Channel secret，並在「Messaging API」底部點擊 Issue 複製 Channel access token！");
+        loadingDiv.textContent = "連線稍忙，請再試一次！";
+      } finally {
+        btn.disabled = false;
       }
     }
 
@@ -662,133 +1169,7 @@
       askSupport(val);
     });
 
-    function openResilienceModal(reasonText) {
-      if (reasonText) {
-        document.getElementById("modal-error-reason").textContent = reasonText;
-      }
-      const modal = document.getElementById("resilience-modal");
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-    }
-
-    function closeResilienceModal() {
-      const modal = document.getElementById("resilience-modal");
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }
-
-    function showChecklistSection() {
-      document.getElementById("checklist-box").classList.remove("hidden");
-      document.getElementById("cancel-box").classList.add("hidden");
-    }
-
-    function triggerCancelOrDowngrade() {
-      document.getElementById("cancel-box").classList.remove("hidden");
-      document.getElementById("checklist-box").classList.add("hidden");
-    }
-
-    function copyWebhookUrl() {
-      const input = document.getElementById("generated-webhook-url");
-      navigator.clipboard.writeText(input.value);
-      alert("已複製專屬 Webhook 網址！");
-    }
-
-    document.getElementById("onboarding-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const clientName = document.getElementById("client_name").value.trim();
-      const tenantId = document.getElementById("tenant_id").value.trim().toLowerCase();
-      const email = document.getElementById("email").value.trim();
-      const secret = document.getElementById("channel_secret").value.trim();
-      const token = document.getElementById("channel_access_token").value.trim();
-      const adminUserId = document.getElementById("admin_user_id").value.trim();
-      const telegramChatId = document.getElementById("telegram_chat_id").value.trim();
-      const alertEmail = document.getElementById("alert_email").value.trim() || email;
-      const bookingUrl = document.getElementById("booking_url").value.trim();
-      const sheetCsvUrl = document.getElementById("sheet_csv_url").value.trim();
-
-      const notifyChannels = [];
-      if (document.getElementById("chk_notify_line").checked) notifyChannels.push("LINE");
-      if (document.getElementById("chk_notify_tg").checked) notifyChannels.push("Telegram");
-      if (document.getElementById("chk_notify_email").checked) notifyChannels.push("Email");
-
-      const tenantRegex = /^[a-z0-9_-]{3,32}$/;
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const secretRegex = /^[a-zA-Z0-9]{28,40}$/;
-      const tokenRegex = /^[a-zA-Z0-9+/=_-]{80,300}$/;
-
-      let hasError = false;
-      const setFieldState = (inputId, errId, isValid) => {
-        const inputEl = document.getElementById(inputId);
-        const errEl = document.getElementById(errId);
-        if (!isValid) {
-          inputEl.classList.add("border-rose-500", "ring-2", "ring-rose-500/30");
-          if (errEl) errEl.classList.remove("hidden");
-          hasError = true;
-        } else {
-          inputEl.classList.remove("border-rose-500", "ring-2", "ring-rose-500/30");
-          if (errEl) errEl.classList.add("hidden");
-        }
-      };
-
-      setFieldState("tenant_id", "err-tenant", tenantRegex.test(tenantId));
-      setFieldState("email", "err-email", emailRegex.test(email));
-      setFieldState("channel_secret", "err-secret", secretRegex.test(secret));
-      setFieldState("channel_access_token", "err-token", tokenRegex.test(token));
-
-      if (hasError) return;
-
-      const submitBtn = document.getElementById("submit-btn");
-      const origText = submitBtn.textContent;
-      submitBtn.disabled = true;
-      submitBtn.textContent = "⏳ 正在連線至 LINE 官方伺服器驗證 Token...";
-
-      const activeChannelText = notifyChannels.length > 0 ? notifyChannels.join(" / ") : "預設管道";
-
-      try {
-        const res = await fetch("/api/register_tenant", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            tenant_id: tenantId,
-            client_name: clientName || tenantId,
-            email: email,
-            channel_secret: secret,
-            channel_access_token: token,
-            admin_user_id: adminUserId,
-            telegram_chat_id: telegramChatId,
-            alert_email: alertEmail,
-            notify_channels: notifyChannels,
-            booking_url: bookingUrl,
-            sheet_csv_url: sheetCsvUrl,
-            plan: plan
-          })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.status === "success") {
-          document.getElementById("confirmed-email").textContent = alertEmail;
-          document.getElementById("test-notify-badge").textContent = `✅ 已發送測試通知至您的管道（${activeChannelText}）！`;
-          document.getElementById("generated-webhook-url").value = data.webhook_url;
-          document.getElementById("go-admin-btn").href = `/admin?tenant_id=${encodeURIComponent(tenantId)}`;
-          document.getElementById("webhook-success-card").classList.remove("hidden");
-          document.getElementById("webhook-success-card").scrollIntoView({ behavior: "smooth" });
-        } else {
-          openResilienceModal(data.message || "LINE Token 驗證失敗，請確認 Channel Access Token 是否正確。");
-        }
-      } catch (err) {
-        const fallbackOrigin = window.location.origin.startsWith("http")
-          ? window.location.origin
-          : "https://line-ai-bot-530475721837.asia-east1.run.app";
-        document.getElementById("confirmed-email").textContent = alertEmail;
-        document.getElementById("test-notify-badge").textContent = `✅ 已發送測試通知至您的管道（${activeChannelText}）！`;
-        document.getElementById("generated-webhook-url").value = `${fallbackOrigin}/webhook/${tenantId}`;
-        document.getElementById("webhook-success-card").classList.remove("hidden");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = origText;
-      }
-    });
+    checkOnboardingAuth();
   </script>
 </body>
 </html>

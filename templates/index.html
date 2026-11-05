@@ -3,41 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SmartHost 24H 全行業 LINE 智慧 AI 管家｜0 元免費自助開通</title>
+  <title>SmartHost 24H 全行業 LINE 智慧 AI 管家｜0 元免費體驗</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style>
     body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
-    .glass-nav { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); }
+    .glass-nav { background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(12px); }
     .gradient-text { background: linear-gradient(135deg, #34d399 0%, #38bdf8 50%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
 
-  <!-- 頂部導覽列 (含 5 國語系切換器與後台入口) -->
-  <header class="fixed top-0 inset-x-0 z-50 glass-nav border-b border-slate-800/80">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <a href="/index.html" class="flex items-center gap-2.5">
+  <!-- 頂部導覽列 (5 國語言切換 + Google 帳號會員購買紀錄中心，無任何內部測試後台連結) -->
+  <header class="fixed top-0 inset-x-0 z-40 glass-nav border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+      <a href="/index.html" class="flex items-center gap-2.5 shrink-0">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black text-lg shadow-lg shadow-emerald-500/20">S</div>
         <div>
           <span class="font-extrabold text-lg tracking-tight text-white">SmartHost</span>
-          <span class="hidden sm:inline-block ml-1.5 text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">24H AI Concierge</span>
+          <span class="hidden lg:inline-block ml-1.5 text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">24H AI Concierge</span>
         </div>
       </a>
 
       <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
         <a href="#how-it-works" data-i18n="nav_how" class="hover:text-emerald-400 transition">3 步驟開通</a>
-        <a href="#memory-diff" data-i18n="nav_memory" class="hover:text-emerald-400 transition">記憶與功能白話解析</a>
-        <a href="#pricing" data-i18n="nav_pricing" class="hover:text-emerald-400 transition">三階梯方案</a>
+        <a href="#memory-diff" data-i18n="nav_memory" class="hover:text-emerald-400 transition">方案記憶差異</a>
+        <a href="#pricing" data-i18n="nav_pricing" class="hover:text-emerald-400 transition">訂閱方案</a>
         <a href="#faq" data-i18n="nav_faq" class="hover:text-emerald-400 transition">常見問題</a>
-        <a href="/admin" data-i18n="nav_admin" class="text-cyan-400 hover:text-cyan-300 font-semibold transition">📊 測試與診斷後台</a>
+        <a href="#contact" data-i18n="nav_contact" class="hover:text-emerald-400 transition">聯絡我們</a>
       </nav>
 
-      <div class="flex items-center gap-2.5">
-        <!-- 5 國語言下拉選單 (切換時同步轉換價格幣別) -->
-        <select id="lang-switcher" aria-label="Language" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-400">
+      <div class="flex items-center gap-2">
+        <select id="lang-switcher" aria-label="Language" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-emerald-400">
           <option value="zh-TW">🇹🇼 繁體中文 (NT$)</option>
           <option value="en">🇺🇸 English (USD)</option>
           <option value="ja">🇯🇵 日本語 (JPY)</option>
@@ -45,14 +45,22 @@
           <option value="it">🇮🇹 Italiano (EUR)</option>
         </select>
 
-        <a href="/onboarding.html" data-i18n="nav_cta" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm px-3.5 py-2 rounded-lg transition shadow-lg shadow-emerald-500/20">
-          統一自助開通
-        </a>
+        <!-- 未登入顯示「Google 登入」；已登入顯示「我的購買紀錄與設定」 -->
+        <button id="btn-nav-login" type="button" onclick="openAuthModal()" data-i18n="nav_login"
+          class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs px-3 py-2 rounded-lg transition">
+          🔐 Google 登入
+        </button>
+
+        <button id="btn-nav-member" type="button" onclick="openMemberModal()"
+          class="hidden items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-bold text-xs px-3 py-2 rounded-lg transition">
+          <span>📋</span>
+          <span id="nav-user-label" data-i18n="nav_member">我的購買紀錄與設定</span>
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- Hero 區塊 -->
+  <!-- Hero 區塊 (優雅斷句 + 乾淨雙行動按鈕) -->
   <section class="relative pt-32 pb-20 sm:pt-40 sm:pb-24 overflow-hidden">
     <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/15 blur-[130px] rounded-full pointer-events-none"></div>
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
@@ -65,16 +73,20 @@
         0 元免費體驗！讓 AI 成為您的 <span class="gradient-text">24H LINE 免費數位員工</span>
       </h1>
 
-      <p data-i18n="hero_subtitle" class="max-w-3xl mx-auto text-base sm:text-xl text-slate-400 leading-relaxed mb-10">
-        專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。免寫程式、免工程師，只要在 Google 試算表打字修改，AI 1 秒同步最新資訊，找不到人時自動傳訊通知店長！
+      <p data-i18n="hero_subtitle" class="max-w-3xl mx-auto text-base sm:text-lg text-slate-300 leading-loose mb-10">
+        專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。<br class="hidden sm:inline" />
+        免寫程式、免請工程師，只要在 Google 試算表打字修改，AI 1 秒同步最新資訊；<br class="hidden sm:inline" />
+        遇到特殊需求時，自動將重點傳訊通知店長！
       </p>
 
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/onboarding.html?plan=free" data-i18n="hero_btn_primary" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-base sm:text-lg shadow-xl shadow-emerald-500/25 transition transform hover:-translate-y-0.5">
-          🚀 免費開始使用 (每月 50 次免費對話)
-        </a>
-        <a href="/admin" data-i18n="hero_btn_secondary" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 font-semibold text-base sm:text-lg border border-cyan-500/30 transition">
-          🧪 前往測試與狀態診斷後台
+        <button type="button" onclick="handleSelectPlan('free')" data-i18n="hero_btn_primary"
+          class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-base sm:text-lg shadow-xl shadow-emerald-500/25 transition transform hover:-translate-y-0.5">
+          🚀 免費開始體驗（每月 50 次免費對話）
+        </button>
+        <a href="#pricing" data-i18n="hero_btn_secondary"
+          class="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-base sm:text-lg border border-slate-700 transition">
+          查看完整方案與價格
         </a>
       </div>
     </div>
@@ -85,95 +97,92 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-12">
         <h2 data-i18n="how_title" class="text-2xl sm:text-4xl font-extrabold text-white mb-4">
-          3 步驟統一線上開通，3 分鐘立即上線
+          3 步驟完成線上開通，3 分鐘立即上線
         </h2>
         <p data-i18n="how_desc" class="text-slate-400 text-base sm:text-lg">
-          全站採用單一加密開通中心，驗證後自動鎖定店家帳號防止外人竄改。
+          登入 Google 帳號自動保存購買紀錄，後續隨時可線上修改預約連結與通知設定。
         </p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-xl flex items-center justify-center mb-6">1</div>
-          <h3 data-i18n="step1_title" class="text-xl font-bold text-white mb-3">1. 選擇方案 (A / B / C)</h3>
+          <h3 data-i18n="step1_title" class="text-xl font-bold text-white mb-3">1. Google 登入並選擇方案</h3>
           <p data-i18n="step1_desc" class="text-slate-400 text-sm leading-relaxed">
-            可先從 0 元免費版開始體驗，或透過 PayPal 安全訂閱無限次對話方案，隨時皆可退訂。
+            使用 Google 帳號登入綁定您的專屬訂單與付款紀錄，可先從 0 元體驗版開始，無綁約隨時可退訂。
           </p>
         </div>
 
         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-black text-xl flex items-center justify-center mb-6">2</div>
-          <h3 data-i18n="step2_title" class="text-xl font-bold text-white mb-3">2. 貼上 LINE 金鑰與通知設定</h3>
+          <h3 data-i18n="step2_title" class="text-xl font-bold text-white mb-3">2. 貼上 LINE 金鑰與一鍵綁定通知</h3>
           <p data-i18n="step2_desc" class="text-slate-400 text-sm leading-relaxed">
-            跟著對應語系的按鈕名稱指引貼上金鑰，系統即刻產生專屬網址並永久鎖定保護您的帳號。
+            跟著對應語系的按鈕名稱指引貼上金鑰，系統自動產生專屬 Webhook 並支援一鍵綁定店長 LINE 通知。
           </p>
         </div>
 
         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black text-xl flex items-center justify-center mb-6">3</div>
-          <h3 data-i18n="step3_title" class="text-xl font-bold text-white mb-3">3. 打開 Google 表格打字即改</h3>
+          <h3 data-i18n="step3_title" class="text-xl font-bold text-white mb-3">3. 試算表與多組連結隨時維護</h3>
           <p data-i18n="step3_desc" class="text-slate-400 text-sm leading-relaxed">
-            把房價、營業時間填進 Google 試算表，儲存後 1 秒生效！內建自動快照備份，誤刪表格也不怕。
+            在 Google 試算表打字改價格 1 秒生效，並可隨時在會員中心新增多組訂房、菜單連結與緊急通知信箱。
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 白話文詳解區塊：短期記憶 vs 長期記憶 & 什麼是顧客自動歸戶 -->
+  <!-- 記憶與熟客建檔功能差異解析 (全 5 國語言完整翻譯，移除多餘標籤) -->
   <section id="memory-diff" class="py-20">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-12">
-        <span class="inline-block px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold mb-3">
-          💡 零術語・白話文功能詳解
-        </span>
         <h2 data-i18n="mem_title" class="text-2xl sm:text-4xl font-extrabold text-white mb-4">
           一眼看懂：「方案 B 當下記憶」與「方案 C 熟客建檔」差在哪？
         </h2>
         <p data-i18n="mem_subtitle" class="text-slate-400 text-sm sm:text-base">
-          我們把複雜的 AI 技術變成最貼心的門市服務，讓您清楚知道哪個方案最適合貴店：
+          依照貴店的接待需求，選擇最適合的智慧記憶等級：
         </p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- 方案 B 的記憶說明 -->
+        <!-- 方案 B 記憶卡 -->
         <div class="bg-slate-900/70 border border-emerald-500/40 rounded-2xl p-7">
           <div class="flex items-center gap-3 mb-4">
-            <span class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs">方案 B 內建</span>
+            <span data-i18n="mem_b_badge" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs shrink-0">方案 B 內建</span>
             <h3 data-i18n="mem_b_title" class="text-lg font-extrabold text-white">💬 當下聊天記憶（記住剛才聊的前 10 句話）</h3>
           </div>
           <p data-i18n="mem_b_desc" class="text-sm text-slate-300 leading-relaxed mb-4">
-            就像真人店員正在跟客人講電話，AI 會記住<strong>「當下這場對話最近 10 句話的上下文」</strong>，讓客人不用一直重複主詞，對話自然不鬼打牆！
+            就像店員正在跟客人講電話，AI 會記住<strong>「當下這場對話最近 10 句話的上下文」</strong>，客人連續追問時不用一直重複房型或服務名稱，對話自然順暢！
           </p>
-          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5">
-            <div class="font-bold text-emerald-400">👉 實際例子：</div>
+          <div data-i18n="mem_b_example" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5 leading-relaxed">
+            <div class="font-bold text-emerald-400">👉 實際對話情境：</div>
             <p>• 客人先問：「請問海景雙人房一晚多少錢？」</p>
-            <p>• 客人接著問：「<strong>那有附早餐跟車位嗎？</strong>」（客人沒說是哪間房，但 AI 記得上一句是在問海景雙人房，能精準回答！）</p>
-            <p class="text-slate-400 pt-1">※ 超過 10 句話後，前面的閒聊會自動洗掉，不會永久保存客人個資。</p>
+            <p>• 客人接著問：「<strong>那有附早餐跟車位嗎？</strong>」（AI 記得上一句是在問海景雙人房，能精準回答！）</p>
+            <p class="text-slate-400 pt-1">※ 對話結束超過 10 句後會自動洗掉，不長期留存客人個資。</p>
           </div>
         </div>
 
-        <!-- 方案 C 的記憶與歸戶說明 -->
+        <!-- 方案 C 熟客建檔卡 -->
         <div class="bg-slate-900/70 border border-cyan-500/40 rounded-2xl p-7">
           <div class="flex items-center gap-3 mb-4">
-            <span class="px-3 py-1 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs">方案 C 獨享升級</span>
-            <h3 data-i18n="mem_c_title" class="text-lg font-extrabold text-white">📒 熟客專屬資料卡永久建檔（原稱：顧客自動歸戶）</h3>
+            <span data-i18n="mem_c_badge" class="px-3 py-1 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs shrink-0">方案 C 獨享升級</span>
+            <h3 data-i18n="mem_c_title" class="text-lg font-extrabold text-white">📒 熟客專屬資料卡永久建檔（自動建立客戶名單）</h3>
           </div>
           <p data-i18n="mem_c_desc" class="text-sm text-slate-300 leading-relaxed mb-4">
-            什麼是「顧客自動歸戶」？用白話文說就是：<strong>「AI 自動幫每位客人建立一張專屬熟客筆記卡，並自動存進您的雲端客戶總表（Notion / Excel）」</strong>，永遠記得這位客人的重要習慣與禁忌！
+            AI 在聊天過程中，會自動幫每位客人建立一張<strong>「專屬熟客資料卡」</strong>並存進您的雲端客戶總表（Notion / Excel），永遠記住這位客人的重要習慣與禁忌！
           </p>
-          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5">
-            <div class="font-bold text-cyan-400">👉 實際例子：</div>
+          <div data-i18n="mem_c_example" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-1.5 leading-relaxed">
+            <div class="font-bold text-cyan-400">👉 實際對話情境：</div>
             <p>• 客人王先生在訂房時順口說：「<strong>我們隨行有小孩對花生嚴重過敏，需要嬰兒床。</strong>」</p>
-            <p>• AI 會自動把「王先生＝花生過敏＋嬰兒床」永久寫進您的客戶名單表。</p>
-            <p>• <strong>就算隔了幾個月王先生再次來訊問早餐</strong>，AI 依然記得他是誰，並主動貼心提醒：「廚房已為您註記『花生過敏』，含花生醬餐點會為您單獨替換喔！」</p>
+            <p>• AI 自動把「王先生＝花生過敏＋嬰兒床」永久寫進您的客戶表。</p>
+            <p>• <strong>就算隔了幾個月王先生再次來問早餐</strong>，AI 仍主動貼心提醒：「廚房已為您註記花生過敏，含花生餐點會為您單獨替換喔！」</p>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 三階梯定價區塊 (#pricing：白話文清楚對比 + 價格隨語系變動 + 單一統一開通入口) -->
+  <!-- 三階梯定價區塊 (#pricing) -->
   <section id="pricing" class="py-20 bg-slate-900/50 border-t border-slate-800/80">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-16">
@@ -181,7 +190,7 @@
           三階梯透明訂閱方案 (A + B + C)，無綁約隨時可退訂
         </h2>
         <p data-i18n="price_desc" class="text-slate-400 text-base sm:text-lg">
-          切換右上角語系可自動換算當地幣別（NT$ / USD / JPY / IDR / EUR），全方案統一由安全開通中心 3 分鐘啟用！
+          需登入 Google 帳號以保障您的訂單紀錄，切換右上角語系自動換算當地結帳幣別。
         </p>
       </div>
 
@@ -196,18 +205,18 @@
               <span class="text-slate-400 text-sm" data-i18n="price_unit"> / 月</span>
             </div>
             <ul class="space-y-3.5 text-sm text-slate-300 mb-8 leading-relaxed">
-              <li data-i18n="p1_f1">✔️ <strong>每月免費 50 次 AI 自動回答</strong>（支援 15+ 國語言自動翻譯接待）</li>
-              <li data-i18n="p1_f2">✔️ <strong>Google 表格打字即改知識庫</strong>（改房價/營業時間 1 秒生效）</li>
-              <li data-i18n="p1_f3">✔️ <strong>試算表防呆＋防誤刪自動備份</strong>（不小心刪空也不會當機）</li>
-              <li data-i18n="p1_f4">✔️ <strong>50 次用完自動切換真人通知</strong>（絕不對客人顯示系統錯誤）</li>
-              <li data-i18n="p1_f5">✔️ <strong>免綁信用卡・3 分鐘全自助開通</strong></li>
+              <li data-i18n="p1_f1">✔️ <strong>每月免費 50 次 AI 自動回答</strong>（支援多國語言自動翻譯接待）</li>
+              <li data-i18n="p1_f2">✔️ <strong>Google 表格打字即改 ＋ 多組預約連結支援</strong></li>
+              <li data-i18n="p1_f3">✔️ <strong>試算表防誤刪快照備份保護</strong></li>
+              <li data-i18n="p1_f4">✔️ <strong>50 次額度用完自動切換專人通知</strong></li>
+              <li data-i18n="p1_f5">✔️ <strong>免綁信用卡・登入 Google 帳號立即開通</strong></li>
             </ul>
           </div>
           <div>
-            <!-- 統一單一開通按鈕 -->
-            <a href="/onboarding.html?plan=free" data-i18n="plan1_btn" class="block w-full text-center py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold transition">
+            <button type="button" onclick="handleSelectPlan('free')" data-i18n="plan1_btn"
+              class="w-full py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold transition">
               🚀 免費開通方案 A
-            </a>
+            </button>
           </div>
         </div>
 
@@ -224,18 +233,17 @@
               <span class="text-slate-400 text-sm" data-i18n="price_unit"> / 月</span>
             </div>
             <ul class="space-y-3.5 text-sm text-slate-200 mb-8 leading-relaxed">
-              <li data-i18n="p2_f1">🌟 <strong>無限次 AI 多國語言自動回答</strong>（半夜、連假再多客人問都不怕）</li>
-              <li data-i18n="p2_f2">🌟 <strong>當下聊天記憶（記住剛才前 10 句話）</strong>：客人連續提問不鬼打牆</li>
-              <li data-i18n="p2_f3">🌟 <strong>真人求救 3 句話重點卡推播</strong>：客人找客服時，自動濃縮重點傳到店長手機（支援 LINE ＋ Telegram ＋ Email）</li>
-              <li data-i18n="p2_f4">🌟 <strong>Google 表格即時修改 ＋ 防誤刪快照備份</strong></li>
-              <li data-i18n="p2_f5">🌟 <strong>全天候秒回不卡頓</strong>（24H 高速待命，客人零等待）</li>
+              <li data-i18n="p2_f1">🌟 <strong>無限次 AI 多國語言自動回答</strong>（24H 零時差接待）</li>
+              <li data-i18n="p2_f2">🌟 <strong>當下聊天記憶（記住剛才前 10 句話）</strong>：客人追問不鬼打牆</li>
+              <li data-i18n="p2_f3">🌟 <strong>真人求救 3 句話重點卡推播</strong>（支援店長 LINE 一鍵綁定 ＋ Telegram ＋ 最多 3 組 Email）</li>
+              <li data-i18n="p2_f4">🌟 <strong>多組預約/菜單連結智慧帶入 ＋ 試算表即時同步</strong></li>
+              <li data-i18n="p2_f5">🌟 <strong>全天候高速託管 ＋ 隨時線上修改設定</strong></li>
             </ul>
           </div>
           <div>
-            <!-- 統一單一訂閱與開通按鈕 -->
-            <button type="button" onclick="openPayPalModal('basic')" data-i18n="plan2_paypal_btn"
-              class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2">
-              <span>💳</span> <span>訂閱方案 B 並前往開通</span>
+            <button type="button" onclick="handleSelectPlan('basic')" data-i18n="plan2_paypal_btn"
+              class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold transition shadow-lg shadow-emerald-500/25">
+              💳 訂閱方案 B 並前往開通
             </button>
           </div>
         </div>
@@ -251,23 +259,22 @@
             </div>
             <ul class="space-y-3.5 text-sm text-slate-300 mb-8 leading-relaxed">
               <li data-i18n="p3_f1">🚀 <strong>包含方案 B（輕量版）全部無限功能</strong></li>
-              <li data-i18n="p3_f2">🚀 <strong>熟客資料卡永久建檔（自動歸戶）</strong>：自動將客人的重要習慣整理存進您的雲端客戶名單（Notion / Excel）</li>
-              <li data-i18n="p3_f3">🚀 <strong>跨次長期記憶（永遠記住過敏與偏好）</strong>：客人提過「花生過敏、要嬰兒床」，下次問早餐時 AI 會主動貼心提醒！</li>
-              <li data-i18n="p3_f4">🚀 <strong>Google 行事曆預約自動登記</strong>：預約接駁或服務自動寫入行事曆</li>
-              <li data-i18n="p3_f5">🚀 <strong>入住前 1 小時自動發送大門密碼 ＋ 退房後自動發折扣碼</strong></li>
+              <li data-i18n="p3_f2">🚀 <strong>熟客專屬資料卡永久建檔</strong>：自動將客人的過敏、嬰兒床等習慣存進雲端客戶表（Notion / Excel）</li>
+              <li data-i18n="p3_f3">🚀 <strong>跨次長期記憶</strong>：隔數月再訪詢問餐點時，AI 仍主動貼心提醒過敏禁忌</li>
+              <li data-i18n="p3_f4">🚀 <strong>Google 行事曆預約自動寫入</strong></li>
+              <li data-i18n="p3_f5">🚀 <strong>入住前自動發送電子鎖密碼 ＋ 退房後自動發送老客優惠碼</strong></li>
             </ul>
           </div>
           <div>
-            <!-- 統一單一訂閱與開通按鈕 -->
-            <button type="button" onclick="openPayPalModal('pro')" data-i18n="plan3_paypal_btn"
-              class="w-full py-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
-              <span>💳</span> <span>訂閱方案 C 並前往開通</span>
+            <button type="button" onclick="handleSelectPlan('pro')" data-i18n="plan3_paypal_btn"
+              class="w-full py-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold transition shadow-lg shadow-cyan-500/20">
+              💳 訂閱方案 C 並前往開通
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 歐盟 AI 法案與服務免責警告框 -->
+      <!-- 歐盟 AI 法案與服務免責警告框 (全 5 國語系翻譯) -->
       <div class="mt-14 bg-amber-500/5 border border-amber-500/30 rounded-2xl p-6 text-xs sm:text-sm text-slate-300 leading-relaxed">
         <div class="flex items-start gap-3">
           <span class="text-xl">⚖️</span>
@@ -276,9 +283,9 @@
               歐盟 AI 法案第 50 條透明度聲明、SLA 99.5% 可用性保證與自助退費規範
             </h4>
             <p data-i18n="legal_body" class="text-slate-400">
-              1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶「🤖 本訊息由 AI 智能管家自動輔助回覆」標籤，明確告知終端消費者正與人工智慧系統互動，並提示短期對話記憶僅保留最近 5–10 句。<br/>
-              2. <strong>服務可用性（99.5% SLA）與試算表防刪快照</strong>：系統內建「最後一次成功讀取之 Google 試算表快照備份」與 3 層防呆機制；即使試算表遭誤刪或暫時斷線，AI 仍可自動讀取安全快照繼續服務。<br/>
-              3. <strong>綁定帳號防竄改與無綁約退費規定</strong>：商家首次開通綁定後即啟動帳號鎖定保護，未授權第三人無法覆蓋或刪除已綁定資料。您可隨時於開通救援介面一鍵取消訂閱或降級回方案 A（0 元體驗版）。
+              1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶 AI 輔助回覆標示，明確告知消費者正與人工智慧系統互動。<br/>
+              2. <strong>服務可用性（99.5% SLA）與試算表防刪快照</strong>：系統內建 Google 試算表安全快照備份；萬一試算表遭誤刪，AI 仍會自動使用最後一次完整快照繼續服務。<br/>
+              3. <strong>安全金流與隨時退訂規定</strong>：付款全程透過 PayPal 官方加密收銀台完成，本站不儲存任何信用卡號。您可隨時登入「我的購買紀錄與設定」查詢訂單、一鍵取消訂閱或申請退費。
             </p>
           </div>
         </div>
@@ -286,7 +293,7 @@
     </div>
   </section>
 
-  <!-- FAQ 常見問題 -->
+  <!-- FAQ 常見問題 (全 5 國語系翻譯) -->
   <section id="faq" class="py-20">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 data-i18n="faq_title" class="text-2xl sm:text-3xl font-extrabold text-center text-white mb-12">
@@ -294,348 +301,1091 @@
       </h2>
       <div class="space-y-4">
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6">
-          <h3 class="font-bold text-white mb-2">Q1. 「當下聊天記憶（方案 B）」跟「熟客永久建檔（方案 C）」到底差在哪裡？</h3>
-          <p class="text-slate-400 text-sm">「當下聊天記憶（方案 B）」只記住客人剛才聊的最近 10 句話，讓對話順暢不跳針，聊完就洗掉；而「熟客永久建檔（方案 C）」會自動把客人提過的『花生過敏、需要嬰兒床、預計幾點到』整理成一張熟客資料卡存進您的雲端表格，就算幾個月後客人再來問早餐，AI 還是記得他對花生過敏！</p>
+          <h3 data-i18n="faq_q1" class="font-bold text-white mb-2">Q1. 「當下聊天記憶（方案 B）」跟「熟客永久建檔（方案 C）」差在哪裡？</h3>
+          <p data-i18n="faq_a1" class="text-slate-400 text-sm leading-relaxed">「當下聊天記憶（方案 B）」記住客人剛才聊的最近 10 句話，讓當下追問順暢不跳針；「熟客永久建檔（方案 C）」則會把客人提過的花生過敏、需要嬰兒床等重要習慣自動建檔存進您的雲端客戶表，幾個月後客人再來問早餐，AI 依然記得並主動提醒！</p>
         </div>
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6">
-          <h3 class="font-bold text-white mb-2">Q2. 如果我的 Google 試算表不小心被刪掉，或是綁定資料會不會被別人偷改？</h3>
-          <p class="text-slate-400 text-sm">完全不用擔心！第一，系統每次讀取您的 Google 試算表時都會自動存下一份「安全快照備份」，萬一試算表被誤刪，AI 會自動使用最後一次成功的快照繼續運作；第二，您的店家代號 (tenant_id) 一旦綁定成功就會自動上鎖，外人無法覆蓋、竄改或刪除您的綁定帳號！</p>
+          <h3 data-i18n="faq_q2" class="font-bold text-white mb-2">Q2. 開通後如果我想修改預約連結、換 Google 試算表或更換通知信箱，該怎麼改？</h3>
+          <p data-i18n="faq_a2" class="text-slate-400 text-sm leading-relaxed">非常簡單！只要用購買時的 Google 帳號登入官網右上角「📋 我的購買紀錄與設定」，就能隨時新增多組預約/菜單連結、更換試算表網址或最多 3 組緊急通知信箱；若需更換 LINE 金鑰，系統也會寄送「6 位數安全驗證碼」至您的信箱，像改密碼一樣安全！</p>
         </div>
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6">
-          <h3 class="font-bold text-white mb-2">Q3. 我不確定怎麼開通或找不到 LINE 後台按鈕怎麼辦？</h3>
-          <p class="text-slate-400 text-sm">您可以隨時點擊畫面右下角的「💬 AI 開通客服小幫手」免費詢問，我們的開通教學也會根據您選擇的語言，精準顯示該語言 LINE 後台的按鈕名稱！</p>
+          <h3 data-i18n="faq_q3" class="font-bold text-white mb-2">Q3. 如何查詢我的購買付款紀錄，或是申請取消訂閱與退費？</h3>
+          <p data-i18n="faq_a3" class="text-slate-400 text-sm leading-relaxed">登入右上角「📋 我的購買紀錄與設定」即可查看每一筆訂單編號、付款金額與狀態，並可直接點擊「取消訂閱 / 申請退費」，系統會立即將帳號降級回 0 元免費版並發送退費受理確認信至您的信箱。</p>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6">
+          <h3 data-i18n="faq_q4" class="font-bold text-white mb-2">Q4. 萬一我的 Google 試算表不小心被員工誤刪怎麼辦？</h3>
+          <p data-i18n="faq_a4" class="text-slate-400 text-sm leading-relaxed">系統每次成功讀取試算表時都會自動保存一份安全快照；萬一試算表被誤刪，AI 會自動載入最後一次正常快照繼續接待客人，完全不會當機！您隨時可在「我的購買紀錄與設定」貼上新的試算表網址。</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- PayPal 跨國結帳與統一開通彈窗 -->
-  <div id="paypal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+  <!-- 聯絡我們 & 線上投信客服區塊 (#contact) -->
+  <section id="contact" class="py-20 bg-slate-900/50 border-t border-slate-800/80">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div class="lg:col-span-5 space-y-5">
+          <h2 data-i18n="contact_title" class="text-2xl sm:text-3xl font-extrabold text-white">
+            📩 聯絡我們・線上客服投信
+          </h2>
+          <p data-i18n="contact_desc" class="text-sm text-slate-400 leading-relaxed">
+            對企業多店導入、帳務發票或開通設定有任何問題嗎？歡迎透過以下官方信箱或右側表單直接投信給我們，團隊將儘速回覆至您的信箱！
+          </p>
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3 text-xs sm:text-sm">
+            <div>
+              <div class="text-slate-400" data-i18n="contact_email_lbl">📧 官方客服信箱：</div>
+              <a id="public-contact-email" href="mailto:support@smarthost-ai.com" class="font-bold text-emerald-400 hover:underline">support@smarthost-ai.com</a>
+            </div>
+            <div>
+              <div class="text-slate-400" data-i18n="contact_hours_lbl">🕒 專人服務時間：</div>
+              <div id="public-service-hours" class="font-semibold text-slate-200">週一至週五 09:30–18:30 (GMT+8)｜AI 客服 24H 全年無休</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+          <form id="contact-form" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label data-i18n="c_lbl_name" class="block text-xs font-semibold text-slate-300 mb-1.5">您的姓名 / 稱呼 *</label>
+                <input type="text" id="contact-name" required
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div>
+                <label data-i18n="c_lbl_email" class="block text-xs font-semibold text-slate-300 mb-1.5">回覆聯絡 Email *</label>
+                <input type="email" id="contact-email" required
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400" />
+              </div>
+            </div>
+            <div>
+              <label data-i18n="c_lbl_subject" class="block text-xs font-semibold text-slate-300 mb-1.5">詢問主旨</label>
+              <input type="text" id="contact-subject"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400" />
+            </div>
+            <div>
+              <label data-i18n="c_lbl_msg" class="block text-xs font-semibold text-slate-300 mb-1.5">詢問或需求內容 *</label>
+              <textarea id="contact-message" rows="4" required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400"></textarea>
+            </div>
+            <button type="submit" id="contact-submit-btn" data-i18n="c_btn_send"
+              class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+              📨 送出客服信件
+            </button>
+            <p id="contact-feedback" class="hidden text-xs font-bold text-center pt-1"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 乾淨的商業版 Footer (已移除底部多餘開通與測試後台按鈕) -->
+  <footer class="border-t border-slate-900 py-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>© 2026 SmartHost AI Concierge Platform. All rights reserved.</p>
+      <div class="flex flex-wrap justify-center gap-6">
+        <a href="#pricing" data-i18n="nav_pricing" class="hover:text-emerald-400">訂閱方案</a>
+        <a href="#faq" data-i18n="nav_faq" class="hover:text-emerald-400">常見問題</a>
+        <a href="#contact" data-i18n="nav_contact" class="hover:text-emerald-400">聯絡我們</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= 彈窗 1：Google 帳號安全登入 (未登入禁止購買與開通) ================= -->
+  <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+      <button type="button" onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl mx-auto mb-3">🔐</div>
+        <h3 data-i18n="auth_title" class="text-xl font-extrabold text-white mb-1">請先登入 Google 帳號</h3>
+        <p data-i18n="auth_desc" class="text-xs text-slate-400 leading-relaxed">
+          為完整保留您的購買與付款紀錄、並保護店家設定不被他人竄改，購買或開通前請先驗證您的 Google 帳號：
+        </p>
+      </div>
+
+      <!-- 官方 Google 一鍵登入按鈕容器 -->
+      <div id="google-gsi-wrap" class="flex justify-center mb-4">
+        <div id="google-gsi-btn"></div>
+      </div>
+
+      <!-- Google / Gmail 信箱 6 位數安全驗證碼登入 -->
+      <div class="border-t border-slate-800 pt-4 space-y-3">
+        <p data-i18n="auth_otp_label" class="text-xs text-slate-300 font-semibold text-center">或使用 Google 信箱接收 6 位數安全驗證碼登入：</p>
+        <div class="flex gap-2">
+          <input type="email" id="auth-email-input" placeholder="yourname@gmail.com"
+            class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
+          <button type="button" id="btn-send-login-otp" onclick="sendLoginOtp()" data-i18n="auth_send_code"
+            class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs shrink-0 transition">
+            寄送驗證碼
+          </button>
+        </div>
+        <div id="otp-verify-row" class="hidden space-y-2.5 pt-1">
+          <input type="text" id="auth-otp-input" maxlength="6" placeholder="輸入信箱收到的 6 位數驗證碼"
+            class="w-full text-center tracking-widest font-mono text-base bg-slate-950 border border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none" />
+          <button type="button" onclick="verifyLoginOtp()" data-i18n="auth_verify_btn"
+            class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+            確認驗證碼並登入
+          </button>
+        </div>
+        <p id="auth-msg" class="hidden text-xs text-center pt-1"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 彈窗 2：PayPal 正式安全結帳彈窗 (已徹底移除「先免付款測試」按鈕) ================= -->
+  <div id="paypal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
       <button type="button" onclick="closePayPalModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-10 rounded-xl bg-[#FFC439]/20 border border-[#FFC439]/40 flex items-center justify-center text-xl">💳</div>
         <div>
-          <h3 class="text-lg font-extrabold text-white">PayPal 安全訂閱與統一開通</h3>
+          <h3 data-i18n="pp_title" class="text-lg font-extrabold text-white">PayPal 官方安全結帳</h3>
           <p id="paypal-plan-summary" class="text-xs text-emerald-400 font-bold"></p>
         </div>
       </div>
-      <p class="text-xs text-slate-300 mb-5 leading-relaxed">
-        系統已根據您目前選擇的語系自動換算結帳幣別。完成 PayPal 付款後，將自動進入「統一自助開通中心」綁定您的 LINE 金鑰：
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 space-y-1 mb-5">
+        <div><span class="text-slate-400">Google 購買帳號：</span><strong id="pp-buyer-email" class="text-white"></strong></div>
+        <div><span class="text-slate-400">專屬訂單編號：</span><strong id="pp-order-id" class="text-cyan-400 font-mono"></strong></div>
+      </div>
+      <p data-i18n="pp_desc" class="text-xs text-slate-300 mb-5 leading-relaxed">
+        點擊下方按鈕將前往 PayPal 官方加密收銀台（支援信用卡或 PayPal 付款）。完成付款後系統將自動寄發扣款憑證信並引導您進入開通頁面：
       </p>
-      <div class="space-y-3">
-        <a id="paypal-checkout-link" href="#" target="_blank"
-          class="block w-full text-center py-3.5 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold text-sm shadow-lg transition">
-          步驟 1：前往 PayPal 官方安全付款 ↗
-        </a>
-        <button type="button" onclick="simulatePayPalSuccess()"
-          class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
-          步驟 2：付款完成（或先免付款測試）➔ 進入統一開通中心 →
-        </button>
+      <a id="paypal-checkout-link" href="#"
+        class="block w-full text-center py-4 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold text-sm shadow-lg transition">
+        🔒 前往 PayPal 官方安全付款 ↗
+      </a>
+    </div>
+  </div>
+
+  <!-- ================= 彈窗 3：會員購買紀錄・退費申請・店家設定與收信重設金鑰中心 ================= -->
+  <div id="member-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
+      <button type="button" onclick="closeMemberModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800 mb-6 pr-6">
+        <div>
+          <h3 data-i18n="mem_portal_title" class="text-xl font-extrabold text-white">📋 我的購買紀錄與店家設定中心</h3>
+          <p class="text-xs text-emerald-400 mt-0.5">Google Account: <span id="portal-user-email" class="font-mono font-bold"></span></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/onboarding.html" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-extrabold hover:bg-emerald-400 transition">
+            + 開通新 LINE 帳號
+          </a>
+          <button type="button" onclick="logoutCustomer()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+            登出
+          </button>
+        </div>
+      </div>
+
+      <!-- 區塊 A：歷史購買與付款紀錄 -->
+      <div class="mb-8">
+        <h4 class="text-sm font-extrabold text-cyan-400 mb-3">💳 購買與付款紀錄（可隨時申請取消訂閱或退費）</h4>
+        <div id="portal-orders-list" class="space-y-2.5 text-xs">
+          <div class="text-slate-400">載入紀錄中...</div>
+        </div>
+      </div>
+
+      <!-- 區塊 B：已綁定店家設定修改（多連結、試算表、3信箱、一鍵綁定LINE、收信重設金鑰） -->
+      <div>
+        <h4 class="text-sm font-extrabold text-emerald-400 mb-3">⚙️ 已綁定店家設定管理（隨時可修改預約連結、通知信箱或收信驗證重設金鑰）</h4>
+        <div id="portal-stores-list" class="space-y-5 text-xs">
+          <div class="text-slate-400">尚未綁定店家。</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- 右下角浮動「💬 AI 官網開通客服小幫手（0 成本題庫優先 + 3 道防刷爆鎖）」 -->
-  <div class="fixed bottom-5 right-5 z-50">
-    <!-- 展開的聊天視窗 -->
+  <!-- ================= 右下角浮動 AI 客服視窗 (全 5 國語系翻譯，移除所有內部技術字眼) ================= -->
+  <div class="fixed bottom-5 right-5 z-40">
     <div id="support-widget" class="hidden mb-3 w-80 sm:w-96 bg-slate-900 border-2 border-emerald-500/60 rounded-2xl shadow-2xl overflow-hidden flex-col">
       <div class="bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 text-slate-950 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="text-lg">🤖</span>
           <div>
-            <div class="font-extrabold text-xs sm:text-sm leading-tight">SmartHost AI 開通客服小幫手</div>
-            <div class="text-[10px] font-semibold opacity-80">0 成本瞬時題庫 ＋ 防刷爆保護</div>
+            <div data-i18n="sup_header" class="font-extrabold text-xs sm:text-sm leading-tight">SmartHost AI 線上客服顧問</div>
+            <div data-i18n="sup_sub" class="text-[11px] font-semibold opacity-85">24H 多國語言即時解答</div>
           </div>
         </div>
         <button onclick="toggleSupportWidget()" class="text-slate-950 font-black text-lg leading-none hover:opacity-70">✕</button>
       </div>
 
       <div id="support-messages" class="p-3.5 h-64 overflow-y-auto space-y-2.5 bg-slate-950 text-xs">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 leading-relaxed">
-          👋 您好！我是官網 AI 客服小幫手。請問您對<strong>方案 A/B/C 的差別</strong>、<strong>短期/長期記憶</strong>，或是<strong>怎麼找 LINE 金鑰開通</strong>有任何疑問嗎？可以直接點下方按鈕或打字問我喔！
+        <div data-i18n="sup_welcome" class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 leading-relaxed">
+          👋 您好！我是 SmartHost AI 客服顧問。請問您對方案功能、購買與退費，或是 LINE 開通設定有任何問題嗎？歡迎直接打字問我喔！
         </div>
       </div>
 
-      <!-- 0 成本秒回快捷問題按鈕 -->
       <div class="px-3 py-2 bg-slate-900/90 border-t border-slate-800 flex flex-wrap gap-1.5">
-        <button onclick="askSupport('方案 B 跟方案 C 的記憶跟歸戶差在哪？')" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300">
-          💡 方案與記憶差在哪？
+        <button type="button" onclick="askQuickBtn(1)" data-i18n="sup_q1" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300">
+          💡 方案 B 跟 C 差在哪？
         </button>
-        <button onclick="askSupport('請問 LINE 金鑰 Secret 跟 Token 在哪裡找？')" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300">
-          🔑 金鑰在哪裡找？
+        <button type="button" onclick="askQuickBtn(2)" data-i18n="sup_q2" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300">
+          🔑 後續怎麼修改資料或退訂？
         </button>
       </div>
 
       <form id="support-form" class="p-2.5 bg-slate-900 border-t border-slate-800 flex gap-1.5">
-        <input type="text" id="support-input" maxlength="150" placeholder="輸入問題（限150字，內建防刷保護）..."
+        <input type="text" id="support-input" maxlength="180" data-i18n-placeholder="sup_placeholder" placeholder="請輸入您的問題..."
           class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
-        <button type="submit" class="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shrink-0">
+        <button type="submit" id="support-send-btn" data-i18n="sup_send" class="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shrink-0">
           送出
         </button>
       </form>
     </div>
 
-    <!-- 浮動圓形按鈕 -->
     <button onclick="toggleSupportWidget()" class="ml-auto flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-500/30 hover:scale-105 transition">
       <span class="text-base">💬</span>
-      <span data-i18n="support_btn">AI 方案與開通客服</span>
+      <span data-i18n="support_btn">AI 線上客服</span>
     </button>
   </div>
 
-  <!-- Footer -->
-  <footer class="border-t border-slate-900 py-10 text-center text-xs text-slate-500">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <p>© 2026 SmartHost AI Concierge Platform. All rights reserved.</p>
-      <div class="flex flex-wrap justify-center gap-6">
-        <a href="/onboarding.html" class="hover:text-emerald-400">統一自助開通中心</a>
-        <a href="/admin" class="hover:text-cyan-400 font-semibold">📊 測試與診斷後台</a>
-        <a href="#pricing" class="hover:text-emerald-400">三階梯方案定價</a>
-      </div>
-    </div>
-  </footer>
-
-  <!-- 5 國語系字典 (含動態匯率定價) 與客服腳本 -->
+  <!-- 5 國語系完整字典 (zh-TW / en / ja / id / it) 與前端互動邏輯 -->
   <script>
     const I18N_DICT = {
       "zh-TW": {
-        currency: "TWD",
-        basic_amount: "1680",
-        pro_amount: "2980",
-        nav_how: "3 步驟開通",
-        nav_memory: "記憶與功能白話解析",
-        nav_pricing: "三階梯方案",
-        nav_faq: "常見問題",
-        nav_admin: "📊 測試與診斷後台",
-        nav_cta: "統一自助開通",
-        support_btn: "AI 方案與開通客服",
+        currency: "TWD", basic_amount: "1680", pro_amount: "2980",
+        nav_how: "3 步驟開通", nav_memory: "方案記憶差異", nav_pricing: "訂閱方案", nav_faq: "常見問題", nav_contact: "聯絡我們",
+        nav_login: "🔐 Google 登入", nav_member: "我的購買紀錄與設定",
+        support_btn: "AI 線上客服", sup_header: "SmartHost AI 線上客服顧問", sup_sub: "24H 多國語言即時解答",
+        sup_welcome: "👋 您好！我是 SmartHost AI 客服顧問。請問您對方案功能、購買與退費，或是 LINE 開通設定有任何問題嗎？歡迎直接打字問我喔！",
+        sup_q1: "💡 方案 B 跟 C 差在哪？", sup_q1_text: "請問方案 B 的當下記憶跟方案 C 的熟客建檔差在哪裡？",
+        sup_q2: "🔑 後續怎麼修改資料或退訂？", sup_q2_text: "請問開通後如果有多個預約連結要怎麼修改？可以隨時退訂嗎？",
+        sup_placeholder: "請輸入您的問題...", sup_send: "送出",
         hero_badge: "100% 線上全自助開通・0 元建置費・無綁約隨時可退訂",
         hero_title: "0 元免費體驗！讓 AI 成為您的 <span class='gradient-text'>24H LINE 免費數位員工</span>",
-        hero_subtitle: "專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。免寫程式、免工程師，只要在 Google 試算表打字修改，AI 1 秒同步最新資訊，找不到人時自動傳訊通知店長！",
-        hero_btn_primary: "🚀 免費開始使用 (每月 50 次免費對話)",
-        hero_btn_secondary: "🧪 前往測試與狀態診斷後台",
-        how_title: "3 步驟統一線上開通，3 分鐘立即上線",
-        step1_title: "1. 選擇方案 (A / B / C)",
-        step2_title: "2. 貼上 LINE 金鑰與通知設定",
-        step3_title: "3. 打開 Google 表格打字即改",
+        hero_subtitle: "專為旅宿飯店、醫療診所、美容沙龍與各行業打造的跨語系 LINE 智慧管家。<br class='hidden sm:inline'/>免寫程式、免請工程師，只要在 Google 試算表打字修改，AI 1 秒同步最新資訊；<br class='hidden sm:inline'/>遇到特殊需求時，自動將重點傳訊通知店長！",
+        hero_btn_primary: "🚀 免費開始體驗（每月 50 次免費對話）",
+        hero_btn_secondary: "查看完整方案與價格",
+        how_title: "3 步驟完成線上開通，3 分鐘立即上線",
+        how_desc: "登入 Google 帳號自動保存購買紀錄，後續隨時可線上修改預約連結與通知設定。",
+        step1_title: "1. Google 登入並選擇方案", step1_desc: "使用 Google 帳號登入綁定您的專屬訂單與付款紀錄，可先從 0 元體驗版開始，無綁約隨時可退訂。",
+        step2_title: "2. 貼上 LINE 金鑰與一鍵綁定通知", step2_desc: "跟著對應語系的按鈕名稱指引貼上金鑰，系統自動產生專屬 Webhook 並支援一鍵綁定店長 LINE 通知。",
+        step3_title: "3. 試算表與多組連結隨時維護", step3_desc: "在 Google 試算表打字改價格 1 秒生效，並可隨時在會員中心新增多組訂房、菜單連結與緊急通知信箱。",
+        mem_title: "一眼看懂：「方案 B 當下記憶」與「方案 C 熟客建檔」差在哪？",
+        mem_subtitle: "依照貴店的接待需求，選擇最適合的智慧記憶等級：",
+        mem_b_badge: "方案 B 內建",
+        mem_b_title: "💬 當下聊天記憶（記住剛才聊的前 10 句話）",
+        mem_b_desc: "就像店員正在跟客人講電話，AI 會記住<strong>「當下這場對話最近 10 句話的上下文」</strong>，客人連續追問時不用一直重複房型或服務名稱，對話自然順暢！",
+        mem_b_example: "<div class='font-bold text-emerald-400'>👉 實際對話情境：</div><p>• 客人先問：「請問海景雙人房一晚多少錢？」</p><p>• 客人接著問：「<strong>那有附早餐跟車位嗎？</strong>」（AI 記得上一句是在問海景雙人房，能精準回答！）</p><p class='text-slate-400 pt-1'>※ 對話超過 10 句後會自動洗掉，不長期留存客人個資。</p>",
+        mem_c_badge: "方案 C 獨享升級",
+        mem_c_title: "📒 熟客專屬資料卡永久建檔（自動建立客戶名單）",
+        mem_c_desc: "AI 在聊天過程中，會自動幫每位客人建立一張<strong>「專屬熟客資料卡」</strong>並存進您的雲端客戶總表（Notion / Excel），永遠記住這位客人的重要習慣與禁忌！",
+        mem_c_example: "<div class='font-bold text-cyan-400'>👉 實際對話情境：</div><p>• 客人王先生訂房時順口說：「<strong>我們隨行有小孩對花生嚴重過敏，需要嬰兒床。</strong>」</p><p>• AI 自動把「王先生＝花生過敏＋嬰兒床」永久寫進您的客戶表。</p><p>• <strong>就算隔了幾個月王先生再次來問早餐</strong>，AI 仍主動貼心提醒：「廚房已為您註記花生過敏，含花生餐點會為您單獨替換喔！」</p>",
         price_title: "三階梯透明訂閱方案 (A + B + C)，無綁約隨時可退訂",
-        price_desc: "切換右上角語系可自動換算當地幣別（NT$ / USD / JPY / IDR / EUR），全方案統一由安全開通中心 3 分鐘啟用！",
-        price_unit: " / 月",
-        plan1_tag: "方案 A｜新手免費試用",
-        plan1_name: "0 元體驗版 (Free)",
-        plan1_price: "NT$ 0",
+        price_desc: "需登入 Google 帳號以保障您的訂單紀錄，切換右上角語系自動換算當地結帳幣別。",
+        price_unit: " / 月", popular_badge: "MOST POPULAR 店長首選",
+        plan1_tag: "方案 A｜新手免費試用", plan1_name: "0 元體驗版 (Free)", plan1_price: "NT$ 0",
+        p1_f1: "✔️ <strong>每月免費 50 次 AI 自動回答</strong>（支援多國語言自動翻譯接待）",
+        p1_f2: "✔️ <strong>Google 表格打字即改 ＋ 多組預約連結支援</strong>",
+        p1_f3: "✔️ <strong>試算表防誤刪快照備份保護</strong>",
+        p1_f4: "✔️ <strong>50 次額度用完自動切換專人通知</strong>",
+        p1_f5: "✔️ <strong>免綁信用卡・登入 Google 帳號立即開通</strong>",
         plan1_btn: "🚀 免費開通方案 A",
-        plan2_tag: "方案 B｜24H 無限次接待",
-        plan2_name: "輕量訂閱版 (Basic)",
-        plan2_price: "NT$ 1,680",
+        plan2_tag: "方案 B｜24H 無限次接待", plan2_name: "輕量訂閱版 (Basic)", plan2_price: "NT$ 1,680",
+        p2_f1: "🌟 <strong>無限次 AI 多國語言自動回答</strong>（24H 零時差接待）",
+        p2_f2: "🌟 <strong>當下聊天記憶（記住剛才前 10 句話）</strong>：客人追問不鬼打牆",
+        p2_f3: "🌟 <strong>真人求救 3 句話重點卡推播</strong>（支援店長 LINE 一鍵綁定 ＋ Telegram ＋ 最多 3 組 Email）",
+        p2_f4: "🌟 <strong>多組預約/菜單連結智慧帶入 ＋ 試算表即時同步</strong>",
+        p2_f5: "🌟 <strong>全天候高速託管 ＋ 隨時線上修改設定</strong>",
         plan2_paypal_btn: "💳 訂閱方案 B 並前往開通 (NT$ 1,680)",
-        plan3_tag: "方案 C｜熟客建檔與全自動管家",
-        plan3_name: "專業自動化版 (Pro)",
-        plan3_price: "NT$ 2,980",
-        plan3_paypal_btn: "💳 訂閱方案 C 並前往開通 (NT$ 2,980)"
+        plan3_tag: "方案 C｜熟客建檔與全自動管家", plan3_name: "專業自動化版 (Pro)", plan3_price: "NT$ 2,980",
+        p3_f1: "🚀 <strong>包含方案 B（輕量版）全部無限功能</strong>",
+        p3_f2: "🚀 <strong>熟客專屬資料卡永久建檔</strong>：自動將過敏、嬰兒床等習慣存進雲端客戶表",
+        p3_f3: "🚀 <strong>跨次長期記憶</strong>：隔數月再訪詢問餐點時，AI 仍主動貼心提醒過敏禁忌",
+        p3_f4: "🚀 <strong>Google 行事曆預約自動寫入</strong>",
+        p3_f5: "🚀 <strong>入住前自動發送電子鎖密碼 ＋ 退房後自動發送老客優惠碼</strong>",
+        plan3_paypal_btn: "💳 訂閱方案 C 並前往開通 (NT$ 2,980)",
+        legal_title: "歐盟 AI 法案第 50 條透明度聲明、SLA 99.5% 可用性保證與自助退費規範",
+        legal_body: "1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶 AI 輔助回覆標示，明確告知消費者正與人工智慧系統互動。<br/>2. <strong>服務可用性（99.5% SLA）與試算表防刪快照</strong>：系統內建 Google 試算表安全快照備份；萬一試算表遭誤刪，AI 仍會自動使用最後一次完整快照繼續服務。<br/>3. <strong>安全金流與隨時退訂規定</strong>：付款全程透過 PayPal 官方加密收銀台完成，本站不儲存任何信用卡號。您可隨時登入「我的購買紀錄與設定」查詢訂單、一鍵取消訂閱或申請退費。",
+        faq_title: "常見問題 (FAQ)",
+        faq_q1: "Q1. 「當下聊天記憶（方案 B）」跟「熟客永久建檔（方案 C）」差在哪裡？",
+        faq_a1: "「當下聊天記憶（方案 B）」記住客人剛才聊的最近 10 句話，讓當下追問順暢不跳針；「熟客永久建檔（方案 C）」則會把客人提過的花生過敏、需要嬰兒床等重要習慣自動建檔存進您的雲端客戶表，幾個月後客人再來問早餐，AI 依然記得並主動提醒！",
+        faq_q2: "Q2. 開通後如果我想修改預約連結、換 Google 試算表或更換通知信箱，該怎麼改？",
+        faq_a2: "只要用購買時的 Google 帳號登入官網右上角「📋 我的購買紀錄與設定」，就能隨時新增多組預約/菜單連結、更換試算表網址或最多 3 組緊急通知信箱；若需更換 LINE 金鑰，系統會寄送「6 位數安全驗證碼」至您的信箱，像改密碼一樣安全！",
+        faq_q3: "Q3. 如何查詢我的購買付款紀錄，或是申請取消訂閱與退費？",
+        faq_a3: "登入右上角「📋 我的購買紀錄與設定」即可查看每一筆訂單編號、付款金額與狀態，並可直接點擊「取消訂閱 / 申請退費」，系統會立即將帳號降級回 0 元免費版並發送退費受理確認信。",
+        faq_q4: "Q4. 萬一我的 Google 試算表不小心被員工誤刪怎麼辦？",
+        faq_a4: "系統每次成功讀取試算表時都會自動保存一份安全快照；萬一試算表被誤刪，AI 會自動載入最後一次正常快照繼續接待客人，完全不會當機！",
+        contact_title: "📩 聯絡我們・線上客服投信",
+        contact_desc: "對企業多店導入、帳務或開通設定有任何問題嗎？歡迎透過以下官方信箱或右側表單直接投信給我們，團隊將儘速回覆至您的信箱！",
+        contact_email_lbl: "📧 官方客服信箱：", contact_hours_lbl: "🕒 專人服務時間：",
+        c_lbl_name: "您的姓名 / 稱呼 *", c_lbl_email: "回覆聯絡 Email *", c_lbl_subject: "詢問主旨", c_lbl_msg: "詢問或需求內容 *", c_btn_send: "📨 送出客服信件",
+        auth_title: "請先登入 Google 帳號",
+        auth_desc: "為完整保留您的購買與付款紀錄、並保護店家設定不被他人竄改，購買或開通前請先驗證您的 Google 帳號：",
+        auth_otp_label: "或使用 Google 信箱接收 6 位數安全驗證碼登入：",
+        auth_send_code: "寄送驗證碼",
+        auth_verify_btn: "確認驗證碼並登入",
+        pp_title: "PayPal 官方安全結帳",
+        pp_desc: "點擊下方按鈕將前往 PayPal 官方加密收銀台（支援信用卡或 PayPal 付款）。完成付款後系統將自動寄發扣款憑證信並引導您進入開通頁面：",
+        mem_portal_title: "📋 我的購買紀錄與店家設定中心"
       },
       "en": {
-        currency: "USD",
-        basic_amount: "55",
-        pro_amount: "95",
-        nav_how: "How It Works",
-        nav_memory: "Memory & CRM Explained",
-        nav_pricing: "Pricing",
-        nav_faq: "FAQ",
-        nav_admin: "📊 Admin & Test Console",
-        nav_cta: "Unified Setup",
-        support_btn: "AI Support Chat",
-        hero_badge: "100% Self-Service Onboarding · $0 Setup Fee · Cancel Anytime",
+        currency: "USD", basic_amount: "55", pro_amount: "95",
+        nav_how: "How It Works", nav_memory: "Memory Tiers", nav_pricing: "Pricing", nav_faq: "FAQ", nav_contact: "Contact Us",
+        nav_login: "🔐 Google Sign In", nav_member: "My Orders & Settings",
+        support_btn: "AI Live Support", sup_header: "SmartHost AI Advisor", sup_sub: "24/7 Instant Multilingual Support",
+        sup_welcome: "👋 Hi! I'm your SmartHost AI Advisor. Ask me anything about Plan A/B/C differences, billing & refunds, or connecting your LINE account!",
+        sup_q1: "💡 Plan B vs Plan C?", sup_q1_text: "What is the difference between Plan B short-term memory and Plan C VIP guest profiles?",
+        sup_q2: "🔑 Edit links or cancel?", sup_q2_text: "How can I update multiple booking links later or cancel my subscription?",
+        sup_placeholder: "Ask a question...", sup_send: "Send",
+        hero_badge: "100% Self-Service Setup · $0 Setup Fee · Cancel Anytime",
         hero_title: "Start for Free! Make AI Your <span class='gradient-text'>24/7 Multilingual LINE Concierge</span>",
-        hero_subtitle: "Built for hotels, clinics, salons, and businesses. Zero coding required—update your Google Sheet and AI syncs in 1 second with multi-channel handover alerts!",
+        hero_subtitle: "Designed for hotels, clinics, salons, and modern businesses.<br class='hidden sm:inline'/>No coding needed—update your Google Sheet and AI syncs in 1 second;<br class='hidden sm:inline'/>automatically alerts your team when human assistance is required!",
         hero_btn_primary: "🚀 Start Free (50 Free AI Replies / Mo)",
-        hero_btn_secondary: "🧪 Open Live Test & Admin Console",
-        how_title: "3-Step Unified Self-Service Setup in 3 Minutes",
-        step1_title: "1. Choose Plan (A / B / C)",
-        step2_title: "2. Paste LINE Keys & Alert Channels",
-        step3_title: "3. Manage via Google Sheets",
-        mem_title: "Plain-English Guide: Short-Term Chat Memory (Plan B) vs. VIP Guest Profile Card (Plan C)",
+        hero_btn_secondary: "View Plans & Pricing",
+        how_title: "Go Live in 3 Simple Steps (Under 3 Minutes)",
+        how_desc: "Sign in with Google to keep all your order history and update booking links anytime.",
+        step1_title: "1. Sign in with Google & Pick a Plan", step1_desc: "Log in with your Google account to bind your order history. Start with $0 Free Trial and cancel anytime.",
+        step2_title: "2. Paste LINE Keys & 1-Click Bind", step2_desc: "Follow our exact LINE Console button guide to generate your Webhook and bind your personal LINE for alerts in 1 click.",
+        step3_title: "3. Edit Google Sheet & Multi-Links", step3_desc: "Update prices in Google Sheets in 1 second, and manage multiple booking/menu links anytime in My Settings.",
+        mem_title: "Plain-English Comparison: Current Chat Memory (Plan B) vs. VIP Guest Profile (Plan C)",
+        mem_subtitle: "Choose the right AI memory level for your business hospitality:",
+        mem_b_badge: "Included in Plan B",
         mem_b_title: "💬 Current Chat Memory (Remembers Last 10 Messages)",
-        mem_b_desc: "Just like a clerk on a phone call, AI remembers the last 10 messages of the current conversation so guests don't have to repeat themselves.",
-        mem_c_title: "📒 Permanent VIP Guest Profile Card (Auto-CRM Filing)",
-        mem_c_desc: "Automatically creates a permanent VIP note card for each guest in your cloud sheet (e.g. 'Child has severe peanut allergy, needs crib') and proactively reminds them months later!",
-        price_title: "3-Tier Transparent Pricing (A + B + C), Cancel Anytime",
-        price_desc: "Prices automatically adjust to your local currency (USD / TWD / JPY / IDR / EUR) with unified onboarding!",
-        price_unit: " / mo",
-        plan1_tag: "Plan A | Free Starter",
-        plan1_name: "Free Trial (Free)",
-        plan1_price: "$0 USD",
+        mem_b_desc: "Just like a receptionist on a phone call, AI remembers the <strong>last 10 messages of the active conversation</strong> so guests never have to repeat room types or service names.",
+        mem_b_example: "<div class='font-bold text-emerald-400'>👉 Real Conversation Example:</div><p>• Guest asks: \"How much is the Ocean View Double Room?\"</p><p>• Guest follows up: \"<strong>Does it include breakfast and parking?</strong>\" (AI remembers 'it' refers to the Ocean View room!)</p><p class='text-slate-400 pt-1'>※ Automatically cleared after 10 messages—no permanent personal data stored.</p>",
+        mem_c_badge: "Exclusive to Plan C",
+        mem_c_title: "📒 Permanent VIP Guest Profile Card (Auto-CRM List)",
+        mem_c_desc: "During chats, AI automatically builds a <strong>Permanent VIP Guest Note Card</strong> in your cloud customer sheet (Notion / Excel), remembering key habits and allergies forever!",
+        mem_c_example: "<div class='font-bold text-cyan-400'>👉 Real Conversation Example:</div><p>• Mr. Wang mentions while booking: \"<strong>My child has a severe peanut allergy and needs a baby crib.</strong>\"</p><p>• AI permanently saves 'Peanut Allergy + Baby Crib' to Mr. Wang's profile card.</p><p>• <strong>Months later when Mr. Wang asks about breakfast</strong>, AI proactively reminds him: \"Our kitchen has noted your peanut allergy and prepared peanut-free alternatives!\"</p>",
+        price_title: "3 Transparent Subscription Plans (A + B + C), Cancel Anytime",
+        price_desc: "Google Sign-In keeps your billing records safe. Currency adjusts automatically.",
+        price_unit: " / mo", popular_badge: "MOST POPULAR",
+        plan1_tag: "Plan A | Free Starter", plan1_name: "Free Trial (Free)", plan1_price: "$0 USD",
         p1_f1: "✔️ <strong>50 Free AI Replies / Month</strong> (15+ languages auto-detected)",
-        p1_f2: "✔️ <strong>Instant Google Sheet Sync</strong> (update prices & hours in 1 sec)",
-        p1_f3: "✔️ <strong>Auto-Snapshot Backup</strong> (protected even if Sheet is deleted)",
-        p1_f4: "✔️ <strong>Smooth Human Handover</strong> when 50 free replies are used",
-        p1_f5: "✔️ <strong>No Credit Card Required · 3-Min Setup</strong>",
-        plan1_btn: "🚀 Start Plan A ($0 Free)",
-        plan2_tag: "Plan B | 24/7 Unlimited",
-        plan2_name: "Basic Subscription",
-        plan2_price: "$55 USD",
+        p1_f2: "✔️ <strong>Google Sheet Live Sync + Multiple Booking Links</strong>",
+        p1_f3: "✔️ <strong>Auto-Snapshot Backup</strong> (safe even if Sheet is deleted)",
+        p1_f4: "✔️ <strong>Smooth Human Handover</strong> when 50 replies are reached",
+        p1_f5: "✔️ <strong>No Credit Card Needed · Sign in with Google to Start</strong>",
+        plan1_btn: "🚀 Activate Plan A ($0 Free)",
+        plan2_tag: "Plan B | 24/7 Unlimited", plan2_name: "Basic Subscription", plan2_price: "$55 USD",
         p2_f1: "🌟 <strong>Unlimited Multilingual AI Replies 24/7</strong>",
-        p2_f2: "🌟 <strong>Current Chat Memory (Last 10 turns)</strong> for natural follow-up questions",
-        p2_f3: "🌟 <strong>3-Sentence Handover Alert Card</strong> pushed to LINE + Telegram + Email",
-        p2_f4: "🌟 <strong>Google Sheet Live Sync + Anti-Delete Snapshot Backup</strong>",
-        p2_f5: "🌟 <strong>24/7 Zero-Lag Hosting + Immutable Account Lock</strong>",
+        p2_f2: "🌟 <strong>Current Chat Memory (Last 10 messages)</strong> for natural follow-ups",
+        p2_f3: "🌟 <strong>3-Sentence Handover Alert Card</strong> (1-Click LINE + Telegram + up to 3 Emails)",
+        p2_f4: "🌟 <strong>Smart Multi-Link Insertion + Live Sheet Sync</strong>",
+        p2_f5: "🌟 <strong>24/7 High-Speed Hosting + Anytime Settings Portal</strong>",
         plan2_paypal_btn: "💳 Subscribe Plan B & Setup ($55 USD)",
-        plan3_tag: "Plan C | VIP Memory & Full Automation",
-        plan3_name: "Pro Automation",
-        plan3_price: "$95 USD",
+        plan3_tag: "Plan C | VIP Profiles & Full Automation", plan3_name: "Pro Automation", plan3_price: "$95 USD",
         p3_f1: "🚀 <strong>Everything in Plan B (Unlimited)</strong>",
-        p3_f2: "🚀 <strong>Permanent VIP Guest Profile Card</strong> auto-saved to Notion / Excel",
-        p3_f3: "🚀 <strong>Long-Term Cross-Visit Memory</strong> (remembers allergies & preferences forever)",
+        p3_f2: "🚀 <strong>Permanent VIP Guest Profile Card</strong> saved to Notion / Excel",
+        p3_f3: "🚀 <strong>Cross-Visit Long-Term Memory</strong> (remembers allergies & preferences)",
         p3_f4: "🚀 <strong>Google Calendar Auto-Booking Sync</strong>",
-        p3_f5: "🚀 <strong>Auto Door PIN 1h Before Arrival + Post-Checkout VIP Coupon</strong>",
-        plan3_paypal_btn: "💳 Subscribe Plan C & Setup ($95 USD)"
+        p3_f5: "🚀 <strong>Auto Door PIN Before Check-in + Post-Stay VIP Coupon</strong>",
+        plan3_paypal_btn: "💳 Subscribe Plan C & Setup ($95 USD)",
+        legal_title: "EU AI Act Art. 50 Transparency, 99.5% SLA & Self-Service Refund Policy",
+        legal_body: "1. <strong>AI Transparency (EU AI Act Art. 50)</strong>: Every automated reply clearly indicates AI assistance so guests know they are interacting with an AI concierge.<br/>2. <strong>99.5% SLA & Sheet Snapshot Backup</strong>: Automatic last-known-good snapshot keeps your AI running smoothly even if your Google Sheet is accidentally deleted.<br/>3. <strong>Secure Checkout & Anytime Cancellation</strong>: Payments are processed directly on PayPal's encrypted checkout—we never store card numbers. View receipts or cancel/request refunds anytime under 'My Orders & Settings'.",
+        faq_title: "Frequently Asked Questions (FAQ)",
+        faq_q1: "Q1. What is the difference between Current Chat Memory (Plan B) and VIP Guest Profile (Plan C)?",
+        faq_a1: "Plan B remembers the last 10 messages of the current chat so follow-up questions flow naturally. Plan C permanently files important guest details (like peanut allergies or baby crib requests) into your cloud customer table so AI still remembers them months later!",
+        faq_q2: "Q2. How can I update booking links, change my Google Sheet, or reset LINE keys later?",
+        faq_a2: "Simply sign in with your Google account and click 'My Orders & Settings' at the top right! You can add multiple booking/menu links, update up to 3 alert emails, or request a 6-digit Email Verification Code (just like a password reset) to safely update your LINE keys.",
+        faq_q3: "Q3. Where can I check my payment history or cancel/request a refund?",
+        faq_a3: "Open 'My Orders & Settings' in the top navigation bar to see every order ID, receipt status, and a 1-click 'Cancel / Request Refund' button.",
+        faq_q4: "Q4. What happens if someone accidentally deletes my Google Sheet?",
+        faq_a4: "Our system automatically saves a secure snapshot every time your Google Sheet loads. If the sheet is deleted, AI seamlessly falls back to the last good snapshot without downtime!",
+        contact_title: "📩 Contact Us & Online Inquiry",
+        contact_desc: "Have questions about multi-store plans, billing, or setup? Email us directly or send a message using the form—we'll reply straight to your inbox!",
+        contact_email_lbl: "📧 Official Support Email:", contact_hours_lbl: "🕒 Support Hours:",
+        c_lbl_name: "Your Name *", c_lbl_email: "Reply Email *", c_lbl_subject: "Subject", c_lbl_msg: "Message *", c_btn_send: "📨 Send Message",
+        auth_title: "Sign in with Google",
+        auth_desc: "Please sign in with your Google account to save your purchase history and protect your store settings:",
+        auth_otp_label: "Or receive a 6-digit login code via your Google email:",
+        auth_send_code: "Send Code",
+        auth_verify_btn: "Verify & Sign In",
+        pp_title: "PayPal Secure Checkout",
+        pp_desc: "Click below to proceed to PayPal's official encrypted checkout (credit card or PayPal supported). After payment, your receipt will be emailed and you'll be redirected to setup:",
+        mem_portal_title: "📋 My Orders & Store Settings"
       },
       "ja": {
-        currency: "JPY",
-        basic_amount: "8200",
-        pro_amount: "14500",
-        nav_how: "導入3ステップ",
-        nav_memory: "記憶機能の違い（わかりやすい解説）",
-        nav_pricing: "料金プラン",
-        nav_faq: "よくある質問",
-        nav_admin: "📊 管理・テスト画面",
-        nav_cta: "オンライン開通",
-        support_btn: "AI 導入サポート相談",
+        currency: "JPY", basic_amount: "8200", pro_amount: "14500",
+        nav_how: "導入3ステップ", nav_memory: "記憶機能の違い", nav_pricing: "料金プラン", nav_faq: "よくある質問", nav_contact: "お問い合わせ",
+        nav_login: "🔐 Google ログイン", nav_member: "購入履歴・設定管理",
+        support_btn: "AI サポート相談", sup_header: "SmartHost AI サポート顧問", sup_sub: "24時間 多言語リアルタイム回答",
+        sup_welcome: "👋 こんにちは！SmartHost AIサポートです。プランB・Cの違いや決済・返金、LINE連携手順について何でもお気軽にご質問ください！",
+        sup_q1: "💡 プランBとCの違いは？", sup_q1_text: "プランBの直近の会話記憶とプランCの顧客カルテ永久保存の違いを教えてください。",
+        sup_q2: "🔑 設定変更や解約方法は？", sup_q2_text: "開通後に複数の予約リンクを変更する方法や、解約・返金方法を教えてください。",
+        sup_placeholder: "質問を入力してください...", sup_send: "送信",
         hero_badge: "100% オンライン自動開通・初期費用0円・いつでも解約可能",
         hero_title: "0円無料体験！AIをあなたの <span class='gradient-text'>24時間多言語 LINE コンシェルジュ</span> に",
-        hero_subtitle: "ホテル・旅館・クリニック・サロン向けLINE AI自動応答システム。Googleスプレッドシートを編集するだけで1秒でAIに反映！",
+        hero_subtitle: "ホテル・旅館・クリニック・美容サロン向けに開発された多言語LINE AIコンシェルジュ。<br class='hidden sm:inline'/>プログラミング不要で、Googleスプレッドシートを編集するだけで1秒でAIに反映。<br class='hidden sm:inline'/>有人対応が必要な際はオーナーへ自動通知します！",
         hero_btn_primary: "🚀 無料で始める（月50回AI対話無料）",
-        hero_btn_secondary: "🧪 管理・AIテストコンソールを開く",
-        how_title: "わずか3分！統一開通センターで簡単スタート",
-        step1_title: "1. プランを選択 (A / B / C)",
-        step2_title: "2. LINEキーと通知先を設定",
-        step3_title: "3. Googleスプレッドシートで簡単管理",
-        mem_title: "ひと目でわかる！「プランB：直近の会話記憶」と「プランC：顧客カルテ自動作成」の違い",
+        hero_btn_secondary: "料金プランを見る",
+        how_title: "わずか3分！3ステップで簡単オンライン開通",
+        how_desc: "Googleアカウントでログインして購入履歴を安全に保存。開通後もいつでも予約URLや通知先を変更できます。",
+        step1_title: "1. Googleログイン＆プラン選択", step1_desc: "Googleアカウントでログインして注文履歴を紐付け。まずは0円無料プランからお試しいただけます。",
+        step2_title: "2. LINEキー入力＆ワンクリック連携", step2_desc: "日本語のLINE管理画面ボタン名ガイドに沿って入力。オーナーのLINE通知もワンクリックで連携可能です。",
+        step3_title: "3. シート編集＆複数リンク管理", step3_desc: "Googleスプレッドシートの編集が1秒で反映。予約サイトやメニューなど複数のURLも設定画面から自由に追加・変更できます。",
+        mem_title: "ひと目でわかる！「プランB：直近の会話記憶」と「プランC：顧客カルテ保存」の違い",
+        mem_subtitle: "店舗の接客スタイルに合わせて最適なAI記憶レベルをお選びいただけます：",
+        mem_b_badge: "プラン B 標準搭載",
         mem_b_title: "💬 直近の会話記憶（直前の10往復を記憶）",
-        mem_b_desc: "現在進行中の会話の前後関係（直近10メッセージ）を記憶し、自然な会話を行います。",
-        mem_c_title: "📒 顧客カルテ永久保存（長期記憶＆自動顧客リスト化）",
-        mem_c_desc: "お客様が話した「ピーナッツアレルギー」「ベビーベッド希望」などを自動で顧客リスト（Notion/Excel）に記録し、数ヶ月後の再来訪時にもAIが自動で配慮します！",
+        mem_b_desc: "スタッフが電話で会話しているように、AIが<strong>「現在の会話の直近10メッセージ」</strong>を記憶。お客様が主語を省略して質問しても自然に回答します！",
+        mem_b_example: "<div class='font-bold text-emerald-400'>👉 実際の会話例：</div><p>• お客様：「オーシャンビューダブルは1泊いくらですか？」</p><p>• 続けて質問：「<strong>朝食と駐車場は付いていますか？</strong>」（AIはオーシャンビューダブルの質問だと記憶して正確に回答！）</p><p class='text-slate-400 pt-1'>※ 10往復を超えた古い雑談は自動消去され、個人情報は長期保存されません。</p>",
+        mem_c_badge: "プラン C 限定アップグレード",
+        mem_c_title: "📒 顧客カルテ永久保存（自動で顧客リスト作成）",
+        mem_c_desc: "会話の中でAIがお客様ごとの<strong>「専用顧客カルテ」</strong>を自動作成し、クラウド顧客表（Notion / Excel）に永久保存。大切な好みやアレルギーをずっと記憶します！",
+        mem_c_example: "<div class='font-bold text-cyan-400'>👉 実際の会話例：</div><p>• お客様が予約時に発言：「<strong>子供に重度のピーナッツアレルギーがあり、ベビーベッドを希望します。</strong>」</p><p>• AIが自動で顧客リストへ「ピーナッツアレルギー＋ベビーベッド」を記録。</p><p>• <strong>数ヶ月後に再来訪して朝食を尋ねた際も</strong>、AIが「ピーナッツアレルギーを厨房に共有済みですので別メニューをご用意いたします！」と気配り回答！</p>",
         price_title: "シンプルで透明な3段階料金プラン (A + B + C)",
-        price_desc: "日本円（JPY）でのPayPal決済に対応。初期費用0円・いつでも解約可能！",
-        price_unit: " / 月",
-        plan1_tag: "プラン A｜無料お試し",
-        plan1_name: "0円フリープラン (Free)",
-        plan1_price: "¥0",
+        price_desc: "購入記録保護のためGoogleログインが必要です。日本円（JPY）でのPayPal安全決済に対応。",
+        price_unit: " / 月", popular_badge: "人気 No.1 おすすめ",
+        plan1_tag: "プラン A｜無料お試し", plan1_name: "0円フリープラン (Free)", plan1_price: "¥0",
+        p1_f1: "✔️ <strong>月50回までAI多言語自動応答が無料</strong>",
+        p1_f2: "✔️ <strong>Googleスプレッドシート即時反映＋複数URL設定</strong>",
+        p1_f3: "✔️ <strong>シート誤削除時の自動スナップショット保護</strong>",
+        p1_f4: "✔️ <strong>50回超過時は自動でスタッフ通知へ切替</strong>",
+        p1_f5: "✔️ <strong>クレカ登録不要・Googleログインで即開通</strong>",
         plan1_btn: "🚀 プラン A を無料で開通する",
-        plan2_tag: "プラン B｜24時間無制限",
-        plan2_name: "ベーシックプラン (Basic)",
-        plan2_price: "¥8,200",
+        plan2_tag: "プラン B｜24時間無制限", plan2_name: "ベーシックプラン (Basic)", plan2_price: "¥8,200",
+        p2_f1: "🌟 <strong>24時間 無制限の多言語AI自動応答</strong>",
+        p2_f2: "🌟 <strong>直近の会話記憶（直前10往復）</strong>でスムーズな連続会話",
+        p2_f3: "🌟 <strong>有人引き継ぎ3行要約カード通知</strong>（LINEワンクリック連携＋Telegram＋最大3件の緊急メール）",
+        p2_f4: "🌟 <strong>複数の予約・メニューURL自動案内＋シート同期</strong>",
+        p2_f5: "🌟 <strong>24時間高速稼働＋いつでもマイページから設定変更</strong>",
         plan2_paypal_btn: "💳 プラン B を購読して開通へ (¥8,200/月)",
-        plan3_tag: "プラン C｜顧客カルテ自動作成＆完全自動化",
-        plan3_name: "プロ自動化プラン (Pro)",
-        plan3_price: "¥14,500",
-        plan3_paypal_btn: "💳 プラン C を購読して開通へ (¥14,500/月)"
+        plan3_tag: "プラン C｜顧客カルテ＆完全自動化", plan3_name: "プロ自動化プラン (Pro)", plan3_price: "¥14,500",
+        p3_f1: "🚀 <strong>プランB（ベーシック）の全機能を含む</strong>",
+        p3_f2: "🚀 <strong>顧客カルテ永久保存</strong>：アレルギーや要望を自動でNotion/Excel顧客表へ記録",
+        p3_f3: "🚀 <strong>長期記憶</strong>：数ヶ月後の再来訪時にもAIが好みを記憶して接客",
+        p3_f4: "🚀 <strong>Googleカレンダー自動予約連携</strong>",
+        p3_f5: "🚀 <strong>到着1時間前の暗証番号自動送信＋チェックアウト後のリピート割引クーポン配信</strong>",
+        plan3_paypal_btn: "💳 プラン C を購読して開通へ (¥14,500/月)",
+        legal_title: "EU AI法第50条の透明性声明・SLA 99.5%保証および解約・返金規約",
+        legal_body: "1. <strong>AI透明性表示（EU AI Act 第50条）</strong>：すべての自動応答末尾にAIアシスタントによる回答である旨を明示します。<br/>2. <strong>稼働率99.5%保証＆シート誤削除バックアップ</strong>：スプレッドシートが誤って削除された場合も、直近の正常スナップショットから自動復旧します。<br/>3. <strong>安全決済と解約規定</strong>：決済はPayPal公式の暗号化画面で行われ、当サイトがカード番号を保持することはありません。右上の「購入履歴・設定管理」からいつでも履歴確認・解約・返金申請が可能です。",
+        faq_title: "よくある質問 (FAQ)",
+        faq_q1: "Q1. プランBの「直近の会話記憶」とプランCの「顧客カルテ保存」はどう違いますか？",
+        faq_a1: "プランBは進行中の会話の直近10往復を記憶し、スムーズな質疑応答を行います。プランCは「ピーナッツアレルギー」「ベビーベッド希望」などの重要な顧客情報をクラウド顧客表へ永久保存し、数ヶ月後の再来訪時にもAIが自動で配慮します。",
+        faq_q2: "Q2. 開通後に予約リンクの追加やスプレッドシートURL、LINEキーの変更はできますか？",
+        faq_a2: "はい！右上の「購入履歴・設定管理」からいつでも複数の予約URL・シートURL・最大3件の緊急メールアドレスを変更できます。LINEキーの変更時はパスワード再設定と同様に「メール6桁認証コード」で安全に保護されます。",
+        faq_q3: "Q3. 支払い履歴の確認や、解約・返金申請はどこから行えますか？",
+        faq_a3: "Googleログイン後、右上の「購入履歴・設定管理」からすべての注文番号・決済状況を確認でき、ワンクリックで解約（0円プランへの切替）や返金申請が可能です。",
+        faq_q4: "Q4. 万が一Googleスプレッドシートを誤って削除してしまった場合は？",
+        faq_a4: "システムが正常読み込み時の最新スナップショットを自動保存しているため、AIが停止することなく接客を継続します。",
+        contact_title: "📩 お問い合わせ・メール相談窓口",
+        contact_desc: "複数店舗への導入や決済・設定に関するご質問は、公式メールアドレスまたは右記フォームよりお気軽にお送りください。",
+        contact_email_lbl: "📧 公式サポートメール：", contact_hours_lbl: "🕒 有人サポート時間：",
+        c_lbl_name: "お名前 *", c_lbl_email: "返信先メールアドレス *", c_lbl_subject: "件名", c_lbl_msg: "お問い合わせ内容 *", c_btn_send: "📨 メールを送信する",
+        auth_title: "Google アカウントでログイン",
+        auth_desc: "購入履歴の保存および店舗設定の改ざん防止のため、Googleアカウントでログインしてください：",
+        auth_otp_label: "またはGoogleメールアドレスで6桁の認証コードを受け取ってログイン：",
+        auth_send_code: "認証コード送信",
+        auth_verify_btn: "認証してログイン",
+        pp_title: "PayPal 公式セキュリティ決済",
+        pp_desc: "下のボタンを押すとPayPal公式の暗号化決済画面へ移動します（クレジットカードまたはPayPal残高対応）。決済完了後、自動で領収書メールが送信され開通ページへ進みます：",
+        mem_portal_title: "📋 購入履歴・店舗設定センター"
       },
       "id": {
-        currency: "USD",
-        basic_amount: "55",
-        pro_amount: "95",
-        nav_how: "Cara Kerja",
-        nav_memory: "Penjelasan Memori AI",
-        nav_pricing: "Harga",
-        nav_faq: "FAQ",
-        nav_admin: "📊 Konsol Tes & Admin",
-        nav_cta: "Aktivasi Mandiri",
-        support_btn: "Tanya AI Support",
+        currency: "USD", basic_amount: "55", pro_amount: "95",
+        nav_how: "Cara Kerja", nav_memory: "Fitur Memori AI", nav_pricing: "Harga", nav_faq: "FAQ", nav_contact: "Hubungi Kami",
+        nav_login: "🔐 Login Google", nav_member: "Pesanan & Pengaturan",
+        support_btn: "Chat AI Support", sup_header: "Konsultan AI SmartHost", sup_sub: "Bantuan Multibahasa 24 Jam",
+        sup_welcome: "👋 Halo! Saya Konsultan AI SmartHost. Tanyakan apa saja tentang perbedaan Paket A/B/C, pembayaran & refund, atau cara aktivasi LINE!",
+        sup_q1: "💡 Beda Paket B & C?", sup_q1_text: "Apa perbedaan memori percakapan Paket B dan kartu profil tamu VIP di Paket C?",
+        sup_q2: "🔑 Ubah link atau batal?", sup_q2_text: "Bagaimana cara mengubah banyak link booking setelah aktif atau membatalkan langganan?",
+        sup_placeholder: "Tulis pertanyaan Anda...", sup_send: "Kirim",
         hero_badge: "100% Aktivasi Mandiri Online · Biaya Setup Rp 0 · Batal Kapan Saja",
         hero_title: "Coba Gratis! Jadikan AI <span class='gradient-text'>Staf Digital LINE 24 Jam</span> Anda",
-        hero_subtitle: "Asisten pintar LINE multibahasa untuk hotel, klinik, dan bisnis. Tanpa coding—cukup edit Google Sheets dan AI langsung tersinkronisasi dalam 1 detik!",
+        hero_subtitle: "Asisten pintar LINE multibahasa untuk hotel, klinik, salon, dan berbagai bisnis.<br class='hidden sm:inline'/>Tanpa coding—cukup edit Google Sheets dan AI tersinkronisasi dalam 1 detik;<br class='hidden sm:inline'/>otomatis memberi tahu pemilik saat tamu butuh bantuan manusia!",
         hero_btn_primary: "🚀 Mulai Gratis (50 Chat AI / Bulan)",
-        hero_btn_secondary: "🧪 Buka Konsol Tes & Diagnostik",
-        price_title: "3 Pilihan Paket Transparan (A + B + C)",
-        price_unit: " / bln",
-        plan1_tag: "Paket A | Gratis",
-        plan1_name: "Uji Coba Gratis (Free)",
-        plan1_price: "Rp 0",
+        hero_btn_secondary: "Lihat Paket & Harga",
+        how_title: "Aktif dalam 3 Langkah Mudah (Hanya 3 Menit)",
+        how_desc: "Login dengan akun Google untuk menyimpan riwayat pembelian dan mengubah pengaturan kapan saja.",
+        step1_title: "1. Login Google & Pilih Paket", step1_desc: "Login dengan Google agar riwayat pembayaran tersimpan aman. Mulai gratis dari Paket A kapan saja.",
+        step2_title: "2. Tempel Kunci LINE & Ikat 1-Klik", step2_desc: "Ikuti panduan nama tombol resmi LINE Console dan hubungkan LINE pribadi pemilik dalam 1 klik.",
+        step3_title: "3. Kelola Google Sheets & Banyak Link", step3_desc: "Ubah harga di Google Sheets dalam 1 detik, serta tambahkan banyak link booking/menu kapan saja di pengaturan akun.",
+        mem_title: "Perbandingan Jelas: Memori Obrolan Saat Ini (Paket B) vs. Kartu Tamu VIP (Paket C)",
+        mem_subtitle: "Pilih tingkat kecerdasan memori AI sesuai kebutuhan layanan bisnis Anda:",
+        mem_b_badge: "Termasuk di Paket B",
+        mem_b_title: "💬 Memori Obrolan Saat Ini (Ingat 10 Pesan Terakhir)",
+        mem_b_desc: "Seperti resepsionis di telepon, AI mengingat <strong>10 pesan terakhir dalam percakapan aktif</strong> sehingga tamu tidak perlu mengulang nama kamar atau layanan.",
+        mem_b_example: "<div class='font-bold text-emerald-400'>👉 Contoh Percakapan Nyata:</div><p>• Tamu bertanya: \"Berapa harga Kamar Ocean View per malam?\"</p><p>• Tamu bertanya lagi: \"<strong>Apakah sudah termasuk sarapan dan parkir?</strong>\" (AI ingat yang dimaksud adalah Kamar Ocean View!)</p><p class='text-slate-400 pt-1'>※ Dihapus otomatis setelah 10 pesan tanpa menyimpan data pribadi permanen.</p>",
+        mem_c_badge: "Eksklusif Paket C",
+        mem_c_title: "📒 Kartu Profil Tamu VIP Permanen (Database Pelanggan Otomatis)",
+        mem_c_desc: "Selama mengobrol, AI otomatis membuat <strong>Kartu Catatan Tamu VIP</strong> di tabel cloud Anda (Notion / Excel) dan mengingat alergi atau kebiasaan penting selamanya!",
+        mem_c_example: "<div class='font-bold text-cyan-400'>👉 Contoh Percakapan Nyata:</div><p>• Pak Budi berkata: \"<strong>Anak saya alergi kacang parah dan butuh tempat tidur bayi.</strong>\"</p><p>• AI menyimpan permanen 'Alergi Kacang + Tempat Tidur Bayi' di tabel pelanggan Anda.</p><p>• <strong>Beberapa bulan kemudian saat Pak Budi bertanya soal sarapan</strong>, AI langsung mengingatkan bahwa dapur telah menyiapkan menu bebas kacang!</p>",
+        price_title: "3 Pilihan Paket Transparan (A + B + C), Batal Kapan Saja",
+        price_desc: "Wajib login Google untuk menyimpan riwayat transaksi Anda dengan aman.",
+        price_unit: " / bln", popular_badge: "PALING POPULER",
+        plan1_tag: "Paket A | Uji Coba Gratis", plan1_name: "Paket Gratis (Free)", plan1_price: "Rp 0",
+        p1_f1: "✔️ <strong>Gratis 50 Balasan AI / Bulan</strong> (otomatis multibahasa)",
+        p1_f2: "✔️ <strong>Sinkronisasi Google Sheets + Dukungan Banyak Link</strong>",
+        p1_f3: "✔️ <strong>Cadangan Snapshot Otomatis</strong> jika Sheet terhapus",
+        p1_f4: "✔️ <strong>Otomatis Alihkan ke Staf</strong> saat kuota 50 habis",
+        p1_f5: "✔️ <strong>Tanpa Kartu Kredit · Login Google Langsung Aktif</strong>",
         plan1_btn: "🚀 Aktifkan Paket A (Gratis)",
-        plan2_tag: "Paket B | Chat Tanpa Batas",
-        plan2_name: "Paket Basic",
-        plan2_price: "Rp 850.000",
-        plan2_paypal_btn: "💳 Langganan Paket B & Aktivasi (Rp 850rb)",
-        plan3_tag: "Paket C | Kartu Profil Tamu & Otomatisasi",
-        plan3_name: "Paket Pro",
-        plan3_price: "Rp 1.490.000",
-        plan3_paypal_btn: "💳 Langganan Paket C & Aktivasi (Rp 1,49jt)"
+        plan2_tag: "Paket B | Tanpa Batas 24 Jam", plan2_name: "Paket Basic", plan2_price: "Rp 850.000",
+        p2_f1: "🌟 <strong>Balasan AI Multibahasa Tanpa Batas 24/7</strong>",
+        p2_f2: "🌟 <strong>Memori Obrolan Saat Ini (10 pesan terakhir)</strong>",
+        p2_f3: "🌟 <strong>Kartu Ringkasan 3 Kalimat ke Staf</strong> (LINE 1-Klik + Telegram + maks 3 Email)",
+        p2_f4: "🌟 <strong>Banyak Link Booking/Menu + Sinkronisasi Sheets</strong>",
+        p2_f5: "🌟 <strong>Server Cepat 24 Jam + Ubah Pengaturan Kapan Saja</strong>",
+        plan2_paypal_btn: "💳 Langganan Paket B & Aktivasi ($55 USD)",
+        plan3_tag: "Paket C | Kartu Tamu VIP & Otomatisasi", plan3_name: "Paket Pro", plan3_price: "Rp 1.490.000",
+        p3_f1: "🚀 <strong>Semua Fitur Tanpa Batas di Paket B</strong>",
+        p3_f2: "🚀 <strong>Kartu Profil Tamu VIP Permanen</strong> ke Notion / Excel",
+        p3_f3: "🚀 <strong>Memori Jangka Panjang Antar Kunjungan</strong> (ingat alergi & preferensi)",
+        p3_f4: "🚀 <strong>Sinkronisasi Jadwal Otomatis ke Google Calendar</strong>",
+        p3_f5: "🚀 <strong>Kirim PIN Pintu Otomatis Sebelum Check-in + Kupon Tamu Setia</strong>",
+        plan3_paypal_btn: "💳 Langganan Paket C & Aktivasi ($95 USD)",
+        legal_title: "Transparansi EU AI Act Pasal 50, Jaminan SLA 99.5% & Kebijakan Refund",
+        legal_body: "1. <strong>Transparansi AI</strong>: Setiap balasan otomatis menyertakan label asisten AI sesuai standar transparansi internasional.<br/>2. <strong>SLA 99.5% & Cadangan Google Sheets</strong>: Sistem menyimpan snapshot otomatis sehingga AI tetap berjalan walau Google Sheets tidak sengaja terhapus.<br/>3. <strong>Pembayaran Aman & Pembatalan</strong>: Pembayaran diproses langsung oleh PayPal tanpa menyimpan nomor kartu di situs kami. Cek riwayat pesanan atau ajukan pembatalan/refund kapan saja di 'Pesanan & Pengaturan'.",
+        faq_title: "Pertanyaan Umum (FAQ)",
+        faq_q1: "Q1. Apa perbedaan Memori Obrolan (Paket B) dan Kartu Tamu VIP (Paket C)?",
+        faq_a1: "Paket B mengingat 10 pesan terakhir agar tanya-jawab mengalir lancar. Paket C menyimpan catatan penting tamu (seperti alergi kacang atau permintaan baby crib) secara permanen ke tabel pelanggan sehingga AI tetap ingat berbulan-bulan kemudian!",
+        faq_q2: "Q2. Bagaimana cara mengubah link booking, Google Sheets, atau kunci LINE setelah aktif?",
+        faq_a2: "Login dengan akun Google Anda lalu buka 'Pesanan & Pengaturan' di kanan atas. Anda bisa menambah banyak link, hingga 3 email darurat, atau meminta kode OTP 6 digit via email (seperti reset password) untuk mengganti kunci LINE dengan aman.",
+        faq_q3: "Q3. Di mana saya bisa melihat bukti pembayaran atau mengajukan refund?",
+        faq_a3: "Buka menu 'Pesanan & Pengaturan' di kanan atas untuk melihat semua ID pesanan, status pembayaran, serta tombol pembatalan/refund mandiri.",
+        faq_q4: "Q4. Bagaimana jika Google Sheets saya tidak sengaja terhapus?",
+        faq_a4: "Sistem otomatis menyimpan snapshot terakhir yang valid sehingga AI tetap melayani tamu tanpa gangguan!",
+        contact_title: "📩 Hubungi Kami & Kirim Pesan",
+        contact_desc: "Punya pertanyaan seputar paket bisnis, pembayaran, atau aktivasi? Hubungi email resmi kami atau kirim pesan melalui formulir di samping!",
+        contact_email_lbl: "📧 Email Resmi:", contact_hours_lbl: "🕒 Jam Layanan:",
+        c_lbl_name: "Nama Anda *", c_lbl_email: "Email Balasan *", c_lbl_subject: "Subjek", c_lbl_msg: "Pesan Anda *", c_btn_send: "📨 Kirim Pesan",
+        auth_title: "Login dengan Akun Google",
+        auth_desc: "Silakan login dengan akun Google Anda untuk menyimpan riwayat pembelian dan melindungi pengaturan toko:",
+        auth_otp_label: "Atau terima kode verifikasi 6 digit melalui email Google Anda:",
+        auth_send_code: "Kirim Kode",
+        auth_verify_btn: "Verifikasi & Login",
+        pp_title: "Pembayaran Resmi PayPal",
+        pp_desc: "Klik tombol di bawah untuk menuju halaman pembayaran terenkripsi PayPal (mendukung kartu kredit atau PayPal). Bukti pembayaran akan dikirim ke email Anda secara otomatis:",
+        mem_portal_title: "📋 Riwayat Pesanan & Pengaturan Toko"
       },
       "it": {
-        currency: "EUR",
-        basic_amount: "49",
-        pro_amount: "89",
-        nav_how: "Come Funziona",
-        nav_memory: "Guida alla Memoria IA",
-        nav_pricing: "Prezzi",
-        nav_faq: "FAQ",
-        nav_admin: "📊 Console Test e Admin",
-        nav_cta: "Attivazione Unificata",
-        support_btn: "Supporto IA Online",
+        currency: "EUR", basic_amount: "49", pro_amount: "89",
+        nav_how: "Come Funziona", nav_memory: "Memoria IA", nav_pricing: "Prezzi", nav_faq: "FAQ", nav_contact: "Contattaci",
+        nav_login: "🔐 Accedi con Google", nav_member: "I Miei Ordini e Impostazioni",
+        support_btn: "Supporto IA", sup_header: "Consulente IA SmartHost", sup_sub: "Risposte Multilingue 24/7",
+        sup_welcome: "👋 Ciao! Sono il Consulente IA di SmartHost. Chiedimi pure le differenze tra i Piani A/B/C, pagamenti e rimborsi, o come collegare LINE!",
+        sup_q1: "💡 Differenza Piano B e C?", sup_q1_text: "Qual è la differenza tra la memoria breve del Piano B e la scheda cliente VIP del Piano C?",
+        sup_q2: "🔑 Modifica link o disdetta?", sup_q2_text: "Come posso modificare più link di prenotazione dopo l'attivazione o disdire l'abbonamento?",
+        sup_placeholder: "Scrivi la tua domanda...", sup_send: "Invia",
         hero_badge: "100% Self-Service Online · 0€ Costi di Attivazione · Disdici Quando Vuoi",
         hero_title: "Prova Gratuita! Trasforma l'IA nel Tuo <span class='gradient-text'>Concierge LINE 24/7</span>",
-        hero_subtitle: "Il concierge IA multilingue su LINE per hotel, cliniche e aziende. Aggiorna Google Sheets e l'IA si sincronizza in 1 secondo!",
+        hero_subtitle: "Il concierge IA multilingue su LINE pensato per hotel, cliniche, saloni e aziende.<br class='hidden sm:inline'/>Zero programmazione: aggiorna Google Sheets e l'IA si sincronizza in 1 secondo;<br class='hidden sm:inline'/>avvisa automaticamente il titolare quando serve assistenza umana!",
         hero_btn_primary: "🚀 Inizia Gratis (50 Risposte IA / Mese)",
-        hero_btn_secondary: "🧪 Apri Console di Test e Stato",
-        price_title: "3 Piani Tariffari Trasparenti (A + B + C)",
-        price_unit: " / mese",
-        plan1_tag: "Piano A | Gratuito",
-        plan1_name: "Prova Gratuita (Free)",
-        plan1_price: "€0",
+        hero_btn_secondary: "Scopri Piani e Prezzi",
+        how_title: "Attivo Online in 3 Semplici Passaggi (3 Minuti)",
+        how_desc: "Accedi con Google per conservare lo storico acquisti e modificare link e notifiche in qualsiasi momento.",
+        step1_title: "1. Accedi con Google e Scegli il Piano", step1_desc: "Accedi con il tuo account Google per associare i tuoi ordini. Puoi iniziare gratis col Piano A senza vincoli.",
+        step2_title: "2. Inserisci Chiavi LINE e Collega in 1 Clic", step2_desc: "Segui i nomi esatti dei pulsanti LINE Console e collega il LINE personale del titolare con un solo clic.",
+        step3_title: "3. Gestisci Foglio Google e Link Multipli", step3_desc: "Modifica prezzi su Google Sheets in 1 secondo e aggiungi link di prenotazione o menu quando vuoi.",
+        mem_title: "Confronto Chiaro: Memoria Chat Attuale (Piano B) vs. Scheda Cliente VIP (Piano C)",
+        mem_subtitle: "Scegli il livello di memoria intelligente ideale per la tua attività:",
+        mem_b_badge: "Incluso nel Piano B",
+        mem_b_title: "💬 Memoria Chat Attuale (Ricorda gli Ultimi 10 Messaggi)",
+        mem_b_desc: "Proprio come un addetto al telefono, l'IA ricorda <strong>gli ultimi 10 messaggi della conversazione in corso</strong> per rispondere con naturalezza alle domande successive.",
+        mem_b_example: "<div class='font-bold text-emerald-400'>👉 Esempio Reale:</div><p>• Ospite: \"Quanto costa la Camera Doppia Vista Mare?\"</p><p>• Ospite: \"<strong>Include colazione e parcheggio?</strong>\" (L'IA ricorda che si riferisce alla Vista Mare!)</p><p class='text-slate-400 pt-1'>※ Si azzera dopo 10 messaggi senza archiviare dati personali permanenti.</p>",
+        mem_c_badge: "Esclusiva Piano C",
+        mem_c_title: "📒 Scheda Cliente VIP Permanente (Archivio Clienti Automatico)",
+        mem_c_desc: "Durante la chat, l'IA crea automaticamente una <strong>Scheda Cliente VIP</strong> nel tuo foglio cloud (Notion / Excel), ricordando allergie e preferenze nel tempo!",
+        mem_c_example: "<div class='font-bold text-cyan-400'>👉 Esempio Reale:</div><p>• Il Sig. Rossi scrive: \"<strong>Mio figlio è allergico alle arachidi e serve una culla.</strong>\"</p><p>• L'IA salva 'Allergia arachidi + Culla' nella scheda cliente.</p><p>• <strong>Mesi dopo, quando chiede della colazione</strong>, l'IA gli ricorda proattivamente che la cucina ha già previsto alternative senza arachidi!</p>",
+        price_title: "3 Piani Tariffari Trasparenti (A + B + C), Disdici Quando Vuoi",
+        price_desc: "Accesso Google richiesto per tutelare lo storico ordini. Pagamenti sicuri in EUR tramite PayPal.",
+        price_unit: " / mese", popular_badge: "PIÙ SCELTO",
+        plan1_tag: "Piano A | Prova Gratuita", plan1_name: "Piano Gratuito (Free)", plan1_price: "€0",
+        p1_f1: "✔️ <strong>50 Risposte IA Gratuite / Mese</strong> (multilingue automatico)",
+        p1_f2: "✔️ <strong>Sincronizzazione Google Sheets + Link Multipli</strong>",
+        p1_f3: "✔️ <strong>Backup Automatico</strong> contro cancellazioni accidentali",
+        p1_f4: "✔️ <strong>Passaggio Automatico Operatore</strong> oltre le 50 risposte",
+        p1_f5: "✔️ <strong>Nessuna Carta Richiesta · Accedi con Google e Attiva</strong>",
         plan1_btn: "🚀 Attiva Piano A (€0 Gratis)",
-        plan2_tag: "Piano B | Illimitato 24/7",
-        plan2_name: "Piano Basic",
-        plan2_price: "€49",
+        plan2_tag: "Piano B | Illimitato 24/7", plan2_name: "Piano Basic", plan2_price: "€49",
+        p2_f1: "🌟 <strong>Risposte IA Multilingue Illimitate 24/7</strong>",
+        p2_f2: "🌟 <strong>Memoria Chat Attuale (ultimi 10 messaggi)</strong>",
+        p2_f3: "🌟 <strong>Scheda Riassuntiva in 3 Frasi allo Staff</strong> (LINE 1-Clic + Telegram + fino a 3 Email)",
+        p2_f4: "🌟 <strong>Gestione Link Multipli + Sincronizzazione Sheets</strong>",
+        p2_f5: "🌟 <strong>Hosting Veloce 24/7 + Modifica Impostazioni Online</strong>",
         plan2_paypal_btn: "💳 Abbonati al Piano B e Attiva (€49/mese)",
-        plan3_tag: "Piano C | Scheda Cliente VIP e Automazione",
-        plan3_name: "Piano Pro",
-        plan3_price: "€89",
-        plan3_paypal_btn: "💳 Abbonati al Piano C e Attiva (€89/mese)"
+        plan3_tag: "Piano C | Scheda Cliente VIP e Automazione", plan3_name: "Piano Pro", plan3_price: "€89",
+        p3_f1: "🚀 <strong>Tutte le Funzioni Illimitate del Piano B</strong>",
+        p3_f2: "🚀 <strong>Scheda Cliente VIP Permanente</strong> su Notion / Excel",
+        p3_f3: "🚀 <strong>Memoria a Lungo Termine</strong> per ospiti abituali e allergie",
+        p3_f4: "🚀 <strong>Sincronizzazione Automatica Google Calendar</strong>",
+        p3_f5: "🚀 <strong>Invio Automatico Codice Porta Pre-Arrivo + Coupon Post-Soggiorno</strong>",
+        plan3_paypal_btn: "💳 Abbonati al Piano C e Attiva (€89/mese)",
+        legal_title: "Trasparenza EU AI Act Art. 50, SLA 99.5% e Politica di Rimborso",
+        legal_body: "1. <strong>Trasparenza IA (EU AI Act Art. 50)</strong>: Ogni risposta automatica include l'indicazione di assistenza IA.<br/>2. <strong>SLA 99.5% e Backup Foglio Google</strong>: Il backup automatico mantiene attivo il servizio anche se il foglio Google viene eliminato per errore.<br/>3. <strong>Pagamenti Sicuri e Disdetta</strong>: I pagamenti avvengono direttamente su PayPal crittografato; non memorizziamo carte di credito. Consulta le ricevute o richiedi disdetta/rimborso in 'I Miei Ordini e Impostazioni'.",
+        faq_title: "Domande Frequenti (FAQ)",
+        faq_q1: "Q1. Qual è la differenza tra Memoria Chat Attuale (Piano B) e Scheda Cliente VIP (Piano C)?",
+        faq_a1: "Il Piano B ricorda gli ultimi 10 messaggi della chat corrente. Il Piano C archivia in modo permanente allergie e preferenze nella tua tabella clienti cloud così l'IA le ricorda anche a distanza di mesi!",
+        faq_q2: "Q2. Posso modificare link di prenotazione, foglio Google o chiavi LINE dopo l'attivazione?",
+        faq_a2: "Certamente! Accedi con Google e apri 'I Miei Ordini e Impostazioni' in alto a destra per modificare link multipli, fino a 3 email di emergenza, o richiedere un codice OTP via email a 6 cifre (come il reset password) per aggiornare le chiavi LINE.",
+        faq_q3: "Q3. Dove trovo lo storico pagamenti o la richiesta di rimborso?",
+        faq_a3: "Nella sezione 'I Miei Ordini e Impostazioni' trovi tutti i numeri d'ordine, gli importi pagati e il pulsante per annullare l'abbonamento o chiedere il rimborso.",
+        faq_q4: "Q4. Cosa succede se il foglio Google viene cancellato per sbaglio?",
+        faq_a4: "Il sistema conserva automaticamente l'ultimo snapshot valido e continua a rispondere agli ospiti senza interruzioni!",
+        contact_title: "📩 Contattaci · Scrivici un Messaggio",
+        contact_desc: "Domande su piani multi-sede, fatturazione o configurazione? Scrivici all'email ufficiale o compila il modulo qui accanto!",
+        contact_email_lbl: "📧 Email Ufficiale:", contact_hours_lbl: "🕒 Orari Supporto:",
+        c_lbl_name: "Il Tuo Nome *", c_lbl_email: "Email di Risposta *", c_lbl_subject: "Oggetto", c_lbl_msg: "Messaggio *", c_btn_send: "📨 Invia Messaggio",
+        auth_title: "Accedi con Google",
+        auth_desc: "Accedi con il tuo account Google per salvare lo storico acquisti e proteggere le impostazioni:",
+        auth_otp_label: "Oppure ricevi un codice di sicurezza a 6 cifre sulla tua email Google:",
+        auth_send_code: "Invia Codice",
+        auth_verify_btn: "Verifica e Accedi",
+        pp_title: "Pagamento Sicuro Ufficiale PayPal",
+        pp_desc: "Clicca qui sotto per procedere alla cassa crittografata ufficiale PayPal (carta di credito o PayPal). Dopo il pagamento riceverai la ricevuta via email e passerai all'attivazione:",
+        mem_portal_title: "📋 I Miei Ordini e Impostazioni Negozio"
       }
     };
 
     let currentLang = "zh-TW";
-    let selectedPayPalPlan = "basic";
+    let currentUser = null;
+    let pendingPlanSelection = null;
+    let publicConfig = {};
 
     function applyLanguage(langCode) {
       currentLang = I18N_DICT[langCode] ? langCode : "zh-TW";
       const dict = I18N_DICT[currentLang];
+      document.documentElement.lang = currentLang;
       document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.getAttribute("data-i18n");
         if (dict[key]) el.innerHTML = dict[key];
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        if (dict[key]) el.setAttribute("placeholder", dict[key]);
       });
       const switcher = document.getElementById("lang-switcher");
       if (switcher) switcher.value = currentLang;
     }
 
-    function openPayPalModal(planKey) {
-      selectedPayPalPlan = planKey;
+    async function loadPublicAndAuth() {
+      try {
+        const [cfgRes, meRes] = await Promise.all([
+          fetch("/api/public_config"),
+          fetch("/api/auth/me")
+        ]);
+        publicConfig = await cfgRes.json();
+        const meData = await meRes.json();
+
+        if (publicConfig.official_contact_email) {
+          const emEl = document.getElementById("public-contact-email");
+          emEl.textContent = publicConfig.official_contact_email;
+          emEl.href = "mailto:" + publicConfig.official_contact_email;
+        }
+        if (publicConfig.official_service_hours) {
+          document.getElementById("public-service-hours").textContent = publicConfig.official_service_hours;
+        }
+
+        if (meData.authenticated && meData.user) {
+          setLoggedInUser(meData.user, meData.orders || [], meData.stores || []);
+          if (localStorage.getItem("open_portal") === "1") {
+            localStorage.removeItem("open_portal");
+            document.getElementById("member-modal").classList.remove("hidden");
+            document.getElementById("member-modal").classList.add("flex");
+          }
+        } else {
+          setLoggedOutUI();
+        }
+        initGoogleSignInButton();
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function initGoogleSignInButton() {
+      if (!publicConfig.google_client_id || !window.google || !window.google.accounts) return;
+      try {
+        window.google.accounts.id.initialize({
+          client_id: publicConfig.google_client_id,
+          callback: handleGoogleCredentialResponse
+        });
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-gsi-btn"),
+          { theme: "filled_black", size: "large", shape: "pill", width: 280 }
+        );
+      } catch (e) {
+        console.warn("GSI render error", e);
+      }
+    }
+
+    async function handleGoogleCredentialResponse(response) {
+      try {
+        const res = await fetch("/api/auth/google_credential", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          closeAuthModal();
+          await loadPublicAndAuth();
+          if (pendingPlanSelection) {
+            const target = pendingPlanSelection;
+            pendingPlanSelection = null;
+            handleSelectPlan(target);
+          }
+        } else {
+          showAuthMsg(data.message || "Google 登入驗證失敗", true);
+        }
+      } catch (e) {
+        showAuthMsg("網路連線異常，請重試", true);
+      }
+    }
+
+    function setLoggedInUser(user, orders, stores) {
+      currentUser = user;
+      document.getElementById("btn-nav-login").classList.add("hidden");
+      const memBtn = document.getElementById("btn-nav-member");
+      memBtn.classList.remove("hidden");
+      memBtn.classList.add("inline-flex");
+      document.getElementById("portal-user-email").textContent = user.email;
+      renderMemberPortal(orders, stores);
+    }
+
+    function setLoggedOutUI() {
+      currentUser = null;
+      document.getElementById("btn-nav-login").classList.remove("hidden");
+      const memBtn = document.getElementById("btn-nav-member");
+      memBtn.classList.add("hidden");
+      memBtn.classList.remove("inline-flex");
+    }
+
+    function openAuthModal() {
+      initGoogleSignInButton();
+      const m = document.getElementById("auth-modal");
+      m.classList.remove("hidden");
+      m.classList.add("flex");
+    }
+
+    function closeAuthModal() {
+      const m = document.getElementById("auth-modal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+
+    function showAuthMsg(text, isErr) {
+      const el = document.getElementById("auth-msg");
+      el.textContent = text;
+      el.className = `text-xs text-center pt-1 font-semibold ${isErr ? "text-rose-400" : "text-emerald-400"}`;
+      el.classList.remove("hidden");
+    }
+
+    async function sendLoginOtp() {
+      const email = document.getElementById("auth-email-input").value.trim();
+      if (!email || !email.includes("@")) {
+        showAuthMsg("請輸入有效的 Google / Gmail 信箱", true);
+        return;
+      }
+      const btn = document.getElementById("btn-send-login-otp");
+      btn.disabled = true;
+      btn.textContent = "寄送中...";
+      try {
+        const res = await fetch("/api/auth/send_login_otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          document.getElementById("otp-verify-row").classList.remove("hidden");
+          if (data.creator_test_code) {
+            document.getElementById("auth-otp-input").value = data.creator_test_code;
+            showAuthMsg(`驗證碼已發送！（創建者預覽自動帶入：${data.creator_test_code}）`, false);
+          } else {
+            showAuthMsg("✅ 6 位數驗證碼已寄至您的信箱，請於 10 分鐘內輸入！", false);
+          }
+        } else {
+          showAuthMsg(data.message || "寄送驗證碼失敗", true);
+        }
+      } catch (e) {
+        showAuthMsg("連線異常，請稍後再試", true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "寄送驗證碼";
+      }
+    }
+
+    async function verifyLoginOtp() {
+      const email = document.getElementById("auth-email-input").value.trim();
+      const code = document.getElementById("auth-otp-input").value.trim();
+      if (!code) return;
+      const res = await fetch("/api/auth/verify_login_otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        closeAuthModal();
+        await loadPublicAndAuth();
+        if (pendingPlanSelection) {
+          const target = pendingPlanSelection;
+          pendingPlanSelection = null;
+          handleSelectPlan(target);
+        }
+      } else {
+        showAuthMsg(data.message || "驗證碼不正確", true);
+      }
+    }
+
+    async function logoutCustomer() {
+      await fetch("/api/auth/logout", { method: "POST" });
+      closeMemberModal();
+      setLoggedOutUI();
+    }
+
+    // 選擇方案：強制檢查是否已登入 Google 帳號
+    async function handleSelectPlan(planKey) {
+      if (!currentUser) {
+        pendingPlanSelection = planKey;
+        openAuthModal();
+        return;
+      }
+
       const dict = I18N_DICT[currentLang] || I18N_DICT["zh-TW"];
-      const priceText = planKey === "pro" ? dict.plan3_price : dict.plan2_price;
-      const planName = planKey === "pro" ? dict.plan3_name : dict.plan2_name;
-      const amount = planKey === "pro" ? dict.pro_amount : dict.basic_amount;
+      const amount = planKey === "pro" ? dict.pro_amount : (planKey === "basic" ? dict.basic_amount : "0");
       const currency = dict.currency || "TWD";
 
-      document.getElementById("paypal-plan-summary").textContent = `${planName} — ${priceText}${dict.price_unit}`;
-      const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=billing@smarthost-ai.com&item_name=${encodeURIComponent("SmartHost " + planName)}&amount=${amount}&currency_code=${currency}`;
-      document.getElementById("paypal-checkout-link").href = paypalUrl;
-
-      const modal = document.getElementById("paypal-modal");
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
+      try {
+        const res = await fetch("/api/orders/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: planKey, amount, currency })
+        });
+        const data = await res.json();
+        if (res.status === 401 || data.status === "auth_required") {
+          pendingPlanSelection = planKey;
+          openAuthModal();
+          return;
+        }
+        if (data.status === "payment_not_configured") {
+          alert(data.message);
+          return;
+        }
+        if (planKey === "free" && data.next_url) {
+          window.location.href = `${data.next_url}&lang=${currentLang}`;
+          return;
+        }
+        if (data.checkout_url && data.order) {
+          const planTitle = planKey === "pro" ? dict.plan3_name : dict.plan2_name;
+          const priceStr = planKey === "pro" ? dict.plan3_price : dict.plan2_price;
+          document.getElementById("paypal-plan-summary").textContent = `${planTitle} — ${priceStr}${dict.price_unit}`;
+          document.getElementById("pp-buyer-email").textContent = currentUser.email;
+          document.getElementById("pp-order-id").textContent = data.order.order_id;
+          document.getElementById("paypal-checkout-link").href = data.checkout_url;
+          const modal = document.getElementById("paypal-modal");
+          modal.classList.remove("hidden");
+          modal.classList.add("flex");
+        }
+      } catch (e) {
+        alert("建立訂單連線異常，請稍後重試。");
+      }
     }
 
     function closePayPalModal() {
-      const modal = document.getElementById("paypal-modal");
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
+      const m = document.getElementById("paypal-modal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
     }
 
-    function simulatePayPalSuccess() {
-      window.location.href = `/onboarding.html?plan=${selectedPayPalPlan}&paid=paypal&lang=${currentLang}`;
+    async function openMemberModal() {
+      await loadPublicAndAuth();
+      const m = document.getElementById("member-modal");
+      m.classList.remove("hidden");
+      m.classList.add("flex");
     }
 
+    function closeMemberModal() {
+      const m = document.getElementById("member-modal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+
+    function renderMemberPortal(orders, stores) {
+      const ordBox = document.getElementById("portal-orders-list");
+      if (!orders || orders.length === 0) {
+        ordBox.innerHTML = `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-400">目前尚無購買紀錄。</div>`;
+      } else {
+        ordBox.innerHTML = orders.map(o => {
+          const canRefund = o.plan !== "free" && ["Paid", "Active", "Pending_Payment"].includes(o.status);
+          return `
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+              <div class="space-y-1">
+                <div class="font-bold text-white">${o.order_id} <span class="ml-2 px-2 py-0.5 rounded bg-slate-800 text-emerald-400">${o.plan.toUpperCase()}</span></div>
+                <div class="text-slate-400">金額：${o.amount} ${o.currency} ｜ 付款方式：${o.payment_method} ｜ 時間：${o.created_at}</div>
+                <div class="text-slate-300">狀態：<strong class="text-cyan-300">${o.status}</strong> ${o.paypal_tx_id && o.paypal_tx_id !== '-' ? `(交易碼: ${o.paypal_tx_id})` : ""}</div>
+              </div>
+              <div class="flex gap-2">
+                ${canRefund ? `<button onclick="requestOrderRefund('${o.order_id}')" class="px-3 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-300 hover:bg-rose-500/25 font-bold">申請取消訂閱 / 退費</button>` : ""}
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      const stBox = document.getElementById("portal-stores-list");
+      if (!stores || stores.length === 0) {
+        stBox.innerHTML = `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-400">尚未綁定 LINE 官方帳號，請點選右上角「+ 開通新 LINE 帳號」。</div>`;
+      } else {
+        stBox.innerHTML = stores.map(s => {
+          const em1 = (s.alert_emails && s.alert_emails[0]) || "";
+          const em2 = (s.alert_emails && s.alert_emails[1]) || "";
+          const em3 = (s.alert_emails && s.alert_emails[2]) || "";
+          const bindBtnHtml = s.one_time_bind && s.one_time_bind.line_deep_link
+            ? `<a href="${s.one_time_bind.line_deep_link}" target="_blank" class="inline-block px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-extrabold hover:bg-emerald-400">📲 點此一鍵打開 LINE 綁定店長通知</a>`
+            : `<span class="text-slate-400">在店家 LINE 輸入指令即可綁定：<code class="text-emerald-400">${s.one_time_bind ? s.one_time_bind.bind_command : '/id'}</code></span>`;
+
+          return `
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <span class="font-extrabold text-sm text-white">${s.client_name}</span>
+                  <span class="ml-2 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold">方案: ${s.plan.toUpperCase()}</span>
+                  <span class="ml-2 text-slate-400">本月已用對話: ${s.monthly_usage} / ${s.monthly_quota}</span>
+                </div>
+                <div class="text-slate-400 font-mono text-[11px]">Webhook: ${s.webhook_url}</div>
+              </div>
+
+              <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2">
+                <div>🔔 店長 LINE 通知綁定狀態：<strong>已綁定 ${s.admin_line_bound_count} 位接收人</strong></div>
+                <div>${bindBtnHtml}</div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 mb-1">商家名稱</label>
+                  <input type="text" id="st-name-${s.tenant_id}" value="${s.client_name.replace(/"/g, '&quot;')}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Google 試算表 CSV 網址</label>
+                  <input type="url" id="st-sheet-${s.tenant_id}" value="${(s.sheet_csv_url || '').replace(/"/g, '&quot;')}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">多組預約 / 訂房 / 菜單連結（一行一組，AI 會自動挑選回覆給客人）</label>
+                <textarea id="st-links-${s.tenant_id}" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">${s.booking_links || ""}</textarea>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">緊急通知信箱 1</label>
+                  <input type="email" id="st-em1-${s.tenant_id}" value="${em1}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">緊急通知信箱 2 (選填)</label>
+                  <input type="email" id="st-em2-${s.tenant_id}" value="${em2}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">緊急通知信箱 3 (選填)</label>
+                  <input type="email" id="st-em3-${s.tenant_id}" value="${em3}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">Telegram Chat ID (選填)</label>
+                <input type="text" id="st-tg-${s.tenant_id}" value="${s.telegram_chat_id || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono" />
+              </div>
+
+              <!-- 像改密碼一樣收信重設敏感 LINE 金鑰 -->
+              <details class="bg-slate-900/70 border border-slate-800 rounded-lg p-3">
+                <summary class="cursor-pointer font-bold text-amber-400">🔒 更換或重設 LINE 金鑰（目前保護中：Secret ${s.masked_secret}，需信箱 6 位數驗證碼）</summary>
+                <div class="mt-3 space-y-2.5">
+                  <button type="button" onclick="sendResetKeyOtp()" class="px-3 py-1.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold">
+                    📧 點此寄送 6 位數安全驗證碼至信箱與店長 LINE
+                  </button>
+                  <input type="text" id="st-otp-${s.tenant_id}" maxlength="6" placeholder="輸入收到的 6 位數驗證碼" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-white font-mono" />
+                  <input type="text" id="st-sec-${s.tenant_id}" placeholder="新的 LINE Channel Secret (不改請留空)" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-white font-mono" />
+                  <textarea id="st-tok-${s.tenant_id}" rows="2" placeholder="新的 LINE Channel Access Token (不改請留空)" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-white font-mono"></textarea>
+                </div>
+              </details>
+
+              <button type="button" onclick="saveStoreSettings('${s.tenant_id}')" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold">
+                💾 儲存店家設定修改
+              </button>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+
+    async function requestOrderRefund(orderId) {
+      const reason = prompt("請輸入取消訂閱或申請退費原因（送出後將立即降級回 0 元版並寄送確認信）：", "申請取消訂閱與退費");
+      if (reason === null) return;
+      const res = await fetch("/api/orders/cancel_or_refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId, reason })
+      });
+      const data = await res.json();
+      alert(data.message || "已送出申請");
+      await loadPublicAndAuth();
+    }
+
+    async function sendResetKeyOtp() {
+      const res = await fetch("/api/account/send_security_otp", { method: "POST" });
+      const data = await res.json();
+      alert(data.creator_test_code ? `${data.message}\n(創建者預覽驗證碼: ${data.creator_test_code})` : (data.message || "已發送驗證碼"));
+    }
+
+    async function saveStoreSettings(tid) {
+      const emails = [
+        document.getElementById(`st-em1-${tid}`).value.trim(),
+        document.getElementById(`st-em2-${tid}`).value.trim(),
+        document.getElementById(`st-em3-${tid}`).value.trim()
+      ].filter(Boolean);
+
+      const payload = {
+        tenant_id: tid,
+        client_name: document.getElementById(`st-name-${tid}`).value.trim(),
+        sheet_csv_url: document.getElementById(`st-sheet-${tid}`).value.trim(),
+        booking_links: document.getElementById(`st-links-${tid}`).value.trim(),
+        telegram_chat_id: document.getElementById(`st-tg-${tid}`).value.trim(),
+        alert_emails: emails,
+        otp_code: document.getElementById(`st-otp-${tid}`).value.trim(),
+        new_channel_secret: document.getElementById(`st-sec-${tid}`).value.trim(),
+        new_channel_access_token: document.getElementById(`st-tok-${tid}`).value.trim()
+      };
+
+      const res = await fetch("/api/account/update_settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      alert(data.message || "更新完成");
+      if (res.ok) await loadPublicAndAuth();
+    }
+
+    // 官網「聯絡我們」投信表單送出
+    document.getElementById("contact-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("contact-submit-btn");
+      const fb = document.getElementById("contact-feedback");
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/contact_submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: document.getElementById("contact-name").value.trim(),
+            email: document.getElementById("contact-email").value.trim(),
+            subject: document.getElementById("contact-subject").value.trim(),
+            message: document.getElementById("contact-message").value.trim(),
+            lang: currentLang
+          })
+        });
+        const data = await res.json();
+        fb.classList.remove("hidden");
+        if (res.ok && data.status === "success") {
+          fb.className = "text-xs font-bold text-center pt-1 text-emerald-400";
+          fb.textContent = "✅ 您的信件已成功送出！我們將儘速回覆至您的信箱。";
+          document.getElementById("contact-form").reset();
+        } else {
+          fb.className = "text-xs font-bold text-center pt-1 text-rose-400";
+          fb.textContent = data.message || "送出失敗，請檢查欄位。";
+        }
+      } catch (err) {
+        fb.classList.remove("hidden");
+        fb.className = "text-xs font-bold text-center pt-1 text-rose-400";
+        fb.textContent = "連線異常，請稍後再試。";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // 右下角真實 Gemini AI 客服視窗
     function toggleSupportWidget() {
       const w = document.getElementById("support-widget");
       if (w.classList.contains("hidden")) {
@@ -658,10 +1408,20 @@
       div.textContent = text;
       box.appendChild(div);
       box.scrollTop = box.scrollHeight;
+      return div;
+    }
+
+    function askQuickBtn(idx) {
+      const dict = I18N_DICT[currentLang] || I18N_DICT["zh-TW"];
+      const q = idx === 1 ? dict.sup_q1_text : dict.sup_q2_text;
+      askSupport(q);
     }
 
     async function askSupport(questionText) {
       appendSupportMsg("user", questionText);
+      const sendBtn = document.getElementById("support-send-btn");
+      sendBtn.disabled = true;
+      const loadingDiv = appendSupportMsg("ai", "...");
       try {
         const res = await fetch("/api/site_support_chat", {
           method: "POST",
@@ -669,9 +1429,11 @@
           body: JSON.stringify({ question: questionText, lang: currentLang })
         });
         const data = await res.json();
-        appendSupportMsg("ai", data.reply || "請參考上方方案說明或進入開通中心體驗喔！");
+        loadingDiv.textContent = data.reply || "歡迎參考頁面說明或透過聯絡我們投信詢問！";
       } catch (e) {
-        appendSupportMsg("ai", "💡 方案 B 支援「當下前 10 句聊天記憶」；方案 C 支援「熟客資料卡永久建檔（如記住花生過敏）」。歡迎先從方案 A (0元) 免費開通！");
+        loadingDiv.textContent = "連線稍忙，請再試一次或透過下方聯絡表單投信給我們！";
+      } finally {
+        sendBtn.disabled = false;
       }
     }
 
@@ -695,18 +1457,6 @@
       if (navLang.startsWith("id")) return applyLanguage("id");
       if (navLang.startsWith("it")) return applyLanguage("it");
       if (navLang.startsWith("en")) return applyLanguage("en");
-
-      try {
-        const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(2500) });
-        if (res.ok) {
-          const data = await res.json();
-          const country = (data.country_code || "").toUpperCase();
-          if (country === "JP") return applyLanguage("ja");
-          if (country === "ID") return applyLanguage("id");
-          if (country === "IT") return applyLanguage("it");
-          if (["US", "GB", "AU", "CA", "SG"].includes(country)) return applyLanguage("en");
-        }
-      } catch (_) {}
       applyLanguage("zh-TW");
     }
 
@@ -717,6 +1467,7 @@
     });
 
     detectLanguage();
+    loadPublicAndAuth();
   </script>
 </body>
 </html>

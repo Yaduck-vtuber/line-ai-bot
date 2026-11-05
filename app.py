@@ -6,14 +6,13 @@ import io
 import hmac
 import json
 import time
-import hashlib
 import logging
 import threading
 from datetime import datetime, timedelta, timezone
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 import requests
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, send_from_directory
 from dotenv import load_dotenv
 
 # 載入 .env 環境變數
@@ -25,7 +24,7 @@ logging.basicConfig(
     format="[%(asctime)s] [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-logger = logging.getLogger("line-concierge-saas")
+logger = logging.getLogger("smarthost-saas")
 
 # LINE SDK v3 模組載入
 from linebot.v3 import WebhookHandler
@@ -40,7 +39,7 @@ from linebot.v3.messaging import (
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 
-# 載入 Gemini SDK
+# 載入 Gemini SDK (優先使用官方最新 google-genai SDK)
 USE_NEW_SDK = True
 try:
     from google import genai
@@ -63,36 +62,41 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 CLIENT_NAME = os.getenv("CLIENT_NAME", "澄光行旅 Lumina Boutique Hotel").strip()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest").strip()
 
-# 資安強化：管理員綁定驗證碼 (預設需輸入 /綁定管理員 密碼，防止陌生客人偷綁)
+# 資安強化：管理員綁定驗證碼 (防止陌生客人偷綁)
 ADMIN_SECRET_CODE = os.getenv("ADMIN_SECRET_CODE", "lumina8890").strip()
 ADMIN_LINE_USER_ID = os.getenv("ADMIN_LINE_USER_ID", "").strip()
 CRON_SECRET_TOKEN = os.getenv("CRON_SECRET_TOKEN", "lumina_cron_secret").strip()
 
-# 外部雲端總表串接 (Google Sheets CSV / Apps Script Webhook / Notion / Airtable)
+# 預設預約連結與 LINE Notify 權杖
+DEFAULT_BOOKING_URL = os.getenv("BOOKING_URL", "").strip()
+DEFAULT_NOTIFY_TOKEN = os.getenv("LINE_NOTIFY_TOKEN", "").strip()
+
+# 外部雲端總表與 Make 自動化串接 (Google Sheets CSV / Make Webhook / Notion / Airtable)
 GOOGLE_SHEET_CSV_URL = os.getenv("GOOGLE_SHEET_CSV_URL", "").strip()
-CRM_WEBHOOK_URL = os.getenv("CRM_WEBHOOK_URL", "").strip()  # 可連 Google Sheet Apps Script / Make / n8n / Excel Power Automate
+CRM_WEBHOOK_URL = os.getenv("CRM_WEBHOOK_URL", "").strip()  # Make / n8n / Google Apps Script / Excel Webhook
 NOTION_API_KEY = os.getenv("NOTION_API_KEY", "").strip()
 NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID", "").strip()
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY", "").strip()
 AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID", "").strip()
 AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "GuestCRM").strip()
 
-# 電子鎖密碼與回購優惠碼 (可由試算表或環境變數覆蓋)
+# 電子鎖密碼與回購優惠碼
 DEFAULT_DOOR_PIN = os.getenv("DEFAULT_DOOR_PIN", "#202688#").strip()
 RETURN_DISCOUNT_CODE = os.getenv("RETURN_DISCOUNT_CODE", "LUMINA-VIP85").strip()
 SURVEY_URL = os.getenv("SURVEY_URL", "https://forms.gle/lumina-feedback").strip()
 
 executor = ThreadPoolExecutor(max_workers=12)
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+app = Flask(__name__, template_folder=TEMPLATE_DIR)
 
 # 台北時區 (UTC+8)
 TW_TZ = timezone(timedelta(hours=8))
 
 # =============================================================
-# 2. 多租戶 (Multi-Tenant) 與三層防呆保護機制
+# 2. 多租戶 (Multi-Tenant) 與 Google 試算表 3 層防呆保護機制
 # =============================================================
 # 【第 2 層防呆保護：預設備援值 Fallback Defaults】
-# 當客戶在 Google 試算表中誤刪某欄位或留白時，系統自動補上預設值，確保 AI 永不崩潰
 FALLBACK_DEFAULTS = {
     "旅宿名稱": CLIENT_NAME,
     "完整地址": "台北市大安區敦化南路一段 218 號（捷運忠孝敦化站 6 號出口步行 3 分鐘）",
@@ -111,16 +115,17 @@ FALLBACK_DEFAULTS = {
 
 
 def load_tenants_config() -> dict:
-    """
-    載入多租戶設定：一個 Cloud Run 伺服器可同時服務多個客戶的官方 LINE 帳號。
-    可透過環境變數 TENANTS_CONFIG_JSON 傳入多組租戶設定，並包含 default 預設租戶。
-    """
+    """載入多租戶設定（支援動態 API 註冊與環境變數預設載入）"""
     tenants = {
         "default": {
             "tenant_id": "default",
             "client_name": CLIENT_NAME,
+            "email": "",
+            "status": "Active",
             "channel_secret": LINE_CHANNEL_SECRET,
             "channel_access_token": LINE_CHANNEL_ACCESS_TOKEN,
+            "booking_url": DEFAULT_BOOKING_URL,
+            "notify_token": DEFAULT_NOTIFY_TOKEN,
             "sheet_csv_url": GOOGLE_SHEET_CSV_URL,
             "kb_url": os.getenv("KNOWLEDGE_BASE_URL", "").strip(),
             "admin_code": ADMIN_SECRET_CODE,
@@ -136,8 +141,12 @@ def load_tenants_config() -> dict:
                 tenants[tid] = {
                     "tenant_id": tid,
                     "client_name": tcfg.get("client_name", tid),
+                    "email": tcfg.get("email", ""),
+                    "status": tcfg.get("status", "Active"),
                     "channel_secret": tcfg.get("channel_secret", ""),
                     "channel_access_token": tcfg.get("channel_access_token", ""),
+                    "booking_url": tcfg.get("booking_url", ""),
+                    "notify_token": tcfg.get("notify_token", ""),
                     "sheet_csv_url": tcfg.get("sheet_csv_url", ""),
                     "kb_url": tcfg.get("kb_url", ""),
                     "admin_code": tcfg.get("admin_code", ADMIN_SECRET_CODE),
@@ -151,11 +160,59 @@ def load_tenants_config() -> dict:
 
 
 TENANTS_REGISTRY = load_tenants_config()
+_tenants_lock = threading.Lock()
 _sheet_cache = {}
-SHEET_CACHE_TTL = 5  # 【第 1 層防呆：Live API Fetching】僅快取 5 秒，客戶儲存試算表幾乎即時生效
-
-# 防暴力破解：記錄嘗試綁定管理員失敗次數
+SHEET_CACHE_TTL = 5  # 【第 1 層防呆：Live API Fetching】客戶儲存試算表後即時生效
 _failed_admin_attempts = {}
+
+
+def get_tenant_config(tenant_id: str) -> dict:
+    """根據 tenant_id 動態讀取該客戶設定（含 booking_url, notify_token, channel_access_token 等）"""
+    with _tenants_lock:
+        if tenant_id in TENANTS_REGISTRY:
+            return TENANTS_REGISTRY[tenant_id]
+        return TENANTS_REGISTRY["default"]
+
+
+def send_line_notify(token: str, message: str) -> bool:
+    """發送 LINE Notify 轉接通報給店家手機"""
+    if not token:
+        return False
+    try:
+        headers = {"Authorization": f"Bearer {token.strip()}"}
+        resp = requests.post(
+            "https://notify-api.line.me/api/notify",
+            headers=headers,
+            data={"message": message},
+            timeout=5,
+        )
+        return resp.status_code == 200
+    except Exception as e:
+        logger.warning(f"LINE Notify send failed: {e}")
+        return False
+
+
+def reply_to_line(tenant_cfg: dict, reply_token: str, text: str, user_id: str = None):
+    """使用該租戶專屬的 Access Token 回覆 LINE 訊息（若 reply_token 逾期則自動 fallback 至 push_message）"""
+    line_cfg = Configuration(access_token=tenant_cfg["channel_access_token"])
+    with ApiClient(line_cfg) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        try:
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=reply_token,
+                    messages=[TextMessage(text=text)],
+                )
+            )
+        except Exception as reply_err:
+            logger.warning(f"reply_token failed ({reply_err}), using push_message fallback...")
+            if user_id:
+                line_bot_api.push_message(
+                    PushMessageRequest(
+                        to=user_id,
+                        messages=[TextMessage(text=text)],
+                    )
+                )
 
 
 def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
@@ -163,14 +220,15 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
     三層防呆保護機制讀取 Google 試算表：
     1. 即時動態查詢 (Live API Fetching)：透過 Google Sheets CSV / API 即時拉取。
     2. 預設備援值 (Fallback Default)：若某欄位被客戶誤刪或留白，自動補上預設值。
-    3. 標題列結構保護校驗 (Protected Header Validation)：忽略被竄改的無效列，確保結構穩定。
+    3. 標題列結構保護校驗 (Protected Header Validation)：忽略第一列標題列，確保結構穩定。
     """
     tid = tenant_cfg["tenant_id"]
     sheet_url = tenant_cfg.get("sheet_csv_url") or os.getenv("GOOGLE_SHEET_CSV_URL", "").strip()
 
-    # 複製一份完整備援字典，確保每個欄位都有保底值
     merged_fields = dict(FALLBACK_DEFAULTS)
     merged_fields["旅宿名稱"] = tenant_cfg.get("client_name", CLIENT_NAME)
+    if tenant_cfg.get("booking_url"):
+        merged_fields["線上預約連結"] = tenant_cfg["booking_url"]
 
     if sheet_url:
         now = time.time()
@@ -189,10 +247,10 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
                             continue
                         key_col = row[0].strip()
                         val_col = row[1].strip()
-                        # 【第 3 層防呆：標題列保護】跳過第一列標題 (如 A1: 欄位名稱, B1: 內容)
+                        # 【第 3 層防呆：鎖定欄位標題保護】略過第一列標題
                         if idx == 0 and key_col in ["欄位名稱", "項目", "Key", "Field", "標題"]:
                             continue
-                        # 【第 2 層防呆：預設備援值】若客戶將內容留空，則不覆蓋備援值
+                        # 【第 2 層防呆：預設備援值】若內容留白，保留 Fallback Default
                         if key_col and val_col:
                             parsed_sheet[key_col] = val_col
                     _sheet_cache[tid] = {"ts": now, "data": parsed_sheet}
@@ -201,11 +259,10 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
             except Exception as e:
                 logger.warning(f"[{tid}] Google Sheet live fetch error ({e}), using Fallback Defaults.")
 
-    # 若未設定試算表，但有設定純文字環境變數 CLIENT_KNOWLEDGE_BASE，亦將其納入
     custom_raw_kb = os.getenv("CLIENT_KNOWLEDGE_BASE", "").strip()
-    kb_lines = ["---【即時動態知識庫 (含防呆備援保護)】---"]
+    kb_lines = ["---【即時動態知識庫 (含 3 層防呆備援保護)】---"]
     for k, v in merged_fields.items():
-        if k not in ["電子鎖密碼"]:  # 電子鎖密碼僅於入住前1小時或核准時提供，不隨意公開於一般 FAQ
+        if k not in ["電子鎖密碼"]:  # 電子鎖密碼僅於入住前1小時自動推播，一般問答不主動外洩
             kb_lines.append(f"- {k}：{v}")
     if custom_raw_kb:
         kb_lines.append("\n---【補充說明資訊】---\n" + custom_raw_kb)
@@ -216,21 +273,18 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
 # =============================================================
 # 3. 雙層記憶系統：短期記憶 (5-10句) + 長期記憶 (CRM Profile)
 # =============================================================
-# 嚴格以 (tenant_id, user_id) 複合鍵隔離，絕不跨客人或跨租戶洩漏
-SHORT_TERM_MEMORY_MAX_MESSAGES = 10  # 維護前 5-10 句對話 (5 輪問答)
+SHORT_TERM_MEMORY_MAX_MESSAGES = 10
 _short_term_sessions: dict[str, deque] = {}
 _long_term_crm: dict[str, dict] = {}
 _memory_lock = threading.Lock()
 
 
 def _get_isolated_key(tenant_id: str, user_id: str) -> str:
-    """產生租戶與客人嚴格隔離的複合鍵"""
     safe_uid = user_id or "anonymous"
     return f"{tenant_id}::{safe_uid}"
 
 
 def get_short_term_history(tenant_id: str, user_id: str) -> list[dict]:
-    """取得該客人最近 10 句短期對話記憶"""
     key = _get_isolated_key(tenant_id, user_id)
     with _memory_lock:
         if key not in _short_term_sessions:
@@ -239,7 +293,6 @@ def get_short_term_history(tenant_id: str, user_id: str) -> list[dict]:
 
 
 def append_short_term_history(tenant_id: str, user_id: str, role: str, text: str):
-    """新增對話至短期記憶視窗 (自動淘汰超過 10 句的舊對話)"""
     if not user_id:
         return
     key = _get_isolated_key(tenant_id, user_id)
@@ -254,7 +307,6 @@ def append_short_term_history(tenant_id: str, user_id: str, role: str, text: str
 
 
 def get_guest_crm_profile(tenant_id: str, user_id: str) -> dict:
-    """取得單一客人的長期記憶 (CRM Profile)"""
     key = _get_isolated_key(tenant_id, user_id)
     with _memory_lock:
         if key not in _long_term_crm:
@@ -262,9 +314,9 @@ def get_guest_crm_profile(tenant_id: str, user_id: str) -> dict:
                 "tenant_id": tenant_id,
                 "user_id": user_id,
                 "display_name": "貴賓",
-                "dietary_allergies": [],       # 飲食禁忌/過敏 (如：小孩對花生嚴重過敏)
-                "preferences": [],             # 住宿偏好 (如：嬰兒床、高樓層)
-                "estimated_arrival": "",       # 預計抵達時間 (如：16:00)
+                "dietary_allergies": [],
+                "preferences": [],
+                "estimated_arrival": "",
                 "checkin_reminder_sent": False,
                 "checkout_survey_sent": False,
                 "stay_feedback": "",
@@ -274,7 +326,6 @@ def get_guest_crm_profile(tenant_id: str, user_id: str) -> dict:
 
 
 def update_guest_crm_profile(tenant_id: str, user_id: str, updates: dict) -> dict:
-    """更新單一客人的長期記憶，並同步寫入外部雲端總表 (Notion / Airtable / Google Sheets / Excel)"""
     if not user_id:
         return {}
     key = _get_isolated_key(tenant_id, user_id)
@@ -296,22 +347,18 @@ def update_guest_crm_profile(tenant_id: str, user_id: str, updates: dict) -> dic
         profile["updated_at"] = datetime.now(TW_TZ).strftime("%Y-%m-%d %H:%M:%S")
         _long_term_crm[key] = profile
 
-    # 非同步寫入外部雲端總表 (Google Sheets / Notion / Airtable / Excel Webhook)
     executor.submit(sync_crm_to_cloud_tables, dict(profile))
     return profile
 
 
 def sync_crm_to_cloud_tables(profile: dict):
-    """將客人長期記憶 (CRM Profile) 同步至 Google Sheets / Excel Webhook / Notion / Airtable"""
-    # 1. 通用雲端總表 Webhook (支援 Google Sheets Apps Script / Make / n8n / Power Automate Excel)
+    """將客人長期記憶或租戶狀態同步寫入外部雲端總表 (Make / Google Sheets / Notion / Airtable / Excel)"""
     if CRM_WEBHOOK_URL:
         try:
             requests.post(CRM_WEBHOOK_URL, json={"type": "crm_upsert", "profile": profile}, timeout=5)
-            logger.info(f"Synced CRM profile for {profile.get('display_name')} to CRM_WEBHOOK_URL.")
         except Exception as e:
             logger.warning(f"Failed to sync CRM to Webhook URL: {e}")
 
-    # 2. Notion Database API 原生支援
     if NOTION_API_KEY and NOTION_DATABASE_ID:
         try:
             headers = {
@@ -330,11 +377,9 @@ def sync_crm_to_cloud_tables(profile: dict):
                 },
             }
             requests.post("https://api.notion.com/v1/pages", headers=headers, json=notion_payload, timeout=5)
-            logger.info("Synced CRM profile to Notion Database.")
         except Exception as e:
             logger.warning(f"Failed to sync CRM to Notion: {e}")
 
-    # 3. Airtable API 原生支援
     if AIRTABLE_API_KEY and AIRTABLE_BASE_ID:
         try:
             url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
@@ -358,16 +403,14 @@ def sync_crm_to_cloud_tables(profile: dict):
                 ]
             }
             requests.post(url, headers=headers, json=airtable_payload, timeout=5)
-            logger.info("Synced CRM profile to Airtable.")
         except Exception as e:
             logger.warning(f"Failed to sync CRM to Airtable: {e}")
 
 
 # =============================================================
-# 4. LINE 使用者資料查詢 (取得客人 LINE 名字)
+# 4. LINE 使用者資料查詢 (取得客人 LINE 顯示名稱)
 # =============================================================
 def fetch_line_guest_name(line_bot_api: MessagingApi, tenant_id: str, user_id: str) -> str:
-    """向 LINE 查詢客人的顯示名稱 (Display Name)，讓櫃檯管理員一眼知道是哪位客人"""
     if not user_id:
         return "未知房客"
     profile = get_guest_crm_profile(tenant_id, user_id)
@@ -384,25 +427,29 @@ def fetch_line_guest_name(line_bot_api: MessagingApi, tenant_id: str, user_id: s
 
 
 # =============================================================
-# 5. 系統指令組裝 (含資安防護、雙層記憶注入、3句話轉接摘要卡)
+# 5. 系統指令組裝 (資安防護 + 雙層記憶 + 3句話轉接摘要卡)
 # =============================================================
 def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_history: list) -> str:
-    """動態組裝 AI 智慧管家系統指令"""
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
+    booking_url = tenant_cfg.get("booking_url", "")
     kb_text, _ = fetch_google_sheet_kb_with_safeguards(tenant_cfg)
 
-    # 格式化這位客人的專屬長期記憶 (CRM Profile)
     allergies_str = "、".join(guest_crm.get("dietary_allergies", [])) or "尚無紀錄"
     prefs_str = "、".join(guest_crm.get("preferences", [])) or "尚無紀錄"
     arrival_str = guest_crm.get("estimated_arrival") or "尚未提供"
     guest_name = guest_crm.get("display_name", "貴賓")
 
-    # 格式化最近 10 句短期對話記憶
     history_lines = []
     for turn in short_term_history:
         speaker = "旅客" if turn["role"] == "user" else "AI管家"
         history_lines.append(f"[{turn['time']}] {speaker}: {turn['text']}")
     history_block = "\n".join(history_lines) if history_lines else "（此為本輪首句對話）"
+
+    booking_instruction = (
+        f"3. 【動態預約連結帶入】：當旅客詢問預約、報名或訂房時，請在回覆中附上專屬預約連結：{booking_url}"
+        if booking_url
+        else ""
+    )
 
     return f"""# ROLE & IDENTITY
 你是「{client_name}」在 LINE 上的 24 小時跨語系 AI 智慧管家。
@@ -422,9 +469,10 @@ def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_histo
 
 # PROACTIVE HOSPITALITY RULES (超越期待的細節關注)
 1. 【結合記憶主動關懷】：
-   - 若「已註記飲食過敏/禁忌」有內容（例如：花生嚴重過敏、不吃牛、素食），當旅客詢問「早餐、餐廳、餐點」相關問題時，必須主動在回覆中貼心提醒：「廚房已為您註記『{allergies_str}』，相關餐點/抹醬會為您特別留意與替換喔！」
+   - 若「已註記飲食過敏/禁忌」有內容（例如：花生嚴重過敏、不吃牛、素食），當旅客詢問「早餐、餐廳、餐點」相關問題時，必須主動在回覆中貼心提醒：「廚房已為您註記『{allergies_str}』，相關餐點/抹醬會為您特別留意與單獨替換喔！」
 2. 【入住生命週期紀錄】：
    - 若旅客告知預計抵達時間（例如「我們下午 4 點到」），請親切確認並告知：「已為您記錄預計抵達時間，入住當天抵達前 1 小時我們將自動為您推播停車指引與專屬入住資訊！」
+{booking_instruction}
 
 # LINE MESSAGING DISPLAY RULES (手機介面最佳化)
 1. 【簡短易讀】：每封回覆控制在 3-5 句內，善用換行，嚴禁長篇大論。
@@ -437,7 +485,7 @@ def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_histo
 
 # BOUNDARIES & HUMAN ESCALATION (轉接真人機制)
 1. 遇以下狀況，請禮貌告知並觸發專人通知（設定 "need_human": true）：
-   - 旅客主動要求找真人（轉接真人、找客服、人工客服、專人服務、Human agent 等）。
+   - 旅客主動要求找真人（轉接真人、轉接專人、找客服、人工客服、真人客服、Human agent 等）。
    - 詢問資料庫未記載的特殊折扣、房間設施故障（冷氣滴水、設備損壞）、緊急醫療、複雜退款或投訴。
    - 回覆範例：「這項需求我已為您記錄並通知櫃檯專人，服務人員將會在 LINE 上儘速回覆您喔！手邊如有緊急狀況，也可直接致電櫃檯洽詢。」
 
@@ -451,7 +499,7 @@ def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_histo
 (A) 旅客提及「飲食過敏/禁忌、特殊住宿偏好、預計抵達時間、退房體驗回饋」
 (B) 旅客提及「預約接駁車、寄放行李、加購早餐、特殊房型需求」
 (C) 觸發「轉接真人機制（主動找客服、設施故障、退款、投訴、知識庫未記載問題）」
-請務必在回覆最末端附上以下 JSON 區塊（後端會攔截此區塊以更新 CRM 雲端總表並推播「3 句話問題摘要卡」給民宿主人）：
+請務必在回覆最末端附上以下 JSON 區塊：
 
 ```json
 {{
@@ -469,7 +517,6 @@ def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_histo
   }}
 }}
 ```
-（注意：若僅為單純詢問退房時間或 Wi-Fi 密碼，且無任何過敏/抵達時間更新，則無需輸出 JSON；若僅為記憶更新而無需真人介入，請將 "need_human" 設為 false）。
 """
 
 
@@ -481,24 +528,20 @@ def extract_and_strip_json(raw_text: str):
     extracted_data = None
     json_match = re.search(r"\{[\s\S]*?\"event\"\s*:\s*\"service_request\"[\s\S]*\}", raw_text)
     if json_match:
-        raw_json_str = json_match.group(0)
-        # 若結尾有多餘符號，嘗試對齊最後一個大括號
         try:
-            extracted_data = json.loads(raw_json_str)
+            extracted_data = json.loads(json_match.group(0))
         except Exception as e:
             logger.warning(f"JSON parse warning: {e}")
 
-    # 徹底清除任何 ```json ... ``` 或殘留 JSON 結構，確保旅客絕不會看到程式碼
     cleaned = re.sub(r"```(?:json)?[\s\S]*?(?:```|$)", "", raw_text, flags=re.IGNORECASE)
     cleaned = re.sub(r"\{[\s\S]*?\"event\"\s*:\s*\"service_request\"[\s\S]*$", "", cleaned)
     return cleaned.strip(), extracted_data
 
 
 # =============================================================
-# 6. AI 推論引擎 (含多模型防 503 自動秒切)
+# 6. AI 推論引擎 (含多模型防 503 自動秒切與 Try-Except 容錯)
 # =============================================================
 def call_gemini_api(tenant_cfg: dict, user_id: str, user_message: str):
-    """呼叫 Gemini API，結合短期與長期記憶產出回覆"""
     tid = tenant_cfg["tenant_id"]
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
     guest_crm = get_guest_crm_profile(tid, user_id)
@@ -542,34 +585,23 @@ def call_gemini_api(tenant_cfg: dict, user_id: str, user_message: str):
             except Exception as err:
                 logger.warning(f"[{tid}] Model '{model_name}' failed ({err}), switching to next fallback...")
 
-        fallback_msg = (
-            "🏨 您好！目前線上諮詢量較大，您的訊息我們已收到並通知櫃檯專人，"
-            "服務人員將會在 LINE 上儘速回覆您喔！\n"
-            "📞 手邊如有緊急狀況，歡迎直接致電櫃檯：+886-2-2775-8890。\n\n"
-            "💡 貼心提醒：AI 短期記憶僅保留最近 5–10 句對話；重要飲食或住宿偏好將為您安全註記於專屬檔案。\n"
-            f"🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆"
-        )
-        return fallback_msg, {
-            "event": "service_request",
-            "service_type": "轉接真人",
-            "details": user_message,
-            "handover_summary_3_sentences": f"旅客傳送訊息：「{user_message}」。因雲端模型暫時忙碌，系統已自動觸發專人轉接，請櫃檯人員協助回覆。",
-            "need_human": True,
-        }
-    else:
-        genai_legacy.configure(api_key=GEMINI_API_KEY)
-        model = genai_legacy.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=system_instruction,
-        )
-        response = model.generate_content(user_message)
-        if response and response.text:
-            return extract_and_strip_json(response.text)
-        return "抱歉，目前暫時無法回覆您的問題，請稍候再試。", None
+    # 若資料庫或 API 異常，自動回傳備用客氣語句，確保伺服器永不崩潰當機
+    fallback_msg = (
+        "🏨 系統維護中，將盡快為您解答！您的訊息我們已記錄並通知專人管家。\n"
+        "📞 手邊如有緊急狀況，歡迎直接致電櫃檯：+886-2-2775-8890。\n\n"
+        f"🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆"
+    )
+    return fallback_msg, {
+        "event": "service_request",
+        "service_type": "轉接真人",
+        "details": user_message,
+        "handover_summary_3_sentences": f"旅客傳送訊息：「{user_message}」。系統已自動觸發專人轉接，請管家協助回覆。",
+        "need_human": True,
+    }
 
 
 # =============================================================
-# 7. 專人轉接「3 句話問題摘要卡」推播 (含客人 LINE 名稱)
+# 7. 專人轉接「3 句話問題摘要卡」推播 (LINE 管理員 + LINE Notify 雙通道)
 # =============================================================
 def notify_admins_on_line(
     line_bot_api: MessagingApi,
@@ -580,16 +612,15 @@ def notify_admins_on_line(
     service_data: dict,
     guest_crm: dict,
 ):
-    """當觸發真人客服或重要預約時，發送包含客人名稱與『3句話問題摘要卡』的通知給管理員"""
     tid = tenant_cfg["tenant_id"]
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
+    notify_token = tenant_cfg.get("notify_token", "")
     service_type = service_data.get("service_type", "客戶服務")
     details = service_data.get("details", user_text)
     summary_card = service_data.get("handover_summary_3_sentences") or details
     guest_lang = service_data.get("guest_language", "繁體中文")
     need_human = service_data.get("need_human", False)
 
-    # 若僅為背景記憶更新且無需真人通知也非預約，則僅寫入 CRM 不打擾管理員
     if not need_human and service_type == "記憶更新":
         return
 
@@ -613,6 +644,11 @@ def notify_admins_on_line(
     )
     logger.info(f"[{tid}] [ADMIN ALERT]\n{alert_msg}")
 
+    # 通道 A：若有設定 LINE Notify Token，發送 LINE Notify 通報給店家手機
+    if notify_token:
+        send_line_notify(notify_token, "\n" + alert_msg)
+
+    # 通道 B：推播給已透過密碼綁定的 LINE 管理員
     for admin_id in list(tenant_cfg.get("admin_ids", set())):
         if not admin_id:
             continue
@@ -629,10 +665,9 @@ def notify_admins_on_line(
 
 
 # =============================================================
-# 8. 入住前/中/後全自動生命週期排程 (Check-in 前1小時推播密碼 / Check-out 後推播回購碼)
+# 8. 入住前/中/後全自動生命週期排程
 # =============================================================
 def send_pre_checkin_welcome(tenant_cfg: dict, user_id: str):
-    """Check-in 當天抵達前 1 小時：自動推播電子鎖密碼與停車指引"""
     _, fields = fetch_google_sheet_kb_with_safeguards(tenant_cfg)
     door_pin = fields.get("電子鎖密碼", tenant_cfg.get("door_pin", DEFAULT_DOOR_PIN))
     parking_info = fields.get("停車指引", FALLBACK_DEFAULTS["停車指引"])
@@ -659,7 +694,6 @@ def send_pre_checkin_welcome(tenant_cfg: dict, user_id: str):
 
 
 def send_post_checkout_care(tenant_cfg: dict, user_id: str):
-    """Check-out 退房後：自動推播滿意度調查與老客私域回購折扣碼"""
     _, fields = fetch_google_sheet_kb_with_safeguards(tenant_cfg)
     discount_code = fields.get("回購折扣碼", RETURN_DISCOUNT_CODE)
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
@@ -684,7 +718,6 @@ def send_post_checkout_care(tenant_cfg: dict, user_id: str):
 
 
 def check_and_run_lifecycle_tasks():
-    """檢查所有已登記預計抵達時間的房客，若距離抵達時間 <= 60 分鐘則自動推播電子鎖密碼"""
     now_tw = datetime.now(TW_TZ)
     with _memory_lock:
         all_profiles = list(_long_term_crm.values())
@@ -697,7 +730,6 @@ def check_and_run_lifecycle_tasks():
         if not uid or not arrival_str or already_sent:
             continue
 
-        # 解析 HH:MM 格式 (如 16:00)
         m = re.search(r"(\d{1,2}):(\d{2})", str(arrival_str))
         if not m:
             continue
@@ -705,9 +737,8 @@ def check_and_run_lifecycle_tasks():
             arr_hour, arr_min = int(m.group(1)), int(m.group(2))
             arrival_dt = now_tw.replace(hour=arr_hour, minute=arr_min, second=0, microsecond=0)
             diff_minutes = (arrival_dt - now_tw).total_seconds() / 60.0
-            # 當距離抵達時間介於 0 ~ 65 分鐘內，自動觸發推播
             if 0 <= diff_minutes <= 65:
-                tenant_cfg = TENANTS_REGISTRY.get(tid, TENANTS_REGISTRY["default"])
+                tenant_cfg = get_tenant_config(tid)
                 send_pre_checkin_welcome(tenant_cfg, uid)
                 logger.info(f"[{tid}] Auto-sent pre-checkin welcome & door PIN to {uid}")
         except Exception as e:
@@ -715,7 +746,6 @@ def check_and_run_lifecycle_tasks():
 
 
 def background_scheduler_loop():
-    """背景定時巡檢執行緒 (每 60 秒檢查一次入住前推播排程)"""
     while True:
         try:
             check_and_run_lifecycle_tasks()
@@ -728,12 +758,13 @@ threading.Thread(target=background_scheduler_loop, daemon=True).start()
 
 
 # =============================================================
-# 9. 核心訊息處理流程 (含管理員密碼保護指令)
+# 9. 核心訊息處理流程 (含動態預約連結、LINE Notify 轉接與雙層記憶)
 # =============================================================
 def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: str, user_id: str = None):
-    """在背景執行緒中處理單一租戶的客人訊息"""
     tid = tenant_cfg["tenant_id"]
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
+    booking_url = tenant_cfg.get("booking_url", "")
+    notify_token = tenant_cfg.get("notify_token", "")
     line_cfg = Configuration(access_token=tenant_cfg["channel_access_token"])
 
     try:
@@ -744,14 +775,13 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
             guest_name = fetch_line_guest_name(line_bot_api, tid, user_id)
 
             # ---------------------------------------------------------
-            # 資安防護：管理員綁定指令需驗證密碼 (/綁定管理員 <密碼>)
+            # 1. 資安防護：管理員綁定指令需驗證密碼 (/綁定管理員 <密碼>)
             # ---------------------------------------------------------
             if stripped.startswith("/綁定管理員") or stripped.startswith("綁定管理員"):
                 parts = stripped.split(maxsplit=1)
                 input_code = parts[1].strip() if len(parts) > 1 else ""
                 expected_code = tenant_cfg.get("admin_code", ADMIN_SECRET_CODE)
 
-                # 防暴力破解：單一帳號錯誤超過 5 次即鎖定
                 fail_count = _failed_admin_attempts.get(user_id, 0)
                 if fail_count >= 5:
                     logger.warning(f"[{tid}] Blocked brute-force admin bind attempt from {user_id}")
@@ -778,15 +808,13 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                         "🔒【管理員安全鎖保護中】\n"
                         "為防止未授權人員綁定，請輸入正確管理員通行碼：\n"
                         "格式：`/綁定管理員 您的管理員密碼`\n"
-                        "（預設密碼為 `lumina8890`，可於 Cloud Run 環境變數 `ADMIN_SECRET_CODE` 修改）"
+                        "（預設密碼為 `lumina8890`，可於環境變數 `ADMIN_SECRET_CODE` 修改）"
                     )
 
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(reply_token=reply_token, messages=[TextMessage(text=bind_reply)])
-                )
+                reply_to_line(tenant_cfg, reply_token, bind_reply, user_id)
                 return
 
-            # 管理員專用快捷測試指令 (僅限已認證管理員可觸發)
+            # 管理員專用快捷測試指令
             if user_id in tenant_cfg.get("admin_ids", set()):
                 if stripped == "/發送入住密碼":
                     send_pre_checkin_welcome(tenant_cfg, user_id)
@@ -796,16 +824,37 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                     return
 
             # ---------------------------------------------------------
-            # 一般房客對話流程 (雙層記憶 + Gemini 推論)
+            # 2. 結合 AI 推論、動態預約連結帶入與 LINE Notify 轉接通報
             # ---------------------------------------------------------
             logger.info(f"[{tid}] Guest '{guest_name}' ({user_id}): '{user_text[:40]}'")
             ai_reply, service_data = call_gemini_api(tenant_cfg, user_id, user_text)
 
-            # 寫入短期記憶 (維護前 10 句對話)
+            # 意圖判定 A：若顧客明確提及「轉接專人」或「真人客服」，確保強制觸發 LINE Notify 與管理員摘要卡
+            if "轉接專人" in stripped or "真人客服" in stripped:
+                if notify_token:
+                    send_line_notify(
+                        token=notify_token,
+                        message=f"\n🚨 [SmartHost 轉接提醒]\n顧客名稱：{guest_name}\n顧客訊息：{user_text}\n請撥空回覆！",
+                    )
+                if not service_data:
+                    service_data = {
+                        "event": "service_request",
+                        "service_type": "轉接真人",
+                        "details": user_text,
+                        "handover_summary_3_sentences": f"旅客 {guest_name} 主動要求轉接專人客服，原話為：「{user_text}」，請管家第一時間聯繫旅客。",
+                        "need_human": True,
+                    }
+
+            # 意圖判定 B：若顧客詢問「預約 / 報名 / 訂房」且店家設有 booking_url，自動帶入專屬預約連結
+            if booking_url and any(kw in stripped for kw in ["預約", "報名", "訂房"]):
+                if booking_url not in ai_reply:
+                    ai_reply = f"🔗 您可以直接點擊以下專屬連結進行預約喔：\n{booking_url}\n\n{ai_reply}"
+
+            # 寫入短期記憶 (維護前 5–10 句對話)
             append_short_term_history(tid, user_id, "user", user_text)
             append_short_term_history(tid, user_id, "assistant", ai_reply)
 
-            # 若 AI 萃取到長期記憶更新 (如花生過敏、預計抵達時間、住宿體驗)，立即寫入 CRM 與雲端總表
+            # 更新長期記憶 (CRM Profile)
             updated_crm = get_guest_crm_profile(tid, user_id)
             if service_data and isinstance(service_data.get("crm_updates"), dict):
                 crm_upd = service_data["crm_updates"]
@@ -813,29 +862,12 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                 if clean_upd:
                     updated_crm = update_guest_crm_profile(tid, user_id, clean_upd)
                     logger.info(f"[{tid}] Updated CRM profile for {guest_name}: {clean_upd}")
-                    # 檢查是否需要立即執行入住前推播
                     executor.submit(check_and_run_lifecycle_tasks)
 
-            # 回覆給 LINE 房客 (已徹底清除 JSON)
-            try:
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=reply_token,
-                        messages=[TextMessage(text=ai_reply)],
-                    )
-                )
-                logger.info(f"[{tid}] Replied to guest '{guest_name}' via reply_token.")
-            except Exception as reply_err:
-                logger.warning(f"[{tid}] reply_token expired ({reply_err}), using push_message fallback...")
-                if user_id:
-                    line_bot_api.push_message(
-                        PushMessageRequest(
-                            to=user_id,
-                            messages=[TextMessage(text=ai_reply)],
-                        )
-                    )
+            # 回傳訊息給 LINE 顧客
+            reply_to_line(tenant_cfg, reply_token, ai_reply, user_id)
 
-            # 若有轉接真人或預約服務，發送包含客人名稱與「3句話問題摘要卡」給管理員
+            # 發送管理員專人通知與 LINE Notify
             if service_data:
                 notify_admins_on_line(
                     line_bot_api,
@@ -849,28 +881,144 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
 
     except Exception as e:
         logger.error(f"[{tid}] Error in process_user_message_async: {e}", exc_info=True)
+        try:
+            reply_to_line(
+                tenant_cfg,
+                reply_token,
+                f"系統維護中，將盡快為您解答！\n🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆",
+                user_id,
+            )
+        except Exception:
+            pass
 
 
 # =============================================================
-# 10. 多租戶 Webhook 路由與健康檢查 API
+# 10. 自助開通 API、多租戶 Webhook 與前端靜態路由
 # =============================================================
 @app.route("/", methods=["GET"])
 def health_check():
-    """健康檢查接口"""
+    """健康檢查接口（支援 ?view=site 瀏覽品牌首頁）"""
+    if request.args.get("view") == "site":
+        return send_from_directory(TEMPLATE_DIR, "index.html")
     return "LINE Bot Service is Healthy!", 200
+
+
+@app.route("/index.html", methods=["GET"])
+@app.route("/site", methods=["GET"])
+def serve_brand_home():
+    """SmartHost B2B 品牌首頁"""
+    return send_from_directory(TEMPLATE_DIR, "index.html")
+
+
+@app.route("/onboarding.html", methods=["GET"])
+@app.route("/onboarding", methods=["GET"])
+def serve_onboarding_page():
+    """SmartHost 金流完成與自助開通導引頁"""
+    return send_from_directory(TEMPLATE_DIR, "onboarding.html")
+
+
+@app.route("/api/register_tenant", methods=["POST"])
+def api_register_tenant():
+    """
+    接收來自前端 onboarding.html / Make / Google 表單傳入的 JSON：
+    (`tenant_id`, `email`, `channel_access_token`, `channel_secret`, `client_name`, `booking_url`, `notify_token`, `sheet_csv_url`)
+    並向 LINE 官方 https://api.line.me/v2/bot/info 驗證 Token 是否有效。
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        tenant_id = re.sub(r"[^a-zA-Z0-9_-]", "", str(data.get("tenant_id", "")).strip().lower())
+        email = str(data.get("email", "")).strip()
+        channel_access_token = str(data.get("channel_access_token", "")).strip()
+        channel_secret = str(data.get("channel_secret", "")).strip()
+        client_name = str(data.get("client_name", "")).strip() or tenant_id
+        booking_url = str(data.get("booking_url", "")).strip()
+        notify_token = str(data.get("notify_token", "")).strip()
+        sheet_csv_url = str(data.get("sheet_csv_url", "")).strip()
+
+        if not tenant_id or not channel_access_token or not channel_secret:
+            return jsonify({"status": "error", "message": "缺少必要欄位 (tenant_id, channel_secret 或 channel_access_token)"}), 400
+
+        # 發送測試請求至 LINE 官方 API 驗證 Token 是否有效
+        verify_resp = requests.get(
+            "https://api.line.me/v2/bot/info",
+            headers={"Authorization": f"Bearer {channel_access_token}"},
+            timeout=6,
+        )
+
+        base_url = request.host_url.rstrip("/").replace("http://", "https://")
+
+        if verify_resp.status_code == 200:
+            bot_info = verify_resp.json()
+            resolved_name = client_name or bot_info.get("displayName", tenant_id)
+            with _tenants_lock:
+                TENANTS_REGISTRY[tenant_id] = {
+                    "tenant_id": tenant_id,
+                    "client_name": resolved_name,
+                    "email": email,
+                    "status": "Active",
+                    "channel_secret": channel_secret,
+                    "channel_access_token": channel_access_token,
+                    "booking_url": booking_url,
+                    "notify_token": notify_token,
+                    "sheet_csv_url": sheet_csv_url,
+                    "kb_url": "",
+                    "admin_code": ADMIN_SECRET_CODE,
+                    "admin_ids": set(),
+                    "door_pin": DEFAULT_DOOR_PIN,
+                }
+
+            webhook_url = f"{base_url}/webhook/{tenant_id}"
+            # 非同步寫入 Notion / Make 資料庫 (狀態 Active)
+            executor.submit(
+                sync_crm_to_cloud_tables,
+                {
+                    "display_name": f"[TENANT_ACTIVE] {resolved_name}",
+                    "user_id": tenant_id,
+                    "tenant_id": tenant_id,
+                    "preferences": [f"email:{email}", f"webhook:{webhook_url}"],
+                    "updated_at": datetime.now(TW_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            )
+            logger.info(f"Tenant '{tenant_id}' ({resolved_name}) registered successfully! Webhook: {webhook_url}")
+            return jsonify({
+                "status": "success",
+                "tenant_id": tenant_id,
+                "bot_name": bot_info.get("displayName", resolved_name),
+                "webhook_url": webhook_url,
+            }), 200
+        else:
+            # 狀態設為 Invalid_Token，並觸發 Make 發送修復 Email
+            if CRM_WEBHOOK_URL:
+                executor.submit(
+                    requests.post,
+                    CRM_WEBHOOK_URL,
+                    json={
+                        "type": "tenant_invalid_token",
+                        "tenant_id": tenant_id,
+                        "email": email,
+                        "status": "Invalid_Token",
+                    },
+                    timeout=5,
+                )
+            logger.warning(f"Tenant '{tenant_id}' registration failed: Invalid LINE Token (HTTP {verify_resp.status_code})")
+            return jsonify({"status": "error", "message": "LINE Token 無效"}), 400
+
+    except Exception as e:
+        logger.error(f"Error in /api/register_tenant: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": "伺服器驗證異常，請稍後再試"}), 500
 
 
 @app.route("/callback", methods=["POST"])
 @app.route("/callback/<tenant_id>", methods=["POST"])
+@app.route("/webhook/<tenant_id>", methods=["POST"])
 def line_webhook_callback(tenant_id: str = "default"):
     """
-    支援單一伺服器連接多個客戶官方 LINE：
-    - 預設客戶 Webhook URL: https://.../callback
-    - 其他客戶 Webhook URL: https://.../callback/客戶代號 (如 /callback/villa_a)
+    多租戶通用 LINE Webhook Endpoint：
+    同時支援 `/webhook/<tenant_id>`、`/callback/<tenant_id>` 與預設 `/callback`
     """
-    tenant_cfg = TENANTS_REGISTRY.get(tenant_id)
+    tenant_cfg = get_tenant_config(tenant_id)
     if not tenant_cfg or not tenant_cfg.get("channel_secret"):
-        logger.warning(f"Unknown or unconfigured tenant_id: {tenant_id}")
+        logger.warning(f"Unconfigured tenant_id: {tenant_id}")
         abort(404)
 
     signature = request.headers.get("X-Line-Signature", "")
@@ -879,7 +1027,6 @@ def line_webhook_callback(tenant_id: str = "default"):
     if not signature:
         abort(400)
 
-    # 針對該租戶獨立驗證 X-Line-Signature，確保跨租戶絕對安全
     dynamic_handler = WebhookHandler(tenant_cfg["channel_secret"])
 
     @dynamic_handler.add(MessageEvent, message=TextMessageContent)
@@ -896,7 +1043,7 @@ def line_webhook_callback(tenant_id: str = "default"):
         abort(400)
     except Exception as e:
         logger.error(f"[{tenant_id}] Webhook error: {e}", exc_info=True)
-        return "Internal Server Error", 500
+        return "OK", 200  # 容錯保護：確保 LINE 伺服器不會因單次異常重複重試
 
     return "OK", 200
 
@@ -913,5 +1060,5 @@ def trigger_lifecycle_cron():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
-    logger.info(f"Starting Multi-Tenant LINE AI Concierge on port {port}...")
+    logger.info(f"Starting SmartHost 24H Multi-Tenant Server on port {port}...")
     app.run(host="0.0.0.0", port=port, debug=False)

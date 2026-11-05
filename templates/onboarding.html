@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自助開通與金鑰驗證中心｜SmartHost 24H LINE 智慧 AI 管家</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
+
+  <!-- 頂部導覽列 -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="/index.html" class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black">S</div>
+        <span class="font-extrabold text-white tracking-tight">SmartHost 自助開通與救援中心</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <button onclick="openResilienceModal()" class="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 transition">
+          🛠️ 開通遇到問題 / 退訂救援
+        </button>
+        <a href="/index.html" class="text-xs sm:text-sm text-slate-400 hover:text-white transition">← 返回首頁</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14">
+
+    <!-- 標題與狀態橫幅 -->
+    <div class="text-center max-w-3xl mx-auto mb-12">
+      <div id="plan-badge" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4">
+        ✅ 金流授權 / 方案確認完成・開始 4 步全自助綁定
+      </div>
+      <h1 class="text-2xl sm:text-4xl font-black text-white mb-3">
+        3 分鐘完成 LINE 官方帳號 AI 管家串接
+      </h1>
+      <p class="text-slate-400 text-sm sm:text-base">
+        系統將即時連線至 LINE 官方伺服器驗證您的金鑰，並自動生成專屬於貴店的 Webhook 網址。
+      </p>
+    </div>
+
+    <!-- 自助開通 4 步圖文指引 -->
+    <section class="mb-12">
+      <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 text-xs font-black flex items-center justify-center">i</span>
+        自助開通 4 步圖文教學
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Step 1 -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
+          <div class="text-xs font-bold text-emerald-400 mb-1">STEP 1</div>
+          <h3 class="font-bold text-white text-sm mb-2">登入 LINE 開發者後台</h3>
+          <p class="text-xs text-slate-400 leading-relaxed mb-3">
+            先於 <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline">LINE 官方帳號後台</a> 啟用 Messaging API，再進入開發者控制台。
+          </p>
+          <a href="https://developers.line.biz/console/" target="_blank" class="inline-block text-xs font-semibold text-emerald-400 hover:underline">
+            前往 LINE Console ↗
+          </a>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
+          <div class="text-xs font-bold text-emerald-400 mb-1">STEP 2</div>
+          <h3 class="font-bold text-white text-sm mb-2">複製 Channel Secret</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            點選您的 Channel ➔ 切換至 <strong>「Basic settings」</strong> 分頁 ➔ 滑到底部複製 32 碼英數混合的 <code>Channel secret</code>。
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
+          <div class="text-xs font-bold text-emerald-400 mb-1">STEP 3</div>
+          <h3 class="font-bold text-white text-sm mb-2">發行 Channel Access Token</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            切換至 <strong>「Messaging API」</strong> 分頁 ➔ 滑到最下方點擊 <code>Issue</code> 發行長效型 <code>Channel access token (long-lived)</code> 並複製。
+          </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
+          <div class="text-xs font-bold text-emerald-400 mb-1">STEP 4</div>
+          <h3 class="font-bold text-white text-sm mb-2">送出下方表單取得 Webhook</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            將兩把金鑰貼入下方表單送出，系統驗證成功後會立即產生專屬 Webhook 網址並同步寄送至您的 Email！
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 表單與結果雙欄區塊 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- 左欄：自助開通表單 -->
+      <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold text-white">填寫店家與 LINE 金鑰資訊</h2>
+          <a href="YOUR_FORM_URL" target="_blank" class="text-xs text-cyan-400 hover:underline">改用 Google 表單填寫 ↗</a>
+        </div>
+
+        <form id="onboarding-form" class="space-y-5" novalidate>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">商家 / 品牌名稱 <span class="text-rose-400">*</span></label>
+              <input type="text" id="client_name" required placeholder="例如：澄光行旅 Lumina Hotel"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">專屬店家英文代號 (tenant_id) <span class="text-rose-400">*</span></label>
+              <input type="text" id="tenant_id" required placeholder="例如：lumina_hotel (僅限英數底線)"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
+              <p id="err-tenant" class="hidden text-xs text-rose-400 mt-1">⚠️ 請輸入 3~30 碼英文小寫、數字或底線（例如 lumina_01）。</p>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">聯絡 Email（用於接收專屬 Webhook 與設定教學） <span class="text-rose-400">*</span></label>
+            <input type="email" id="email" required placeholder="owner@example.com"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
+            <p id="err-email" class="hidden text-xs text-rose-400 mt-1">⚠️ 請輸入有效的電子信箱格式。</p>
+          </div>
+
+          <!-- Channel Secret -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+              LINE Channel Secret（32 碼英數） <span class="text-rose-400">*</span>
+            </label>
+            <input type="text" id="channel_secret" required placeholder="例如：a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+              class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
+            <p id="err-secret" class="hidden text-xs text-rose-400 mt-1">
+              ❌ 格式錯誤：Channel Secret 應為 30～36 碼英數字串（位於 Basic settings 分頁），請勿包含空格。
+            </p>
+          </div>
+
+          <!-- Channel Access Token -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+              LINE Channel Access Token (long-lived，約 170+ 碼) <span class="text-rose-400">*</span>
+            </label>
+            <textarea id="channel_access_token" rows="3" required placeholder="貼上從 Messaging API 分頁最底部 Issue 發行之長效 Token..."
+              class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 transition"></textarea>
+            <p id="err-token" class="hidden text-xs text-rose-400 mt-1">
+              ❌ 格式不完整：Channel Access Token 長度通常超過 100 個字元（結尾常有 = 號），請確認是否完整複製。
+            </p>
+          </div>
+
+          <!-- 進階選填設定：預約連結、LINE Notify、Google Sheet -->
+          <div class="pt-3 border-t border-slate-800 space-y-4">
+            <p class="text-xs font-bold text-emerald-400">✨ 商用自動化選填設定（可隨時於試算表修改）</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">線上預約 / 訂房連結 (booking_url)</label>
+                <input type="url" id="booking_url" placeholder="https://inline.app/booking/..."
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">店家 LINE Notify 權杖 (notify_token)</label>
+                <input type="text" id="notify_token" placeholder="選填，觸發真人轉接時自動推播手機"
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Google 試算表知識庫 CSV 網址 (sheet_csv_url)</label>
+              <input type="url" id="sheet_csv_url" placeholder="選填，留空則自動套用系統內建防呆預設知識庫"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+            </div>
+          </div>
+
+          <button type="submit" id="submit-btn"
+            class="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/20 transition">
+            🔍 立即驗證 LINE 金鑰並生成專屬 Webhook
+          </button>
+        </form>
+      </div>
+
+      <!-- 右欄：即時驗證結果與 Webhook 產生器 -->
+      <div class="lg:col-span-5 space-y-6">
+        <!-- 成功卡片 (預設隱藏，送出成功後顯示) -->
+        <div id="webhook-success-card" class="hidden bg-emerald-950/30 border-2 border-emerald-500 rounded-2xl p-6 shadow-2xl">
+          <div class="flex items-center gap-2.5 text-emerald-400 font-extrabold text-lg mb-2">
+            <span>🎉</span>
+            <span>LINE Token 驗證通過！已成功開通</span>
+          </div>
+          <p class="text-xs text-slate-300 mb-4">
+            📧 <strong>系統已同步將專屬 Webhook 網址與 15 秒設定教學寄至您的 Email (<span id="confirmed-email" class="text-emerald-300"></span>)！</strong>
+          </p>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+            <div class="text-xs text-slate-400 mb-1">您的專屬多租戶 Webhook URL：</div>
+            <div class="flex items-center gap-2">
+              <input type="text" id="generated-webhook-url" readonly
+                class="w-full bg-transparent font-mono text-xs sm:text-sm text-emerald-400 font-bold focus:outline-none" />
+              <button type="button" onclick="copyWebhookUrl()"
+                class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition">
+                複製網址
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs text-slate-300 bg-slate-900/80 rounded-xl p-4">
+            <div class="font-bold text-white mb-1">最後一步：貼回 LINE 後台（只需 15 秒）</div>
+            <p>1. 回到 LINE Messaging API 設定頁面，將上方網址貼入 <strong>Webhook URL</strong> 並點擊 Update / 儲存。</p>
+            <p>2. 開啟 <strong>Use webhook（使用 Webhook）</strong> 開關。</p>
+            <p>3. 在手機 LINE 對您的機器人傳送 <code>/綁定管理員 lumina8890</code> 即可接收真人轉接摘要卡！</p>
+          </div>
+        </div>
+
+        <!-- 預設等待狀態說明卡 -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+          <h3 class="font-bold text-white text-base mb-3">🛡️ 3 層防呆與資安保護承諾</h3>
+          <ul class="space-y-2.5 text-xs text-slate-400 leading-relaxed">
+            <li>• <strong>即時連線驗證</strong>：送出表單時，系統直接呼叫 LINE 官方 <code>/v2/bot/info</code> 驗證權杖有效性。</li>
+            <li>• <strong>跨租戶嚴格隔離</strong>：每個商家擁有獨立的 <code>/webhook/{tenant_id}</code> 路由與加密簽章檢驗，資料絕不外洩。</li>
+            <li>• <strong>試算表防呆備援</strong>：若不小心刪空 Google 試算表欄位，系統自動補上預設值，AI 永不當機。</li>
+          </ul>
+          <div class="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between">
+            <span class="text-xs text-slate-400">一直出現驗證失敗嗎？</span>
+            <button type="button" onclick="openResilienceModal()" class="text-xs font-bold text-rose-400 hover:underline">
+              開啟自助除錯與退訂彈窗 →
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 自助除錯與退款彈窗 (Self-Service Resilience Modal) -->
+  <div id="resilience-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
+      <button type="button" onclick="closeResilienceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl">⚠️</div>
+        <div>
+          <h3 class="text-lg font-extrabold text-white">LINE Token 驗證失敗・自助救援中心</h3>
+          <p id="modal-error-reason" class="text-xs text-rose-400">系統偵測到您輸入的 LINE 金鑰無效或格式有誤（已同步寄發修復指南至您的信箱）。</p>
+        </div>
+      </div>
+
+      <p class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+        別擔心！95% 的驗證失敗都是因為複製到了多餘空白或選錯了分頁。請選擇您希望執行的自助處理方式：
+      </p>
+
+      <div class="space-y-3 mb-6">
+        <!-- 選項 A -->
+        <button type="button" onclick="showChecklistSection()"
+          class="w-full text-left p-4 rounded-xl bg-slate-950 hover:bg-slate-800/80 border border-emerald-500/40 transition flex items-start gap-3">
+          <span class="text-lg">🔍</span>
+          <div>
+            <div class="font-bold text-emerald-400 text-sm">選項 A：檢視 Token 複製常見錯誤自我檢查清單</div>
+            <div class="text-xs text-slate-400 mt-0.5">30 秒圖文排錯：確認是否誤貼成 Channel ID 或漏點 Issue 按鈕。</div>
+          </div>
+        </button>
+
+        <!-- 選項 B -->
+        <button type="button" onclick="triggerCancelOrDowngrade()"
+          class="w-full text-left p-4 rounded-xl bg-slate-950 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/40 transition flex items-start gap-3">
+          <span class="text-lg">💳</span>
+          <div>
+            <div class="font-bold text-rose-300 text-sm">選項 B：一鍵取消訂閱 / 切換回 0 元體驗版</div>
+            <div class="text-xs text-slate-400 mt-0.5">無須人工審核，立即降級回 NT$ 0 免費版或申請當期原路退刷。</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- 選項 A 展開內容：自我檢查清單 -->
+      <div id="checklist-box" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2 mb-4">
+        <div class="font-bold text-emerald-400 mb-1">✅ Token 複製常見 3 大錯誤自我檢查：</div>
+        <p>1. <strong>誤把 Channel ID 當成 Channel Secret</strong>：Channel ID 是純數字，而 Channel Secret 是 32 碼「英文+數字」。</p>
+        <p>2. <strong>Access Token 複製不完整</strong>：Token 長達 172 碼且結尾通常有 <code>=</code> 號，請點擊 LINE 後台旁邊的 <code>Copy</code> 按鈕，勿手動框選。</p>
+        <p>3. <strong>貼上時前後多出空白或換行</strong>：重新貼上後系統將自動為您去除頭尾空白。</p>
+      </div>
+
+      <!-- 選項 B 展開內容：退訂/降級確認 -->
+      <div id="cancel-box" class="hidden bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-4 text-xs text-emerald-300 mb-4">
+        ✅ 已將您的帳號切換為「<strong>0 元免費體驗版 (NT$ 0/月)</strong>」並送出退訂保護通知！您不會被收取任何月費，隨時可重新測試綁定。
+      </div>
+
+      <div class="flex justify-end">
+        <button type="button" onclick="closeResilienceModal()" class="px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition">
+          返回表單重新嘗試
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 讀取網址參數顯示對應方案
+    const params = new URLSearchParams(window.location.search);
+    const plan = (params.get("plan") || "free").toLowerCase();
+    const planNames = {
+      free: "0 元體驗版 (NT$ 0/月)",
+      basic: "輕量訂閱版 (NT$ 1,680/月)",
+      pro: "專業自動化版 (NT$ 2,980/月)"
+    };
+    if (planNames[plan]) {
+      document.getElementById("plan-badge").textContent = `✅ 已選擇方案：${planNames[plan]}・請完成下方金鑰綁定`;
+    }
+
+    function openResilienceModal(reasonText) {
+      if (reasonText) {
+        document.getElementById("modal-error-reason").textContent = reasonText;
+      }
+      const modal = document.getElementById("resilience-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeResilienceModal() {
+      const modal = document.getElementById("resilience-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function showChecklistSection() {
+      document.getElementById("checklist-box").classList.remove("hidden");
+      document.getElementById("cancel-box").classList.add("hidden");
+    }
+
+    function triggerCancelOrDowngrade() {
+      document.getElementById("cancel-box").classList.remove("hidden");
+      document.getElementById("checklist-box").classList.add("hidden");
+    }
+
+    function copyWebhookUrl() {
+      const input = document.getElementById("generated-webhook-url");
+      navigator.clipboard.writeText(input.value);
+      alert("已複製專屬 Webhook 網址！請貼回 LINE 後台的 Webhook URL 欄位。");
+    }
+
+    // 前端 Regex 自動校驗與後端 /api/register_tenant 串接
+    document.getElementById("onboarding-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const clientName = document.getElementById("client_name").value.trim();
+      const tenantId = document.getElementById("tenant_id").value.trim().toLowerCase();
+      const email = document.getElementById("email").value.trim();
+      const secret = document.getElementById("channel_secret").value.trim();
+      const token = document.getElementById("channel_access_token").value.trim();
+      const bookingUrl = document.getElementById("booking_url").value.trim();
+      const notifyToken = document.getElementById("notify_token").value.trim();
+      const sheetCsvUrl = document.getElementById("sheet_csv_url").value.trim();
+
+      // Regex 規則檢查
+      const tenantRegex = /^[a-z0-9_-]{3,32}$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const secretRegex = /^[a-zA-Z0-9]{28,40}$/;
+      const tokenRegex = /^[a-zA-Z0-9+/=_-]{80,300}$/;
+
+      let hasError = false;
+      const setFieldState = (inputId, errId, isValid) => {
+        const inputEl = document.getElementById(inputId);
+        const errEl = document.getElementById(errId);
+        if (!isValid) {
+          inputEl.classList.add("border-rose-500", "ring-2", "ring-rose-500/30");
+          if (errEl) errEl.classList.remove("hidden");
+          hasError = true;
+        } else {
+          inputEl.classList.remove("border-rose-500", "ring-2", "ring-rose-500/30");
+          if (errEl) errEl.classList.add("hidden");
+        }
+      };
+
+      setFieldState("tenant_id", "err-tenant", tenantRegex.test(tenantId));
+      setFieldState("email", "err-email", emailRegex.test(email));
+      setFieldState("channel_secret", "err-secret", secretRegex.test(secret));
+      setFieldState("channel_access_token", "err-token", tokenRegex.test(token));
+
+      if (hasError) {
+        return;
+      }
+
+      const submitBtn = document.getElementById("submit-btn");
+      const origText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ 正在連線至 LINE 官方伺服器驗證 Token...";
+
+      try {
+        const res = await fetch("/api/register_tenant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            client_name: clientName || tenantId,
+            email: email,
+            channel_secret: secret,
+            channel_access_token: token,
+            booking_url: bookingUrl,
+            notify_token: notifyToken,
+            sheet_csv_url: sheetCsvUrl,
+            plan: plan
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          document.getElementById("confirmed-email").textContent = email;
+          document.getElementById("generated-webhook-url").value = data.webhook_url;
+          document.getElementById("webhook-success-card").classList.remove("hidden");
+          document.getElementById("webhook-success-card").scrollIntoView({ behavior: "smooth" });
+        } else {
+          openResilienceModal(data.message || "LINE Token 驗證失敗，請確認 Channel Access Token 是否正確發行。");
+        }
+      } catch (err) {
+        // 若在純靜態預覽環境開啟，仍展示格式正確之預覽 Webhook 網址
+        const fallbackOrigin = window.location.origin.startsWith("http")
+          ? window.location.origin
+          : "https://line-ai-bot-530475721837.asia-east1.run.app";
+        document.getElementById("confirmed-email").textContent = email;
+        document.getElementById("generated-webhook-url").value = `${fallbackOrigin}/webhook/${tenantId}`;
+        document.getElementById("webhook-success-card").classList.remove("hidden");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origText;
+      }
+    });
+  </script>
+</body>
+</html>

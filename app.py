@@ -6,6 +6,7 @@ import io
 import hmac
 import json
 import time
+import secrets
 import logging
 import threading
 from datetime import datetime, timedelta, timezone
@@ -838,62 +839,82 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
 
             # ---------------------------------------------------------
             # 0. 查詢個人 LINE User ID 快捷指令 (/我的ID)
+            # （僅回傳使用者自身的公開 User ID，絕不透露任何管理員指令或密碼！）
             # ---------------------------------------------------------
             if stripped in ["/我的ID", "我的ID", "/id", "/userid"]:
                 id_reply = (
                     f"🪪 您的 LINE 顯示名稱：{guest_name}\n"
-                    f"🔑 您的 LINE User ID：\n{user_id}\n\n"
-                    f"💡 若您是店家管理員，可直接輸入：\n"
-                    f"`/綁定管理員 {tenant_cfg.get('admin_code', ADMIN_SECRET_CODE)}`\n"
-                    f"即可透過 LINE Messaging API 接收真人客服轉接與 3 秒問題摘要卡推播！"
+                    f"🔑 您的 LINE User ID：\n{user_id}"
                 )
                 reply_to_line(tenant_cfg, reply_token, id_reply, user_id)
                 return
 
             # ---------------------------------------------------------
-            # 1. 資安防護：管理員綁定指令需驗證密碼 (/綁定管理員 <密碼>)
+            # 1. 銀行級資安防護：一次性管理員綁定與單一店長自動上鎖機制
+            #    - 綁定成功 1 次後即自動永久上鎖 (admin_bind_locked = True)
+            #    - 若密碼錯誤或已上鎖，採「隱形模式 (Stealth Mode)」不透露任何密碼或指令提示
             # ---------------------------------------------------------
             if stripped.startswith("/綁定管理員") or stripped.startswith("綁定管理員"):
                 parts = stripped.split(maxsplit=1)
                 input_code = parts[1].strip() if len(parts) > 1 else ""
                 expected_code = tenant_cfg.get("admin_code", ADMIN_SECRET_CODE)
+                one_time_code = tenant_cfg.get("one_time_bind_code", "")
 
+                # 防暴力破解：超過 3 次失敗即永久封鎖該 user_id 嘗試
                 fail_count = _failed_admin_attempts.get(user_id, 0)
-                if fail_count >= 5:
+                if fail_count >= 3:
                     logger.warning(f"[{tid}] Blocked brute-force admin bind attempt from {user_id}")
                     return
 
-                if input_code and hmac.compare_digest(input_code, expected_code):
+                # 檢查是否已上鎖（若已有綁定管理員，除非使用現任管理員簽發的一次性授權碼，否則禁止新綁定）
+                already_has_admin = len(tenant_cfg.get("admin_ids", set())) > 0 or tenant_cfg.get("admin_bind_locked", False)
+
+                matched_one_time = bool(one_time_code and input_code and hmac.compare_digest(input_code, one_time_code))
+                matched_initial = bool(not already_has_admin and input_code and expected_code and hmac.compare_digest(input_code, expected_code))
+
+                if matched_one_time or matched_initial:
                     if user_id:
                         tenant_cfg["admin_ids"].add(user_id)
                         tenant_cfg["admin_user_id"] = user_id
+                        tenant_cfg["admin_bind_locked"] = True  # 綁定成功後立即自動上鎖！
+                        tenant_cfg["one_time_bind_code"] = ""   # 立即銷毀一次性綁定碼！
                         bind_reply = (
-                            f"✅【管理員安全認證成功｜Messaging API 推播已啟用】\n"
+                            f"✅【管理員安全認證成功｜已啟動單一管理員防盜鎖】\n"
                             f"👤 管理員：{guest_name}\n"
-                            f"🏢 綁定品牌：{client_name}\n"
-                            f"🔑 您的 LINE User ID：\n{user_id}\n\n"
-                            f"📲 專人轉接通知已透過官方 LINE Messaging API 綁定至此帳號（完全不需使用已停服的 LINE Notify）。\n"
-                            f"🛡️ 資安保護已啟用：未持有管理員密碼之房客無法綁定。\n"
-                            f"💡 實用管理員指令：\n"
+                            f"🏢 綁定品牌：{client_name}\n\n"
+                            f"🔒【最高資安保護已生效】：\n"
+                            f"本綁定通道已自動上鎖並銷毀一次性金鑰，任何外部人員或房客皆無法再綁定或索取通行碼。\n\n"
+                            f"💡 專屬管理員指令（僅您的帳號可用）：\n"
+                            f"• 輸入「/產生綁定碼」可生成 1 次性授權碼供新同事綁定\n"
                             f"• 輸入「/發送入住密碼」可測試入住前1小時自動推播\n"
                             f"• 輸入「/發送退房關懷」可測試退房後回購折扣碼推播"
                         )
-                    else:
-                        bind_reply = "⚠️ 無法取得您的 User ID。"
+                        reply_to_line(tenant_cfg, reply_token, bind_reply, user_id)
+                        return
                 else:
+                    # 驗證失敗或已上鎖：記錄失敗次數，並採「隱形模式」不回傳任何密碼規則提示，直接交由下方一般客服處理或靜默忽略
                     _failed_admin_attempts[user_id] = fail_count + 1
-                    bind_reply = (
-                        "🔒【管理員安全鎖保護中】\n"
-                        "為防止未授權人員綁定，請輸入正確管理員通行碼：\n"
-                        "格式：`/綁定管理員 您的管理員密碼`\n"
-                        "（預設密碼為 `lumina8890`，可於環境變數 `ADMIN_SECRET_CODE` 修改）"
+                    logger.warning(f"[{tid}] Unauthorized or locked admin bind attempt by {guest_name} ({user_id}).")
+                    reply_to_line(
+                        tenant_cfg,
+                        reply_token,
+                        f"您好！請問有什麼關於「{client_name}」的住宿或預約問題需要管家為您服務嗎？😊\n🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆",
+                        user_id,
                     )
+                    return
 
-                reply_to_line(tenant_cfg, reply_token, bind_reply, user_id)
-                return
-
-            # 管理員專用快捷測試指令
+            # 已綁定管理員專用快捷指令（嚴格檢驗 user_id 是否在 admin_ids 內）
             if user_id in tenant_cfg.get("admin_ids", set()):
+                if stripped == "/產生綁定碼":
+                    new_otc = secrets.token_urlsafe(8)
+                    tenant_cfg["one_time_bind_code"] = new_otc
+                    otc_reply = (
+                        f"🔑【一次性管理員新增授權碼】\n"
+                        f"請將以下指令私下傳給需要接收通知的櫃檯同事（僅限使用 1 次，綁定後立即失效）：\n\n"
+                        f"`/綁定管理員 {new_otc}`"
+                    )
+                    reply_to_line(tenant_cfg, reply_token, otc_reply, user_id)
+                    return
                 if stripped == "/發送入住密碼":
                     send_pre_checkin_welcome(tenant_cfg, user_id)
                     return
@@ -1029,6 +1050,8 @@ def api_register_tenant():
             bot_info = verify_resp.json()
             resolved_name = client_name or bot_info.get("displayName", tenant_id)
             initial_admins = {admin_user_id} if admin_user_id else set()
+            # 為該店家自動生成專屬一次性高強度亂數綁定碼 (綁定1次後即自動失效並上鎖)
+            unique_one_time_code = secrets.token_urlsafe(8)
             with _tenants_lock:
                 TENANTS_REGISTRY[tenant_id] = {
                     "tenant_id": tenant_id,
@@ -1044,7 +1067,9 @@ def api_register_tenant():
                     "admin_user_id": admin_user_id,
                     "sheet_csv_url": sheet_csv_url,
                     "kb_url": "",
-                    "admin_code": ADMIN_SECRET_CODE,
+                    "admin_code": unique_one_time_code,
+                    "one_time_bind_code": unique_one_time_code,
+                    "admin_bind_locked": bool(admin_user_id),
                     "admin_ids": initial_admins,
                     "door_pin": DEFAULT_DOOR_PIN,
                 }
@@ -1077,6 +1102,7 @@ def api_register_tenant():
                 "tenant_id": tenant_id,
                 "bot_name": bot_info.get("displayName", resolved_name),
                 "webhook_url": webhook_url,
+                "one_time_bind_code": unique_one_time_code,
             }), 200
         else:
             # 狀態設為 Invalid_Token，並觸發 Make 發送修復 Email

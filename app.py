@@ -296,11 +296,14 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
             except Exception as e:
                 logger.warning(f"[{tid}] Google Sheet live fetch error ({e}), using Fallback Defaults.")
 
-    # 若試算表中有填寫「管理員LINE_ID」或「admin_user_id」，自動加入該租戶的管理員推播名單
+    # 若試算表中有填寫「管理員LINE_ID」或「admin_user_id」，支援填入多位管理員（以逗號、分號或空白分隔），自動同步為最新管理員推播名單
     for admin_key in ["管理員LINE_ID", "admin_user_id", "店長LINE_ID"]:
-        sheet_admin_id = merged_fields.get(admin_key, "").strip()
-        if sheet_admin_id and sheet_admin_id.startswith("U"):
-            tenant_cfg.setdefault("admin_ids", set()).add(sheet_admin_id)
+        raw_admin_val = merged_fields.get(admin_key, "").strip()
+        if raw_admin_val:
+            for token_part in re.split(r"[,;，；\s\n]+", raw_admin_val):
+                clean_id = token_part.strip()
+                if clean_id.startswith("U") and len(clean_id) >= 20:
+                    tenant_cfg.setdefault("admin_ids", set()).add(clean_id)
 
     custom_raw_kb = os.getenv("CLIENT_KNOWLEDGE_BASE", "").strip()
     kb_lines = ["---【即時動態知識庫 (含 3 層防呆備援保護)】---"]
@@ -896,118 +899,28 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
             guest_name = fetch_line_guest_name(line_bot_api, tid, user_id)
 
             # ---------------------------------------------------------
-            # 0. 多語系查詢個人 LINE User ID 快捷指令
-            # （中/英/日通用：/我的ID, /my_id, /id, /userid, /マイID）
+            # 0. 多語系查詢個人 LINE User ID 快捷指令（100% 免綁定碼設計）
+            #    （中/英/日通用：/我的ID, /my_id, /id, /userid, /マイID）
+            #    店長或同事查詢自己的 ID 後，直接由店長填入 Google 試算表「管理員LINE_ID」即可，
+            #    對話視窗完全不設任何綁定密碼指令，杜絕任何外人猜測或盜綁之可能！
             # ---------------------------------------------------------
             id_triggers = ["/我的id", "我的id", "/my_id", "my_id", "/id", "/userid", "/マイid", "マイid"]
             if stripped.lower() in id_triggers:
                 id_reply = (
                     f"🪪 您的 LINE 顯示名稱 / Name：{guest_name}\n"
                     f"🔑 您的 LINE User ID：\n{user_id}\n\n"
-                    f"💡 店長若要新增管理員接收通知，可直接在 Google 試算表貼上此 ID，或由已綁定之店長發送「/產生綁定碼」。"
+                    f"💡【店長專人通知設定方式】：\n"
+                    f"請將上方 U 開頭的 ID 複製並貼入貴店專屬 Google 試算表的「管理員LINE_ID」欄位（或開通表單），即可立即接收真人客服轉接推播！"
                 )
                 reply_to_line(tenant_cfg, reply_token, id_reply, user_id)
                 return
 
             # ---------------------------------------------------------
-            # 1. 銀行級資安防護：多語系管理員綁定與「15 分鐘冷卻 ＋ 試算表救援」防爆破機制
-            #    中：/綁定管理員 <代碼>
-            #    英：/bind_admin <code_or_token> 或 /bind <code>
-            #    日：/管理者連携 <コード>
+            # 1. 已授權管理員專用測試指令（僅限已在試算表或開通表單登記之 admin_ids 可觸發）
             # ---------------------------------------------------------
-            bind_cmd_matched = False
-            input_code = ""
-            for prefix in ["/綁定管理員", "綁定管理員", "/bind_admin", "/bind", "/管理者連携"]:
-                if stripped.lower().startswith(prefix.lower()):
-                    bind_cmd_matched = True
-                    parts = stripped.split(maxsplit=1)
-                    input_code = parts[1].strip() if len(parts) > 1 else ""
-                    break
-
-            if bind_cmd_matched:
-                now_ts = time.time()
-                fail_info = _failed_admin_attempts.get(user_id, {"count": 0, "locked_until": 0})
-
-                # 檢查是否仍在 15 分鐘安全冷卻期內（避免真實店長打錯字時被永久封鎖）
-                if fail_info.get("locked_until", 0) > now_ts:
-                    remaining_mins = int((fail_info["locked_until"] - now_ts) / 60) + 1
-                    cooldown_msg = (
-                        f"🔒【安全冷卻鎖定中】\n"
-                        f"為防止密碼被猜測，此帳號已暫時鎖定綁定功能，請於 {remaining_mins} 分鐘後再試。\n"
-                        f"💡 店長救援方案：您可直接打開 Google 試算表，在「管理員LINE_ID」欄位填入您的 ID 即可直接完成綁定，無須等待冷卻！"
-                    )
-                    reply_to_line(tenant_cfg, reply_token, cooldown_msg, user_id)
-                    return
-
-                expected_code = tenant_cfg.get("admin_code", ADMIN_SECRET_CODE)
-                one_time_code = tenant_cfg.get("one_time_bind_code", "")
-
-                already_has_admin = len(tenant_cfg.get("admin_ids", set())) > 0 or tenant_cfg.get("admin_bind_locked", False)
-                matched_one_time = bool(one_time_code and input_code and hmac.compare_digest(input_code, one_time_code))
-                matched_initial = bool(not already_has_admin and input_code and expected_code and hmac.compare_digest(input_code, expected_code))
-
-                if matched_one_time or matched_initial:
-                    if user_id:
-                        tenant_cfg["admin_ids"].add(user_id)
-                        tenant_cfg["admin_user_id"] = user_id
-                        tenant_cfg["admin_bind_locked"] = True
-                        tenant_cfg["one_time_bind_code"] = ""
-                        _failed_admin_attempts.pop(user_id, None)
-
-                        bind_reply = (
-                            f"✅【管理員安全認證成功｜已啟用專人推播】\n"
-                            f"👤 管理員：{guest_name}\n"
-                            f"🏢 綁定品牌：{client_name}\n\n"
-                            f"🔒【資安防護已自動生效】：\n"
-                            f"本綁定金鑰已自動作廢銷毀，任何外部人員或房客皆無法再綁定或索取通行碼。\n\n"
-                            f"💡 專屬管理員多語系指令（僅綁定者可用）：\n"
-                            f"• 輸入「/產生綁定碼」或「/generate_code」：簽發 1 次性授權碼供同事綁定\n"
-                            f"• 輸入「/發送入住密碼」：測試入住前1小時密碼自動推播\n"
-                            f"• 輸入「/發送退房關懷」：測試退房後老客回購折扣碼推播"
-                        )
-                        reply_to_line(tenant_cfg, reply_token, bind_reply, user_id)
-                        return
-                else:
-                    # 輸錯處理：計算失敗次數，滿 3 次啟動 15 分鐘冷卻
-                    fail_info["count"] = fail_info.get("count", 0) + 1
-                    rem = 3 - fail_info["count"]
-                    if rem <= 0:
-                        fail_info["locked_until"] = now_ts + (15 * 60)
-                        fail_info["count"] = 0
-                        _failed_admin_attempts[user_id] = fail_info
-                        fail_msg = (
-                            "🔒【安全鎖定啟動】\n"
-                            "您已連續輸錯 3 次，系統已啟動 15 分鐘保護鎖定。\n"
-                            "💡 建議直接打開 Google 試算表，在「管理員LINE_ID」欄位填入您的 ID 即可 1 秒完成免密碼認證！"
-                        )
-                    else:
-                        _failed_admin_attempts[user_id] = fail_info
-                        fail_msg = (
-                            f"⚠️ 綁定通行碼不正確（剩餘 {rem} 次嘗試機會）。\n"
-                            f"若不確定代碼，店長可直接在 Google 試算表中設定「管理員LINE_ID」進行綁定。"
-                        )
-                    reply_to_line(tenant_cfg, reply_token, fail_msg, user_id)
-                    return
-
-            # ---------------------------------------------------------
-            # 2. 已綁定管理員專用指令（嚴格檢驗 user_id 是否在 admin_ids 白名單內）
-            #    非管理員輸入絕不執行，且支援中/英/日指令：
-            #    /產生綁定碼, /generate_code, /コード生成
-            # ---------------------------------------------------------
+            # 先同步一次試算表中的最新管理員名單
+            fetch_google_sheet_kb_with_safeguards(tenant_cfg)
             if user_id in tenant_cfg.get("admin_ids", set()):
-                if stripped.lower() in ["/產生綁定碼", "產生綁定碼", "/generate_code", "/code", "/コード生成"]:
-                    new_otc = secrets.token_urlsafe(8)
-                    tenant_cfg["one_time_bind_code"] = new_otc
-                    otc_reply = (
-                        f"🔑【一次性管理員新增授權碼】\n"
-                        f"請將以下指令私下轉傳給需要接收通知的櫃檯同事（中/英/日皆可，限用 1 次）：\n\n"
-                        f"繁中：`/綁定管理員 {new_otc}`\n"
-                        f"EN  ：`/bind {new_otc}`\n"
-                        f"日文：`/管理者連携 {new_otc}`\n\n"
-                        f"⚠️ 同事綁定成功後，此代碼立即作廢並重新鎖死！"
-                    )
-                    reply_to_line(tenant_cfg, reply_token, otc_reply, user_id)
-                    return
                 if stripped == "/發送入住密碼":
                     send_pre_checkin_welcome(tenant_cfg, user_id)
                     return
@@ -1194,9 +1107,11 @@ def api_register_tenant():
         if verify_resp.status_code == 200:
             bot_info = verify_resp.json()
             resolved_name = client_name or bot_info.get("displayName", tenant_id)
-            initial_admins = {admin_user_id} if admin_user_id else set()
-            # 為該店家自動生成專屬一次性高強度亂數綁定碼 (綁定1次後即自動失效並上鎖)
-            unique_one_time_code = secrets.token_urlsafe(8)
+            initial_admins = set()
+            if admin_user_id:
+                for part in re.split(r"[,;，；\s\n]+", admin_user_id):
+                    if part.strip().startswith("U"):
+                        initial_admins.add(part.strip())
             with _tenants_lock:
                 TENANTS_REGISTRY[tenant_id] = {
                     "tenant_id": tenant_id,
@@ -1212,9 +1127,6 @@ def api_register_tenant():
                     "admin_user_id": admin_user_id,
                     "sheet_csv_url": sheet_csv_url,
                     "kb_url": "",
-                    "admin_code": unique_one_time_code,
-                    "one_time_bind_code": unique_one_time_code,
-                    "admin_bind_locked": bool(admin_user_id),
                     "admin_ids": initial_admins,
                     "door_pin": DEFAULT_DOOR_PIN,
                 }
@@ -1247,7 +1159,6 @@ def api_register_tenant():
                 "tenant_id": tenant_id,
                 "bot_name": bot_info.get("displayName", resolved_name),
                 "webhook_url": webhook_url,
-                "one_time_bind_code": unique_one_time_code,
             }), 200
         else:
             # 狀態設為 Invalid_Token，並觸發 Make 發送修復 Email

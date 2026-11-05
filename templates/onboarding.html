@@ -168,9 +168,9 @@
             <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
               <label class="flex items-center gap-2.5 cursor-pointer">
                 <input type="checkbox" id="chk_notify_line" checked class="w-4 h-4 rounded accent-emerald-500" />
-                <span class="text-xs sm:text-sm font-bold text-white">方案 A：店長個人 LINE User ID（預設推播至店長個人 LINE，一般客人免綁定）</span>
+                <span class="text-xs sm:text-sm font-bold text-white">方案 A：店長/同事 LINE User ID（直接填於此處或 Google 試算表，免密碼零盜綁風險）</span>
               </label>
-              <input type="text" id="admin_user_id" placeholder="選填 (U開頭33碼)，或留空並使用驗證成功後產生的「一次性專屬綁定碼」綁定（綁定1次即自動上鎖）"
+              <input type="text" id="admin_user_id" placeholder="選填 (U開頭33碼，多位可用逗號分隔)，或隨時填於您的 Google 試算表「管理員LINE_ID」欄位"
                 class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
             </div>
 
@@ -252,9 +252,7 @@
             <div class="font-bold text-white mb-1">最後一步：貼回 LINE 後台（只需 15 秒）</div>
             <p>1. 回到 LINE Messaging API 設定頁面，將上方網址貼入 <strong>Webhook URL</strong> 並點擊 Update / 儲存。</p>
             <p>2. 開啟 <strong>Use webhook（使用 Webhook）</strong> 開關。</p>
-            <p>3. 🔒 <strong>店長專屬一次性安全綁定</strong>：若您未填寫 LINE User ID，請由店長本人在 LINE 對機器人傳送以下一次性亂數指令（<strong>僅限使用 1 次，綁定後立即銷毀並永久上鎖，外人無法綁定</strong>）：<br/>
-              <code id="generated-bind-cmd" class="inline-block mt-1 px-2.5 py-1 rounded bg-slate-950 border border-emerald-500/40 text-emerald-300 font-mono font-bold">/綁定管理員 (驗證後自動產生)</code>
-            </p>
+            <p>3. 🔒 <strong>Google 試算表免綁定碼設定管理員（100% 防盜綁）</strong>：在 LINE 對機器人輸入 <code>/我的ID</code>（或 <code>/id</code>、<code>/マイID</code>）即可查看您的 <code>U...</code> ID，將它貼入您私人 Google 試算表的 <strong>「管理員LINE_ID」</strong> 欄位（多位同事可用逗號分隔），即可安全接收專人轉接推播！</p>
           </div>
         </div>
 
@@ -463,9 +461,6 @@
           document.getElementById("confirmed-email").textContent = alertEmail;
           document.getElementById("test-notify-badge").textContent = `✅ 已發送測試通知至您的管道（${activeChannelText}）！`;
           document.getElementById("generated-webhook-url").value = data.webhook_url;
-          if (data.one_time_bind_code) {
-            document.getElementById("generated-bind-cmd").textContent = `/綁定管理員 ${data.one_time_bind_code}`;
-          }
           document.getElementById("webhook-success-card").classList.remove("hidden");
           document.getElementById("webhook-success-card").scrollIntoView({ behavior: "smooth" });
         } else {

@@ -167,11 +167,16 @@ def load_tenants_config() -> dict:
     return tenants
 
 
+# 記憶體快取與資安防禦狀態
 TENANTS_REGISTRY = load_tenants_config()
 _tenants_lock = threading.Lock()
 _sheet_cache = {}
 SHEET_CACHE_TTL = 5  # 【第 1 層防呆：Live API Fetching】客戶儲存試算表後即時生效
-_failed_admin_attempts = {}
+_failed_admin_attempts: dict[str, dict] = {}  # {user_id: {"count": int, "locked_until": float}}
+_user_rate_limits: dict[str, list[float]] = {}  # {user_id: [timestamps]} 防洗版限流
+_tenant_usage_counters: dict[str, dict] = {}  # {tenant_id: {"year_month": "2026-11", "count": int}}
+MAX_GUEST_RPM = 20  # 單一訪客每分鐘最多 20 則訊息，防惡意爆破
+FREE_PLAN_QUOTA = 50  # 方案 A 免費版每月上限 50 次 AI 對話
 
 
 def get_tenant_config(tenant_id: str) -> dict:
@@ -822,53 +827,122 @@ threading.Thread(target=background_scheduler_loop, daemon=True).start()
 
 
 # =============================================================
-# 9. 核心訊息處理流程 (含動態預約連結、LINE Messaging API 專人轉接與雙層記憶)
+# 9. 核心訊息處理流程 (含多語系管理員指令、頻率防護、額度管理與轉接)
 # =============================================================
+def get_tenant_monthly_usage(tenant_id: str) -> int:
+    """取得該租戶本月已使用的 AI 對話次數"""
+    ym = datetime.now(TW_TZ).strftime("%Y-%m")
+    with _memory_lock:
+        data = _tenant_usage_counters.get(tenant_id, {})
+        if data.get("year_month") == ym:
+            return data.get("count", 0)
+        _tenant_usage_counters[tenant_id] = {"year_month": ym, "count": 0}
+        return 0
+
+
+def increment_tenant_usage(tenant_id: str) -> int:
+    """累加該租戶本月 AI 對話計數"""
+    ym = datetime.now(TW_TZ).strftime("%Y-%m")
+    with _memory_lock:
+        data = _tenant_usage_counters.get(tenant_id, {})
+        if data.get("year_month") != ym:
+            data = {"year_month": ym, "count": 0}
+        data["count"] = data.get("count", 0) + 1
+        _tenant_usage_counters[tenant_id] = data
+        return data["count"]
+
+
+def check_rate_limit(user_id: str) -> bool:
+    """訪客限流檢查：每分鐘最多 20 則訊息，防止惡意腳本刷爆或阻斷服務攻擊（不影響一般正常訪客）"""
+    if not user_id:
+        return True
+    now = time.time()
+    with _memory_lock:
+        timestamps = _user_rate_limits.setdefault(user_id, [])
+        timestamps = [t for t in timestamps if now - t < 60]
+        if len(timestamps) >= MAX_GUEST_RPM:
+            _user_rate_limits[user_id] = timestamps
+            return False
+        timestamps.append(now)
+        _user_rate_limits[user_id] = timestamps
+        return True
+
+
 def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: str, user_id: str = None):
     tid = tenant_cfg["tenant_id"]
     client_name = tenant_cfg.get("client_name", CLIENT_NAME)
     booking_url = tenant_cfg.get("booking_url", "")
+    plan = str(tenant_cfg.get("plan", "free")).lower()
     line_cfg = Configuration(access_token=tenant_cfg["channel_access_token"])
 
     try:
         stripped = user_text.strip()
+
+        # -------------------------------------------------------------
+        # 防護 1：針對惡意洗版/連點之單一訪客限流保護（完全不影響其他正常客人）
+        # -------------------------------------------------------------
+        if not check_rate_limit(user_id):
+            logger.warning(f"[{tid}] Rate limit exceeded by guest {user_id}")
+            reply_to_line(
+                tenant_cfg,
+                reply_token,
+                "⏳ 您傳送訊息的頻率稍快，管家正在為您整理資訊中，請稍候 30 秒再試喔！😊",
+                user_id,
+            )
+            return
 
         with ApiClient(line_cfg) as api_client:
             line_bot_api = MessagingApi(api_client)
             guest_name = fetch_line_guest_name(line_bot_api, tid, user_id)
 
             # ---------------------------------------------------------
-            # 0. 查詢個人 LINE User ID 快捷指令 (/我的ID)
-            # （僅回傳使用者自身的公開 User ID，絕不透露任何管理員指令或密碼！）
+            # 0. 多語系查詢個人 LINE User ID 快捷指令
+            # （中/英/日通用：/我的ID, /my_id, /id, /userid, /マイID）
             # ---------------------------------------------------------
-            if stripped in ["/我的ID", "我的ID", "/id", "/userid"]:
+            id_triggers = ["/我的id", "我的id", "/my_id", "my_id", "/id", "/userid", "/マイid", "マイid"]
+            if stripped.lower() in id_triggers:
                 id_reply = (
-                    f"🪪 您的 LINE 顯示名稱：{guest_name}\n"
-                    f"🔑 您的 LINE User ID：\n{user_id}"
+                    f"🪪 您的 LINE 顯示名稱 / Name：{guest_name}\n"
+                    f"🔑 您的 LINE User ID：\n{user_id}\n\n"
+                    f"💡 店長若要新增管理員接收通知，可直接在 Google 試算表貼上此 ID，或由已綁定之店長發送「/產生綁定碼」。"
                 )
                 reply_to_line(tenant_cfg, reply_token, id_reply, user_id)
                 return
 
             # ---------------------------------------------------------
-            # 1. 銀行級資安防護：一次性管理員綁定與單一店長自動上鎖機制
-            #    - 綁定成功 1 次後即自動永久上鎖 (admin_bind_locked = True)
-            #    - 若密碼錯誤或已上鎖，採「隱形模式 (Stealth Mode)」不透露任何密碼或指令提示
+            # 1. 銀行級資安防護：多語系管理員綁定與「15 分鐘冷卻 ＋ 試算表救援」防爆破機制
+            #    中：/綁定管理員 <代碼>
+            #    英：/bind_admin <code_or_token> 或 /bind <code>
+            #    日：/管理者連携 <コード>
             # ---------------------------------------------------------
-            if stripped.startswith("/綁定管理員") or stripped.startswith("綁定管理員"):
-                parts = stripped.split(maxsplit=1)
-                input_code = parts[1].strip() if len(parts) > 1 else ""
+            bind_cmd_matched = False
+            input_code = ""
+            for prefix in ["/綁定管理員", "綁定管理員", "/bind_admin", "/bind", "/管理者連携"]:
+                if stripped.lower().startswith(prefix.lower()):
+                    bind_cmd_matched = True
+                    parts = stripped.split(maxsplit=1)
+                    input_code = parts[1].strip() if len(parts) > 1 else ""
+                    break
+
+            if bind_cmd_matched:
+                now_ts = time.time()
+                fail_info = _failed_admin_attempts.get(user_id, {"count": 0, "locked_until": 0})
+
+                # 檢查是否仍在 15 分鐘安全冷卻期內（避免真實店長打錯字時被永久封鎖）
+                if fail_info.get("locked_until", 0) > now_ts:
+                    remaining_mins = int((fail_info["locked_until"] - now_ts) / 60) + 1
+                    cooldown_msg = (
+                        f"🔒【安全冷卻鎖定中】\n"
+                        f"為防止密碼被猜測，此帳號已暫時鎖定綁定功能，請於 {remaining_mins} 分鐘後再試。\n"
+                        f"💡 店長救援方案：您可直接打開 Google 試算表，在「管理員LINE_ID」欄位填入您的 ID 即可直接完成綁定，無須等待冷卻！"
+                    )
+                    reply_to_line(tenant_cfg, reply_token, cooldown_msg, user_id)
+                    return
+
                 expected_code = tenant_cfg.get("admin_code", ADMIN_SECRET_CODE)
                 one_time_code = tenant_cfg.get("one_time_bind_code", "")
 
-                # 防暴力破解：超過 3 次失敗即永久封鎖該 user_id 嘗試
-                fail_count = _failed_admin_attempts.get(user_id, 0)
-                if fail_count >= 3:
-                    logger.warning(f"[{tid}] Blocked brute-force admin bind attempt from {user_id}")
-                    return
-
-                # 檢查是否已上鎖（若已有綁定管理員，除非使用現任管理員簽發的一次性授權碼，否則禁止新綁定）
                 already_has_admin = len(tenant_cfg.get("admin_ids", set())) > 0 or tenant_cfg.get("admin_bind_locked", False)
-
                 matched_one_time = bool(one_time_code and input_code and hmac.compare_digest(input_code, one_time_code))
                 matched_initial = bool(not already_has_admin and input_code and expected_code and hmac.compare_digest(input_code, expected_code))
 
@@ -876,42 +950,61 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                     if user_id:
                         tenant_cfg["admin_ids"].add(user_id)
                         tenant_cfg["admin_user_id"] = user_id
-                        tenant_cfg["admin_bind_locked"] = True  # 綁定成功後立即自動上鎖！
-                        tenant_cfg["one_time_bind_code"] = ""   # 立即銷毀一次性綁定碼！
+                        tenant_cfg["admin_bind_locked"] = True
+                        tenant_cfg["one_time_bind_code"] = ""
+                        _failed_admin_attempts.pop(user_id, None)
+
                         bind_reply = (
-                            f"✅【管理員安全認證成功｜已啟動單一管理員防盜鎖】\n"
+                            f"✅【管理員安全認證成功｜已啟用專人推播】\n"
                             f"👤 管理員：{guest_name}\n"
                             f"🏢 綁定品牌：{client_name}\n\n"
-                            f"🔒【最高資安保護已生效】：\n"
-                            f"本綁定通道已自動上鎖並銷毀一次性金鑰，任何外部人員或房客皆無法再綁定或索取通行碼。\n\n"
-                            f"💡 專屬管理員指令（僅您的帳號可用）：\n"
-                            f"• 輸入「/產生綁定碼」可生成 1 次性授權碼供新同事綁定\n"
-                            f"• 輸入「/發送入住密碼」可測試入住前1小時自動推播\n"
-                            f"• 輸入「/發送退房關懷」可測試退房後回購折扣碼推播"
+                            f"🔒【資安防護已自動生效】：\n"
+                            f"本綁定金鑰已自動作廢銷毀，任何外部人員或房客皆無法再綁定或索取通行碼。\n\n"
+                            f"💡 專屬管理員多語系指令（僅綁定者可用）：\n"
+                            f"• 輸入「/產生綁定碼」或「/generate_code」：簽發 1 次性授權碼供同事綁定\n"
+                            f"• 輸入「/發送入住密碼」：測試入住前1小時密碼自動推播\n"
+                            f"• 輸入「/發送退房關懷」：測試退房後老客回購折扣碼推播"
                         )
                         reply_to_line(tenant_cfg, reply_token, bind_reply, user_id)
                         return
                 else:
-                    # 驗證失敗或已上鎖：記錄失敗次數，並採「隱形模式」不回傳任何密碼規則提示，直接交由下方一般客服處理或靜默忽略
-                    _failed_admin_attempts[user_id] = fail_count + 1
-                    logger.warning(f"[{tid}] Unauthorized or locked admin bind attempt by {guest_name} ({user_id}).")
-                    reply_to_line(
-                        tenant_cfg,
-                        reply_token,
-                        f"您好！請問有什麼關於「{client_name}」的住宿或預約問題需要管家為您服務嗎？😊\n🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆",
-                        user_id,
-                    )
+                    # 輸錯處理：計算失敗次數，滿 3 次啟動 15 分鐘冷卻
+                    fail_info["count"] = fail_info.get("count", 0) + 1
+                    rem = 3 - fail_info["count"]
+                    if rem <= 0:
+                        fail_info["locked_until"] = now_ts + (15 * 60)
+                        fail_info["count"] = 0
+                        _failed_admin_attempts[user_id] = fail_info
+                        fail_msg = (
+                            "🔒【安全鎖定啟動】\n"
+                            "您已連續輸錯 3 次，系統已啟動 15 分鐘保護鎖定。\n"
+                            "💡 建議直接打開 Google 試算表，在「管理員LINE_ID」欄位填入您的 ID 即可 1 秒完成免密碼認證！"
+                        )
+                    else:
+                        _failed_admin_attempts[user_id] = fail_info
+                        fail_msg = (
+                            f"⚠️ 綁定通行碼不正確（剩餘 {rem} 次嘗試機會）。\n"
+                            f"若不確定代碼，店長可直接在 Google 試算表中設定「管理員LINE_ID」進行綁定。"
+                        )
+                    reply_to_line(tenant_cfg, reply_token, fail_msg, user_id)
                     return
 
-            # 已綁定管理員專用快捷指令（嚴格檢驗 user_id 是否在 admin_ids 內）
+            # ---------------------------------------------------------
+            # 2. 已綁定管理員專用指令（嚴格檢驗 user_id 是否在 admin_ids 白名單內）
+            #    非管理員輸入絕不執行，且支援中/英/日指令：
+            #    /產生綁定碼, /generate_code, /コード生成
+            # ---------------------------------------------------------
             if user_id in tenant_cfg.get("admin_ids", set()):
-                if stripped == "/產生綁定碼":
+                if stripped.lower() in ["/產生綁定碼", "產生綁定碼", "/generate_code", "/code", "/コード生成"]:
                     new_otc = secrets.token_urlsafe(8)
                     tenant_cfg["one_time_bind_code"] = new_otc
                     otc_reply = (
                         f"🔑【一次性管理員新增授權碼】\n"
-                        f"請將以下指令私下傳給需要接收通知的櫃檯同事（僅限使用 1 次，綁定後立即失效）：\n\n"
-                        f"`/綁定管理員 {new_otc}`"
+                        f"請將以下指令私下轉傳給需要接收通知的櫃檯同事（中/英/日皆可，限用 1 次）：\n\n"
+                        f"繁中：`/綁定管理員 {new_otc}`\n"
+                        f"EN  ：`/bind {new_otc}`\n"
+                        f"日文：`/管理者連携 {new_otc}`\n\n"
+                        f"⚠️ 同事綁定成功後，此代碼立即作廢並重新鎖死！"
                     )
                     reply_to_line(tenant_cfg, reply_token, otc_reply, user_id)
                     return
@@ -923,9 +1016,49 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                     return
 
             # ---------------------------------------------------------
-            # 2. 結合 AI 推論、動態預約連結帶入與 LINE Messaging API 轉接推播
+            # 3. 額度管理與用完回覆（方案 A 免費版每月 50 次對話保護）
+            # ---------------------------------------------------------
+            current_usage = get_tenant_monthly_usage(tid)
+            if plan == "free" and current_usage >= FREE_PLAN_QUOTA:
+                logger.info(f"[{tid}] Free plan quota reached ({current_usage}/{FREE_PLAN_QUOTA}). Switching to human handover.")
+
+                # (1) 親切回覆客人：不拋出硬體錯誤，而是貼心轉接真人專人
+                quota_guest_reply = (
+                    f"🏨 親愛的貴賓您好！感謝您的諮詢。\n"
+                    f"本館目前已為您將訊息記錄並轉接專人客服，服務人員將會在 LINE 上儘速回覆您喔！✨\n\n"
+                    f"📞 手邊如有緊急狀況，也歡迎直接致電櫃檯洽詢（{FALLBACK_DEFAULTS['客服電話']}）。\n\n"
+                    f"🤖 本訊息由 {client_name} 智能管家自動輔助回覆"
+                )
+                reply_to_line(tenant_cfg, reply_token, quota_guest_reply, user_id)
+
+                # (2) 即時通報店家店長（透過 LINE / Telegram / Email 說明額度用完＋旅客需求摘要）
+                quota_alert_data = {
+                    "event": "service_request",
+                    "service_type": "額度已滿・真人接管",
+                    "details": user_text,
+                    "handover_summary_3_sentences": (
+                        f"貴店方案 A（0 元體驗版）本月 50 次 AI 對話額度已滿！系統已自動切換為全真人模式。"
+                        f"旅客 {guest_name} 傳送訊息：「{user_text}」，請店長至官方後台回覆客人。"
+                        f"若需恢復 24H AI 自動回覆與自動預約，歡迎隨時升級至方案 B（輕量版）！"
+                    ),
+                    "need_human": True,
+                }
+                notify_admins_on_line(
+                    line_bot_api,
+                    tenant_cfg,
+                    guest_name,
+                    user_id,
+                    user_text,
+                    quota_alert_data,
+                    get_guest_crm_profile(tid, user_id),
+                )
+                return
+
+            # ---------------------------------------------------------
+            # 4. 結合 AI 推論、動態預約連結帶入與 LINE Messaging API 轉接推播
             # ---------------------------------------------------------
             logger.info(f"[{tid}] Guest '{guest_name}' ({user_id}): '{user_text[:40]}'")
+            increment_tenant_usage(tid)
             ai_reply, service_data = call_gemini_api(tenant_cfg, user_id, user_text)
 
             # 意圖判定 A：若顧客明確提及「轉接專人」或「真人客服」，確保強制觸發 Messaging API 管理員推播
@@ -974,6 +1107,18 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                     service_data,
                     updated_crm,
                 )
+
+    except Exception as e:
+        logger.error(f"[{tid}] Error in process_user_message_async: {e}", exc_info=True)
+        try:
+            reply_to_line(
+                tenant_cfg,
+                reply_token,
+                f"系統維護中，將盡快為您解答！\n🤖 本訊息由 {client_name} AI 智能管家自動輔助回覆",
+                user_id,
+            )
+        except Exception:
+            pass
 
     except Exception as e:
         logger.error(f"[{tid}] Error in process_user_message_async: {e}", exc_info=True)
@@ -1164,6 +1309,43 @@ def line_webhook_callback(tenant_id: str = "default"):
         return "OK", 200  # 容錯保護：確保 LINE 伺服器不會因單次異常重複重試
 
     return "OK", 200
+
+
+@app.route("/api/status/<tenant_id>", methods=["GET"])
+def api_tenant_status(tenant_id: str):
+    """
+    店家自助診斷與額度即時查詢接口：
+    可查詢目前方案 (Plan A/B/C)、本月 AI 對話已用次數、剩餘額度、通知管道連線狀況與試算表同步狀態
+    """
+    tenant_cfg = get_tenant_config(tenant_id)
+    if not tenant_cfg:
+        return jsonify({"status": "error", "message": "Tenant not found"}), 404
+
+    plan = str(tenant_cfg.get("plan", "free")).lower()
+    usage = get_tenant_monthly_usage(tenant_id)
+    quota = FREE_PLAN_QUOTA if plan == "free" else "Unlimited (無限制)"
+    sheet_url = tenant_cfg.get("sheet_csv_url", "")
+
+    cached = _sheet_cache.get(tenant_id)
+    sheet_ok = bool(cached and cached.get("data"))
+
+    return jsonify({
+        "status": "healthy",
+        "tenant_id": tenant_id,
+        "client_name": tenant_cfg.get("client_name", ""),
+        "plan": plan,
+        "monthly_usage": usage,
+        "monthly_quota": quota,
+        "quota_exhausted": bool(plan == "free" and usage >= FREE_PLAN_QUOTA),
+        "admin_bind_locked": tenant_cfg.get("admin_bind_locked", False),
+        "admin_count": len(tenant_cfg.get("admin_ids", set())),
+        "channels": {
+            "line_admin_push": len(tenant_cfg.get("admin_ids", set())) > 0,
+            "telegram_push": bool(tenant_cfg.get("telegram_chat_id")),
+            "email_alerts": bool(tenant_cfg.get("alert_email") or tenant_cfg.get("email")),
+        },
+        "sheet_connected": sheet_ok if sheet_url else "未設定 (套用內建 3 層防呆知識庫)",
+    }), 200
 
 
 @app.route("/cron/lifecycle", methods=["POST", "GET"])

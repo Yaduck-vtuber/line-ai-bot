@@ -1014,10 +1014,11 @@ def _get_genai_client():
     if _GENAI_CLIENT is not None:
         return _GENAI_CLIENT
     if not USE_NEW_SDK or not GEMINI_API_KEY:
+        logger.error("Gemini client unavailable: GEMINI_API_KEY missing or google-genai SDK not installed.")
         return None
     try:
         http_opts = types.HttpOptions(
-            timeout=10000,
+            timeout=18000,
             retry_options=types.HttpRetryOptions(attempts=1),
         )
         _GENAI_CLIENT = genai.Client(api_key=GEMINI_API_KEY, http_options=http_opts)
@@ -1026,41 +1027,47 @@ def _get_genai_client():
     return _GENAI_CLIENT
 
 
+_LAST_GOOD_MODEL = None
+
+
 def _generate_with_gemini_models(system_instruction: str, user_message: str, max_tokens: int = 750) -> str | None:
+    """依序嘗試現行 Gemini 模型；記住上次成功的模型，下次優先使用以加快速度"""
+    global _LAST_GOOD_MODEL
     client = _get_genai_client()
     if not client:
         return None
 
+    env_model = os.getenv("GEMINI_MODEL", "").strip()
     candidate_models = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        os.getenv("GEMINI_MODEL", GEMINI_MODEL).strip(),
+        _LAST_GOOD_MODEL,
+        env_model if env_model and not env_model.startswith(("gemini-2.", "gemini-1.")) else None,
+        "gemini-3.8-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
         "gemini-flash-latest",
     ]
     models_to_try = list(dict.fromkeys(m for m in candidate_models if m))
+    # 預留足夠輸出額度，避免模型內部思考用光額度導致回覆空白
+    output_budget = max(max_tokens, 2048)
 
     for model_name in models_to_try:
         try:
-            try:
-                cfg = types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.15,
-                    max_output_tokens=max_tokens,
-                    thinking_config=types.ThinkingConfig(thinking_budget=0),
-                )
-                response = client.models.generate_content(model=model_name, contents=user_message, config=cfg)
-            except Exception:
-                cfg = types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.15,
-                    max_output_tokens=max_tokens,
-                )
-                response = client.models.generate_content(model=model_name, contents=user_message, config=cfg)
+            cfg = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.3,
+                max_output_tokens=output_budget,
+            )
+            response = client.models.generate_content(model=model_name, contents=user_message, config=cfg)
 
             if response and response.text:
+                _LAST_GOOD_MODEL = model_name
                 return response.text.strip()
+            logger.warning(f"Gemini model '{model_name}' returned empty text.")
         except Exception as err:
             logger.warning(f"Gemini model '{model_name}' warning: {err}")
+            if _LAST_GOOD_MODEL == model_name:
+                _LAST_GOOD_MODEL = None
+    logger.error("All Gemini models failed — check GEMINI_API_KEY and model availability.")
     return None
 
 
@@ -2743,10 +2750,13 @@ def api_creator_overview():
         tenants_list = []
         for tid, tcfg in TENANTS_REGISTRY.items():
             admin_ids_list = sorted(list(tcfg.get("admin_ids", set())))
-            default_kb_preview = (
-                tcfg.get("custom_kb_text")
-                or "\n".join(f"{k}：{v}" for k, v in FALLBACK_DEFAULTS.items() if k not in ["電子鎖密碼", "回購折扣碼"])
-            )
+            # 只有「從未儲存過」才顯示範例；店家主動清空並儲存後就維持空白，不再被還原
+            if "custom_kb_text" in tcfg:
+                default_kb_preview = tcfg.get("custom_kb_text") or ""
+            else:
+                default_kb_preview = "\n".join(
+                    f"{k}：{v}" for k, v in FALLBACK_DEFAULTS.items() if k not in ["電子鎖密碼", "回購折扣碼"]
+                )
             tenants_list.append({
                 "tenant_id": tid,
                 "client_name": tcfg.get("client_name", tid),

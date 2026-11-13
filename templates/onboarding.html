@@ -478,7 +478,7 @@
           </div>
         </button>
 
-        <button type="button" onclick="triggerRealCancelOrRefund()"
+        <button type="button" id="cancel-refund-option" onclick="triggerRealCancelOrRefund()"
           class="w-full text-left p-4 rounded-xl bg-slate-950 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/40 transition flex items-start gap-3">
           <span class="text-lg">💳</span>
           <div>
@@ -1099,6 +1099,9 @@
         document.getElementById("modal-error-reason").textContent = reasonText;
       }
       const modal = document.getElementById("resilience-modal");
+      // 免費方案 A 沒有付款，不顯示「取消訂閱／退費」選項
+      const cancelOpt = document.getElementById("cancel-refund-option");
+      if (cancelOpt) cancelOpt.classList.toggle("hidden", plan === "free");
       modal.classList.remove("hidden");
       modal.classList.add("flex");
     }

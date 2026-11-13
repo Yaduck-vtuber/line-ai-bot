@@ -381,11 +381,6 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-              <button type="button" onclick="testTenantLineNotify('${t.tenant_id}')"
-                class="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-extrabold transition">
-                📨 發送專人通知測試到 LINE
-              </button>
-
               <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
                 <span class="text-slate-400 mr-1">本月對話：</span>
                 <strong class="text-emerald-400 text-sm">${t.monthly_usage}</strong> 次
@@ -461,10 +456,16 @@
                   class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
               </div>
 
-              <button type="button" onclick="saveTenantDetailsFromAdmin('${t.tenant_id}')"
-                class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm transition shadow-lg">
-                💾 儲存「${t.client_name}」表單知識庫與通知綁定設定（立即生效）
-              </button>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="saveTenantDetailsFromAdmin('${t.tenant_id}')"
+                  class="flex-1 min-w-[220px] py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm transition shadow-lg">
+                  💾 儲存「${t.client_name}」表單知識庫與通知綁定設定（立即生效）
+                </button>
+                <button type="button" onclick="testTenantLineNotify('${t.tenant_id}')"
+                  class="py-3 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-extrabold text-xs sm:text-sm transition">
+                  📨 發送專人通知測試到 LINE
+                </button>
+              </div>
             </div>
           </details>
         </div>

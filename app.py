@@ -580,27 +580,110 @@ def get_tenant_ignore_keywords(tenant_cfg: dict, kb_fields: dict = None) -> list
     return keywords
 
 
+def normalize_google_sheet_csv_url(raw_url: str) -> str:
+    """
+    自動將使用者從瀏覽器複製的一般 Google 試算表網址（例如 .../edit?usp=sharing 或 #gid=0）
+    轉換為可直接讀取的 CSV 匯出網址（.../export?format=csv），免除人工改網址的困擾！
+    """
+    u = (raw_url or "").strip()
+    if not u:
+        return ""
+    # 若為「發布到網路」之 pubhtml 網址，轉為 pub?output=csv
+    if "docs.google.com/spreadsheets" in u and "/pubhtml" in u:
+        return re.sub(r"/pubhtml.*$", "/pub?output=csv", u)
+    if "docs.google.com/spreadsheets" in u and ("output=csv" in u or "format=csv" in u):
+        return u
+    m = re.search(r"docs\.google\.com/spreadsheets/d/([a-zA-Z0-9_-]+)", u)
+    if m:
+        doc_id = m.group(1)
+        gid_match = re.search(r"[?&#]gid=(\d+)", u)
+        gid_suffix = f"&gid={gid_match.group(1)}" if gid_match else ""
+        return f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv{gid_suffix}"
+    return u
+
+
+def _parse_csv_kb_text(csv_text: str) -> tuple[dict, list[str], str]:
+    """
+    解析從 Google 試算表下載的 CSV 文字：
+    - 自動偵測是否因「未開啟公開檢視權限」而收到 Google 登入 HTML 網頁
+    - 支援雙欄 (A欄標題、B欄內容)、多欄、以及單欄「標題：內容」或條列文字格式
+    回傳: (parsed_dict, extra_lines, error_msg)
+    """
+    cleaned_raw = (csv_text or "").lstrip("\ufeff").strip()
+    if not cleaned_raw:
+        return {}, [], "試算表內容為空白"
+    head_lower = cleaned_raw[:250].lower()
+    if head_lower.startswith("<!doctype html") or head_lower.startswith("<html") or "accounts.google.com" in head_lower:
+        return (
+            {},
+            [],
+            "⚠️ 此 Google 試算表目前為「私人權限（未公開）」，系統無法讀取！請打開試算表右上角點擊「共用 (Share)」➔ 將一般存取權改為「知道連結的任何人皆可檢視 (Anyone with the link can view)」。",
+        )
+
+    reader = csv.reader(io.StringIO(cleaned_raw))
+    rows = list(reader)
+    parsed_sheet: dict[str, str] = {}
+    extra_lines: list[str] = []
+
+    header_keywords = {"欄位名稱", "項目", "key", "field", "標題", "關鍵字", "問題", "question", "category", "類別"}
+    for idx, row in enumerate(rows):
+        non_empty_cells = [c.strip() for c in row if c and c.strip()]
+        if not non_empty_cells:
+            continue
+        if len(row) >= 2 and (row[0].strip() or row[1].strip()):
+            key_col = row[0].strip()
+            val_col = row[1].strip()
+            status_col = row[2].strip() if len(row) >= 3 else ""
+            # 若有第 3 欄以後且不是停用標記，將補充欄位一併合併進內容，避免多欄試算表遺漏資訊
+            if len(row) >= 3 and not _is_kb_row_disabled("", "", status_col):
+                extra_cols = [c.strip() for c in row[2:] if c.strip()]
+                if extra_cols and status_col.lower() not in {"啟用", "active", "on", "true", "yes", "1"}:
+                    val_col = f"{val_col}（{' / '.join(extra_cols)}）" if val_col else " / ".join(extra_cols)
+            if idx == 0 and key_col.lower() in header_keywords:
+                continue
+            if _is_kb_row_disabled(key_col, val_col, status_col):
+                continue
+            if key_col and val_col:
+                parsed_sheet[key_col] = val_col
+            elif key_col and not val_col:
+                if "：" in key_col:
+                    k_p, v_p = key_col.split("：", 1)
+                    parsed_sheet[k_p.strip()] = v_p.strip()
+                elif ":" in key_col and not key_col.lower().startswith("http"):
+                    k_p, v_p = key_col.split(":", 1)
+                    parsed_sheet[k_p.strip()] = v_p.strip()
+                else:
+                    extra_lines.append(key_col)
+            elif val_col and not key_col:
+                extra_lines.append(val_col)
+        else:
+            single_cell = non_empty_cells[0]
+            if idx == 0 and single_cell.lower() in header_keywords:
+                continue
+            if _is_kb_row_disabled(single_cell, ""):
+                continue
+            if "：" in single_cell:
+                k_p, v_p = single_cell.split("：", 1)
+                parsed_sheet[k_p.strip()] = v_p.strip()
+            elif ":" in single_cell and not single_cell.lower().startswith("http"):
+                k_p, v_p = single_cell.split(":", 1)
+                parsed_sheet[k_p.strip()] = v_p.strip()
+            else:
+                extra_lines.append(single_cell)
+
+    return parsed_sheet, extra_lines, ""
+
+
 def _refresh_sheet_cache_bg(tid: str, sheet_url: str):
     """背景非阻塞更新 Google 試算表快取，確保客人訊息 0 毫秒等待（自動過濾標記為停用之列）"""
     try:
-        resp = requests.get(sheet_url, timeout=4)
+        norm_url = normalize_google_sheet_csv_url(sheet_url)
+        resp = requests.get(norm_url, timeout=4, headers={"User-Agent": "SmartHost-AI-Concierge/2.0"})
         if resp.status_code == 200 and resp.text.strip():
-            reader = csv.reader(io.StringIO(resp.text.strip()))
-            rows = list(reader)
-            parsed_sheet = {}
-            for idx, row in enumerate(rows):
-                if len(row) < 2:
-                    continue
-                key_col = row[0].strip()
-                val_col = row[1].strip()
-                status_col = row[2].strip() if len(row) >= 3 else ""
-                if idx == 0 and key_col in ["欄位名稱", "項目", "Key", "Field", "標題", "關鍵字"]:
-                    continue
-                if _is_kb_row_disabled(key_col, val_col, status_col):
-                    continue
-                if key_col and val_col:
-                    parsed_sheet[key_col] = val_col
-            if parsed_sheet:
+            parsed_sheet, extra_lines, err_msg = _parse_csv_kb_text(resp.text)
+            if not err_msg and (parsed_sheet or extra_lines):
+                if extra_lines:
+                    parsed_sheet["試算表補充條列說明"] = "；".join(extra_lines)
                 with _memory_lock:
                     _sheet_cache[tid] = {"ts": time.time(), "data": parsed_sheet}
                     _sheet_last_good_snapshot[tid] = dict(parsed_sheet)
@@ -611,8 +694,10 @@ def _refresh_sheet_cache_bg(tid: str, sheet_url: str):
 def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
     """三層防呆保護機制讀取 Google 試算表 ＋ 線上自填表單知識庫 ＋ 停用列自動過濾 ＋ 誤刪快照自動還原"""
     tid = tenant_cfg["tenant_id"]
-    sheet_url = (tenant_cfg.get("sheet_csv_url") or (GOOGLE_SHEET_CSV_URL if tid == "default" else "")).strip()
+    raw_sheet_url = (tenant_cfg.get("sheet_csv_url") or (GOOGLE_SHEET_CSV_URL if tid == "default" else "")).strip()
+    sheet_url = normalize_google_sheet_csv_url(raw_sheet_url)
     custom_kb_text = (tenant_cfg.get("custom_kb_text") or "").strip()
+    configured_client_name = (tenant_cfg.get("client_name") or CLIENT_NAME).strip()
 
     # 若店家已自行填寫線上表單或已連接 Google 試算表，不混入預設範例資料，避免回答到店家沒規定的內容！
     has_custom_sheet_data = False
@@ -629,25 +714,18 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
                 executor.submit(_refresh_sheet_cache_bg, tid, sheet_url)
         else:
             try:
-                resp = requests.get(sheet_url, timeout=3.5)
+                resp = requests.get(sheet_url, timeout=4.5, headers={"User-Agent": "SmartHost-AI-Concierge/2.0"})
                 if resp.status_code == 200 and resp.text.strip():
-                    reader = csv.reader(io.StringIO(resp.text.strip()))
-                    rows = list(reader)
-                    for idx, row in enumerate(rows):
-                        if len(row) < 2:
-                            continue
-                        key_col = row[0].strip()
-                        val_col = row[1].strip()
-                        status_col = row[2].strip() if len(row) >= 3 else ""
-                        if idx == 0 and key_col in ["欄位名稱", "項目", "Key", "Field", "標題", "關鍵字"]:
-                            continue
-                        if _is_kb_row_disabled(key_col, val_col, status_col):
-                            continue
-                        if key_col and val_col:
-                            parsed_from_sheet[key_col] = val_col
+                    parsed_sheet, extra_lines, err_msg = _parse_csv_kb_text(resp.text)
+                    if err_msg:
+                        logger.warning(f"[{tid}] Google Sheet permission/format notice: {err_msg}")
+                    else:
+                        if extra_lines:
+                            parsed_sheet["試算表補充條列說明"] = "；".join(extra_lines)
+                        parsed_from_sheet = parsed_sheet
                     if parsed_from_sheet:
                         _sheet_cache[tid] = {"ts": now, "data": parsed_from_sheet}
-                        _sheet_last_good_snapshot[tid] = dict(parsed_sheet := parsed_from_sheet)
+                        _sheet_last_good_snapshot[tid] = dict(parsed_from_sheet)
                         has_custom_sheet_data = True
                 elif tid in _sheet_last_good_snapshot:
                     parsed_from_sheet = dict(_sheet_last_good_snapshot[tid])
@@ -669,6 +747,10 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
                 continue
             if _is_kb_row_disabled(clean_l, ""):
                 continue
+            # 若店家已修改商家名稱，自動將預設範例殘留的舊名稱替換為新商家名稱
+            if configured_client_name and configured_client_name != "澄光行旅 Lumina Boutique Hotel":
+                clean_l = clean_l.replace("澄光行旅 Lumina Boutique Hotel", configured_client_name)
+                line = line.replace("澄光行旅 Lumina Boutique Hotel", configured_client_name)
             active_custom_kb_lines.append(line)
             if "：" in clean_l:
                 k_part, v_part = clean_l.split("：", 1)
@@ -681,12 +763,22 @@ def fetch_google_sheet_kb_with_safeguards(tenant_cfg: dict) -> tuple[str, dict]:
 
     if has_custom_sheet_data or active_custom_kb_lines:
         merged_fields = {}
-        merged_fields["商家名稱"] = tenant_cfg.get("client_name", CLIENT_NAME)
-        merged_fields.update(parsed_from_sheet)
+        # 先載入線上表單，再載入 Google 試算表（讓外部試算表的最新欄位與後台修改之商家名稱優先覆蓋舊範例）
         merged_fields.update(parsed_custom_lines)
+        merged_fields.update(parsed_from_sheet)
+        # 若試算表本身有填「旅宿名稱」或「商家名稱」且後台維持預設值，尊重試算表；若後台已明確修改商家名稱，則強制同步！
+        sheet_store_name = parsed_from_sheet.get("旅宿名稱") or parsed_from_sheet.get("商家名稱") or parsed_from_sheet.get("店名")
+        final_store_name = (
+            sheet_store_name
+            if (sheet_store_name and configured_client_name == "澄光行旅 Lumina Boutique Hotel")
+            else configured_client_name
+        )
+        merged_fields["商家名稱"] = final_store_name
+        merged_fields["旅宿名稱"] = final_store_name
     else:
         merged_fields = dict(FALLBACK_DEFAULTS)
-        merged_fields["旅宿名稱"] = tenant_cfg.get("client_name", CLIENT_NAME)
+        merged_fields["商家名稱"] = configured_client_name
+        merged_fields["旅宿名稱"] = configured_client_name
 
     links_text = (tenant_cfg.get("booking_links") or tenant_cfg.get("booking_url") or "").strip()
     if links_text:
@@ -875,10 +967,15 @@ def fetch_line_guest_name(line_bot_api: MessagingApi, tenant_id: str, user_id: s
 # 5. 系統指令組裝 (依方案 A/B/C 動態啟用短期記憶與熟客資料卡 + 店家不提供項目攔截)
 # =============================================================
 def build_system_instruction(tenant_cfg: dict, guest_crm: dict, short_term_history: list) -> str:
-    client_name = tenant_cfg.get("client_name", CLIENT_NAME)
     plan = str(tenant_cfg.get("plan", "free")).lower()
     links_text = (tenant_cfg.get("booking_links") or tenant_cfg.get("booking_url") or "").strip()
     kb_text, kb_fields = fetch_google_sheet_kb_with_safeguards(tenant_cfg)
+    client_name = (
+        kb_fields.get("商家名稱")
+        or kb_fields.get("旅宿名稱")
+        or tenant_cfg.get("client_name")
+        or CLIENT_NAME
+    )
     store_restrictions = (
         kb_fields.get("店家不提供項目與限制")
         or kb_fields.get("不提供項目")
@@ -1690,17 +1787,16 @@ def api_auth_google_credential():
             "email": email,
             "name": name,
             "picture": picture,
-            "exp": time.time() + 86400 * 14,
+            "exp": time.time() + 86400 * 7,
         })
         res = make_response(jsonify({
             "status": "success",
-            "token": session_token,
             "user": {"email": email, "name": name, "picture": picture},
         }))
         res.set_cookie(
             "smarthost_user_session",
             session_token,
-            max_age=86400 * 14,
+            max_age=86400 * 7,
             httponly=True,
             samesite="Lax",
             secure=request.is_secure or request.headers.get("X-Forwarded-Proto") == "https",
@@ -1737,17 +1833,16 @@ def api_auth_google_button_login():
         "email": email,
         "name": SAAS_DB["users"][email]["name"],
         "picture": "",
-        "exp": time.time() + 86400 * 14,
+        "exp": time.time() + 86400 * 7,
     })
     res = make_response(jsonify({
         "status": "success",
-        "token": session_token,
         "user": SAAS_DB["users"][email],
     }))
     res.set_cookie(
         "smarthost_user_session",
         session_token,
-        max_age=86400 * 14,
+        max_age=86400 * 7,
         httponly=True,
         samesite="Lax",
         secure=request.is_secure or request.headers.get("X-Forwarded-Proto") == "https",
@@ -1835,17 +1930,16 @@ def api_auth_verify_login_otp():
         "email": email,
         "name": SAAS_DB["users"][email]["name"],
         "picture": "",
-        "exp": time.time() + 86400 * 14,
+        "exp": time.time() + 86400 * 7,
     })
     res = make_response(jsonify({
         "status": "success",
-        "token": session_token,
         "user": SAAS_DB["users"][email],
     }))
     res.set_cookie(
         "smarthost_user_session",
         session_token,
-        max_age=86400 * 14,
+        max_age=86400 * 7,
         httponly=True,
         samesite="Lax",
         secure=request.is_secure or request.headers.get("X-Forwarded-Proto") == "https",
@@ -2259,7 +2353,7 @@ def api_register_tenant():
         telegram_chat_id = str(data.get("telegram_chat_id", "")).strip()
         notify_channels = data.get("notify_channels", ["LINE", "Telegram", "Email"])
         booking_links = str(data.get("booking_links") or data.get("booking_url") or "").strip()
-        sheet_csv_url = str(data.get("sheet_csv_url", "")).strip()
+        sheet_csv_url = normalize_google_sheet_csv_url(str(data.get("sheet_csv_url", "")).strip())
         custom_kb_text = str(data.get("custom_kb_text", "")).strip()
         ignore_keywords = str(data.get("ignore_keywords", "")).strip()
 
@@ -2524,7 +2618,7 @@ def api_account_update_settings():
             tcfg["booking_links"] = links_val
             tcfg["booking_url"] = links_val.splitlines()[0].strip() if links_val else ""
         if "sheet_csv_url" in data:
-            tcfg["sheet_csv_url"] = str(data["sheet_csv_url"]).strip()
+            tcfg["sheet_csv_url"] = normalize_google_sheet_csv_url(str(data["sheet_csv_url"]).strip())
             _sheet_cache.pop(tid, None)
         if "custom_kb_text" in data:
             tcfg["custom_kb_text"] = str(data["custom_kb_text"]).strip()
@@ -2553,6 +2647,71 @@ def api_account_update_settings():
 
     save_saas_db()
     return jsonify({"status": "success", "message": "✅ 店家設定已安全儲存並立即生效！"}), 200
+
+
+@app.route("/api/test_sheet_csv", methods=["POST"])
+def api_test_sheet_csv():
+    """
+    即時測試並驗證 Google 試算表網址是否可讀取：
+    - 自動將一般瀏覽器試算表網址 (.../edit?usp=sharing) 轉為 CSV 匯出網址 (.../export?format=csv)
+    - 檢測是否忘記開啟「知道連結的任何人皆可檢視」權限
+    - 回傳解析成功的筆數與前 8 筆內容預覽，讓客戶與創建者 100% 確認 AI 有抓到試算表資料！
+    """
+    data = request.get_json(silent=True) or {}
+    raw_url = str(data.get("sheet_csv_url", "")).strip()
+    if not raw_url:
+        return jsonify({"status": "error", "message": "請先貼上您的 Google 試算表網址！"}), 400
+
+    norm_url = normalize_google_sheet_csv_url(raw_url)
+    try:
+        resp = requests.get(norm_url, timeout=6, headers={"User-Agent": "SmartHost-AI-Concierge/2.0"})
+        if resp.status_code in [401, 403]:
+            return jsonify({
+                "status": "error",
+                "normalized_url": norm_url,
+                "message": "⚠️ 無法讀取：此 Google 試算表目前為「私人權限（未公開）」！請於試算表右上角點擊「共用 (Share)」➔ 將一般存取權改為「知道連結的任何人皆可檢視 (Anyone with the link can view)」。",
+            }), 400
+        if resp.status_code != 200:
+            return jsonify({
+                "status": "error",
+                "normalized_url": norm_url,
+                "message": f"⚠️ Google 試算表連線回應異常 (HTTP {resp.status_code})，請確認網址是否正確且已設為公開檢視。",
+            }), 400
+
+        parsed_dict, extra_lines, err_msg = _parse_csv_kb_text(resp.text)
+        if err_msg:
+            return jsonify({
+                "status": "error",
+                "normalized_url": norm_url,
+                "message": err_msg,
+            }), 400
+
+        preview_items = [f"• {k}：{v}" for k, v in list(parsed_dict.items())[:8]]
+        for ex in extra_lines[:4]:
+            if len(preview_items) < 8:
+                preview_items.append(f"• {ex}")
+
+        total_count = len(parsed_dict) + len(extra_lines)
+        if total_count == 0:
+            return jsonify({
+                "status": "error",
+                "normalized_url": norm_url,
+                "message": "⚠️ 試算表連線成功，但表內目前沒有可讀取的文字內容（請於 A 欄填寫問題/項目、B 欄填寫答案/內容）。",
+            }), 400
+
+        return jsonify({
+            "status": "success",
+            "normalized_url": norm_url,
+            "row_count": total_count,
+            "preview": preview_items,
+            "message": f"🎉 測試成功！AI 已順利從試算表抓到 {total_count} 筆有效知識庫資料！",
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "normalized_url": norm_url,
+            "message": f"⚠️ 讀取試算表連線失敗：{e}",
+        }), 400
 
 
 # =============================================================
@@ -2771,7 +2930,7 @@ def api_creator_login():
         return jsonify({"status": "error", "message": "總後台密碼不正確"}), 401
 
     token = _sign_session_payload({"role": "creator_master", "exp": time.time() + 86400 * 7})
-    res = make_response(jsonify({"status": "success", "token": token}))
+    res = make_response(jsonify({"status": "success"}))
     res.set_cookie(
         "smarthost_creator_session",
         token,
@@ -2891,7 +3050,7 @@ def api_creator_action():
             if "ignore_keywords" in data:
                 tcfg["ignore_keywords"] = str(data["ignore_keywords"]).strip()
             if "sheet_csv_url" in data:
-                tcfg["sheet_csv_url"] = str(data["sheet_csv_url"]).strip()
+                tcfg["sheet_csv_url"] = normalize_google_sheet_csv_url(str(data["sheet_csv_url"]).strip())
                 _sheet_cache.pop(tid, None)
             if "booking_links" in data:
                 links_val = str(data["booking_links"]).strip()

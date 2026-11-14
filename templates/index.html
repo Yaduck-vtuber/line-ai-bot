@@ -10,14 +10,46 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; transition: background-color 0.25s, color 0.25s; }
     .glass-nav { background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(12px); }
     .gradient-text { background: linear-gradient(135deg, #34d399 0%, #38bdf8 50%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    /* ☀️ 淺色模式 (Light Mode) 全域智慧配色覆寫 */
+    html.light-mode body { background-color: #f8fafc !important; color: #0f172a !important; }
+    html.light-mode .glass-nav { background: rgba(255, 255, 255, 0.92) !important; border-color: #cbd5e1 !important; }
+    html.light-mode .bg-slate-950,
+    html.light-mode .bg-slate-950\/90,
+    html.light-mode .bg-slate-950\/80 { background-color: #f1f5f9 !important; color: #0f172a !important; }
+    html.light-mode .bg-slate-900,
+    html.light-mode .bg-slate-900\/90,
+    html.light-mode .bg-slate-900\/80,
+    html.light-mode .bg-slate-900\/70,
+    html.light-mode .bg-slate-900\/60,
+    html.light-mode .bg-slate-900\/50 { background-color: #ffffff !important; color: #0f172a !important; box-shadow: 0 4px 16px rgba(15,23,42,0.06); }
+    html.light-mode .bg-slate-800 { background-color: #e2e8f0 !important; color: #0f172a !important; }
+    html.light-mode .border-slate-800,
+    html.light-mode .border-slate-800\/80,
+    html.light-mode .border-slate-700 { border-color: #cbd5e1 !important; }
+    html.light-mode .text-white { color: #0f172a !important; }
+    html.light-mode .text-slate-100,
+    html.light-mode .text-slate-200,
+    html.light-mode .text-slate-300 { color: #334155 !important; }
+    html.light-mode .text-slate-400 { color: #475569 !important; }
+    html.light-mode .text-emerald-400,
+    html.light-mode .text-emerald-300 { color: #047857 !important; }
+    html.light-mode .text-cyan-400,
+    html.light-mode .text-cyan-300 { color: #0369a1 !important; }
+    html.light-mode .text-amber-300,
+    html.light-mode .text-amber-200 { color: #b45309 !important; }
+    html.light-mode .text-rose-400,
+    html.light-mode .text-rose-300 { color: #be123c !important; }
+    html.light-mode input,
+    html.light-mode textarea,
+    html.light-mode select { background-color: #ffffff !important; color: #0f172a !important; border-color: #94a3b8 !important; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
 
-  <!-- 頂部導覽列 (5 國語言切換 + Google 帳號會員購買紀錄中心，無任何內部測試後台連結) -->
+  <!-- 頂部導覽列 (5 國語言切換 + 深淺色切換 + 個人檔案與店家後台 + Google 帳號會員購買紀錄中心) -->
   <header class="fixed top-0 inset-x-0 z-40 glass-nav border-b border-slate-800/80">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
       <a href="/index.html" class="flex items-center gap-2.5 shrink-0">
@@ -36,7 +68,13 @@
         <a href="#contact" data-i18n="nav_contact" class="hover:text-emerald-400 transition">聯絡我們</a>
       </nav>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button type="button" id="theme-toggle-btn" onclick="toggleTheme()"
+          class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 hover:border-emerald-400 font-bold transition"
+          title="切換深色 / 淺色模式">
+          ☀️ 淺色
+        </button>
+
         <select id="lang-switcher" aria-label="Language" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-emerald-400">
           <option value="zh-TW">🇹🇼 繁體中文 (NT$)</option>
           <option value="en">🇺🇸 English (USD)</option>
@@ -45,16 +83,22 @@
           <option value="it">🇮🇹 Italiano (EUR)</option>
         </select>
 
-        <!-- 未登入顯示「Google 登入」；已登入顯示「我的購買紀錄與設定」 -->
+        <!-- 未登入顯示「Google 登入」；已登入顯示「👤 個人檔案與店家後台」與「📋 購買紀錄」 -->
         <button id="btn-nav-login" type="button" onclick="openAuthModal()" data-i18n="nav_login"
           class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs px-3 py-2 rounded-lg transition">
           🔐 Google 登入
         </button>
 
+        <a id="btn-nav-profile" href="/onboarding.html"
+          class="hidden items-center gap-1 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 font-bold text-xs px-2.5 py-2 rounded-lg transition">
+          <span>👤</span>
+          <span data-i18n="nav_profile">個人檔案與店家後台</span>
+        </a>
+
         <button id="btn-nav-member" type="button" onclick="openMemberModal()"
-          class="hidden items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-bold text-xs px-3 py-2 rounded-lg transition">
+          class="hidden items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-bold text-xs px-2.5 py-2 rounded-lg transition">
           <span>📋</span>
-          <span id="nav-user-label" data-i18n="nav_member">我的購買紀錄與設定</span>
+          <span id="nav-user-label" data-i18n="nav_member">購買紀錄與設定</span>
         </button>
       </div>
     </div>
@@ -483,17 +527,23 @@
         </span>
       </label>
 
-      <p data-i18n="pp_desc" class="text-xs text-slate-300 mb-3 leading-relaxed">
+      <p id="pp-desc-text" data-i18n="pp_desc" class="text-xs text-slate-300 mb-3 leading-relaxed">
         點擊下方黃色按鈕將開啟 PayPal 官方加密收銀台（支援信用卡或 PayPal 付款）：
       </p>
-      <div class="space-y-2.5">
+      <div id="pp-paid-buttons" class="space-y-2.5">
         <a id="paypal-checkout-link" href="#" target="_blank" rel="noopener noreferrer" onclick="return checkTermsBeforePayPal()" data-i18n="pp_btn_pay"
           class="block w-full text-center py-3.5 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold text-sm shadow-lg transition">
           🔒 1. 前往 PayPal 官方安全付款 (開啟新分頁) ↗
         </a>
-        <a id="paypal-confirm-return-link" href="#" data-i18n="pp_btn_confirm"
+        <a id="paypal-confirm-return-link" href="#" onclick="return checkTermsBeforePayPal()" data-i18n="pp_btn_confirm"
           class="block w-full text-center py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 font-extrabold text-xs transition">
           ✅ 2. 已於 PayPal 分頁完成付款？點此確認並進入 LINE 開通頁面 →
+        </a>
+      </div>
+      <div id="pp-free-buttons" class="hidden">
+        <a id="free-plan-confirm-link" href="#" onclick="return checkTermsBeforePayPal()" data-i18n="pp_free_btn"
+          class="block w-full text-center py-3.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:opacity-95 text-slate-950 font-extrabold text-sm shadow-lg transition">
+          🚀 同意服務條款並立即前往免費版開通頁面 →
         </a>
       </div>
     </div>
@@ -634,7 +684,8 @@
       "zh-TW": {
         currency: "TWD", basic_amount: "1680", pro_amount: "2980",
         nav_how: "3 步驟開通", nav_memory: "方案記憶差異", nav_pricing: "訂閱方案", nav_faq: "常見問題", nav_contact: "聯絡我們",
-        nav_login: "🔐 Google 登入", nav_member: "我的購買紀錄與設定",
+        nav_login: "🔐 Google 登入", nav_member: "我的購買紀錄與設定", nav_profile: "個人檔案與店家後台",
+        pp_free_btn: "🚀 同意服務條款並立即前往免費版開通頁面 →",
         support_btn: "AI 線上客服", sup_header: "SmartHost AI 線上客服顧問", sup_sub: "24H 多國語言即時解答",
         sup_welcome: "👋 您好！我是 SmartHost AI 客服顧問。請問您對方案功能、購買與退費，或是 LINE 開通設定有任何問題嗎？歡迎直接打字問我喔！",
         sup_q1: "💡 方案 B 跟 C 差在哪？", sup_q1_text: "請問方案 B 的當下記憶跟方案 C 的熟客建檔差在哪裡？",
@@ -728,7 +779,8 @@
       "en": {
         currency: "USD", basic_amount: "55", pro_amount: "95",
         nav_how: "How It Works", nav_memory: "Memory Tiers", nav_pricing: "Pricing", nav_faq: "FAQ", nav_contact: "Contact Us",
-        nav_login: "🔐 Google Sign In", nav_member: "My Orders & Settings",
+        nav_login: "🔐 Google Sign In", nav_member: "My Orders & Settings", nav_profile: "My Profile & Store Backend",
+        pp_free_btn: "🚀 Agree to Terms & Continue to Free Plan Setup →",
         support_btn: "AI Live Support", sup_header: "SmartHost AI Advisor", sup_sub: "24/7 Instant Multilingual Support",
         sup_welcome: "👋 Hi! I'm your SmartHost AI Advisor. Ask me anything about Plan A/B/C differences, billing & refunds, or connecting your LINE account!",
         sup_q1: "💡 Plan B vs Plan C?", sup_q1_text: "What is the difference between Plan B short-term memory and Plan C VIP guest profiles?",
@@ -822,7 +874,8 @@
       "ja": {
         currency: "JPY", basic_amount: "8200", pro_amount: "14500",
         nav_how: "導入3ステップ", nav_memory: "記憶機能の違い", nav_pricing: "料金プラン", nav_faq: "よくある質問", nav_contact: "お問い合わせ",
-        nav_login: "🔐 Google ログイン", nav_member: "購入履歴・設定管理",
+        nav_login: "🔐 Google ログイン", nav_member: "購入履歴・設定管理", nav_profile: "プロフィール・店舗管理",
+        pp_free_btn: "🚀 利用規約に同意して無料プラン開通ページへ進む →",
         support_btn: "AI サポート相談", sup_header: "SmartHost AI サポート顧問", sup_sub: "24時間 多言語リアルタイム回答",
         sup_welcome: "👋 こんにちは！SmartHost AIサポートです。プランB・Cの違いや決済・返金、LINE連携手順について何でもお気軽にご質問ください！",
         sup_q1: "💡 プランBとCの違いは？", sup_q1_text: "プランBの直近の会話記憶とプランCの顧客カルテ永久保存の違いを教えてください。",
@@ -916,7 +969,8 @@
       "id": {
         currency: "USD", basic_amount: "55", pro_amount: "95",
         nav_how: "Cara Kerja", nav_memory: "Fitur Memori AI", nav_pricing: "Harga", nav_faq: "FAQ", nav_contact: "Hubungi Kami",
-        nav_login: "🔐 Login Google", nav_member: "Pesanan & Pengaturan",
+        nav_login: "🔐 Login Google", nav_member: "Pesanan & Pengaturan", nav_profile: "Profil & Backend Toko",
+        pp_free_btn: "🚀 Setuju Syarat Layanan & Lanjut ke Aktivasi Paket Gratis →",
         support_btn: "Chat AI Support", sup_header: "Konsultan AI SmartHost", sup_sub: "Bantuan Multibahasa 24 Jam",
         sup_welcome: "👋 Halo! Saya Konsultan AI SmartHost. Tanyakan apa saja tentang perbedaan Paket A/B/C, pembayaran & refund, atau cara aktivasi LINE!",
         sup_q1: "💡 Beda Paket B & C?", sup_q1_text: "Apa perbedaan memori percakapan Paket B dan kartu profil tamu VIP di Paket C?",
@@ -1010,7 +1064,8 @@
       "it": {
         currency: "EUR", basic_amount: "49", pro_amount: "89",
         nav_how: "Come Funziona", nav_memory: "Memoria IA", nav_pricing: "Prezzi", nav_faq: "FAQ", nav_contact: "Contattaci",
-        nav_login: "🔐 Accedi con Google", nav_member: "I Miei Ordini e Impostazioni",
+        nav_login: "🔐 Accedi con Google", nav_member: "I Miei Ordini e Impostazioni", nav_profile: "Profilo e Backend Negozio",
+        pp_free_btn: "🚀 Accetta i Termini e Procedi all'Attivazione Piano Gratuito →",
         support_btn: "Supporto IA", sup_header: "Consulente IA SmartHost", sup_sub: "Risposte Multilingue 24/7",
         sup_welcome: "👋 Ciao! Sono il Consulente IA di SmartHost. Chiedimi pure le differenze tra i Piani A/B/C, pagamenti e rimborsi, o come collegare LINE!",
         sup_q1: "💡 Differenza Piano B e C?", sup_q1_text: "Qual è la differenza tra la memoria breve del Piano B e la scheda cliente VIP del Piano C?",
@@ -1103,24 +1158,40 @@
       }
     };
 
+    // ================= 儲存分類架構說明 (State vs localStorage vs Cookie) =================
+    // 1. State (只活在當下畫面，重新整理歸零): currentUser, pendingPlanSelection, publicConfig
+    // 2. localStorage (約 5MB，存在裝置，僅存介面偏好如深淺色 smarthost_theme、語系 smarthost_lang；絕不存放登入憑證或金鑰)
+    // 3. Cookie (約 4KB，HttpOnly, 7天效期，每次請求自動帶給伺服器驗證身份，保護後端店家重要資料)
     let currentLang = "zh-TW";
     let currentUser = null;
     let pendingPlanSelection = null;
     let publicConfig = {};
 
-    function getUserToken() {
-      try { return localStorage.getItem("smarthost_user_token") || ""; } catch (e) { return ""; }
+    // 清除舊版可能殘留於 localStorage 的敏感 token
+    try { localStorage.removeItem("smarthost_user_token"); } catch (e) {}
+
+    function applyTheme(mode) {
+      const isLight = mode === "light";
+      document.documentElement.classList.toggle("light-mode", isLight);
+      const iconEl = document.getElementById("theme-icon");
+      const lblEl = document.getElementById("theme-label");
+      if (iconEl) iconEl.textContent = isLight ? "🌙" : "☀️";
+      if (lblEl) lblEl.textContent = isLight ? "深色" : "淺色";
     }
-    function setUserToken(tok) {
-      try {
-        if (tok) localStorage.setItem("smarthost_user_token", tok);
-        else localStorage.removeItem("smarthost_user_token");
-      } catch (e) {}
+    function toggleTheme() {
+      const isCurrentlyLight = document.documentElement.classList.contains("light-mode");
+      const next = isCurrentlyLight ? "dark" : "light";
+      try { localStorage.setItem("smarthost_theme", next); } catch (e) {}
+      applyTheme(next);
     }
+    (function initTheme() {
+      let saved = "dark";
+      try { saved = localStorage.getItem("smarthost_theme") || "dark"; } catch (e) {}
+      applyTheme(saved);
+    })();
+
     async function userFetch(url, options = {}) {
       const headers = Object.assign({}, options.headers || {});
-      const tok = getUserToken();
-      if (tok) headers["X-User-Token"] = tok;
       return fetch(url, Object.assign({}, options, { headers, credentials: "same-origin" }));
     }
 
@@ -1138,6 +1209,8 @@
       });
       const switcher = document.getElementById("lang-switcher");
       if (switcher) switcher.value = currentLang;
+      const profBtn = document.getElementById("btn-nav-profile");
+      if (profBtn) profBtn.href = `/onboarding.html?lang=${currentLang}`;
     }
 
     async function loadPublicAndAuth() {
@@ -1220,7 +1293,6 @@
         });
         const data = await res.json();
         if (res.ok && data.status === "success") {
-          if (data.token) setUserToken(data.token);
           closeAuthModal();
           await loadPublicAndAuth();
           if (pendingPlanSelection) {
@@ -1245,7 +1317,6 @@
         });
         const data = await res.json();
         if (res.ok && data.status === "success") {
-          if (data.token) setUserToken(data.token);
           closeAuthModal();
           await loadPublicAndAuth();
           if (pendingPlanSelection) {
@@ -1264,6 +1335,12 @@
     function setLoggedInUser(user, orders, stores) {
       currentUser = user;
       document.getElementById("btn-nav-login").classList.add("hidden");
+      const profBtn = document.getElementById("btn-nav-profile");
+      if (profBtn) {
+        profBtn.href = `/onboarding.html?lang=${currentLang}`;
+        profBtn.classList.remove("hidden");
+        profBtn.classList.add("inline-flex");
+      }
       const memBtn = document.getElementById("btn-nav-member");
       memBtn.classList.remove("hidden");
       memBtn.classList.add("inline-flex");
@@ -1274,6 +1351,11 @@
     function setLoggedOutUI() {
       currentUser = null;
       document.getElementById("btn-nav-login").classList.remove("hidden");
+      const profBtn = document.getElementById("btn-nav-profile");
+      if (profBtn) {
+        profBtn.classList.add("hidden");
+        profBtn.classList.remove("inline-flex");
+      }
       const memBtn = document.getElementById("btn-nav-member");
       memBtn.classList.add("hidden");
       memBtn.classList.remove("inline-flex");
@@ -1345,7 +1427,6 @@
       });
       const data = await res.json();
       if (res.ok && data.status === "success") {
-        if (data.token) setUserToken(data.token);
         closeAuthModal();
         await loadPublicAndAuth();
         if (pendingPlanSelection) {
@@ -1359,13 +1440,12 @@
     }
 
     async function logoutCustomer() {
-      setUserToken("");
       await userFetch("/api/auth/logout", { method: "POST" });
       closeMemberModal();
       setLoggedOutUI();
     }
 
-    // 選擇方案：強制檢查是否已登入 Google 帳號
+    // 選擇方案：強制檢查是否已登入 Google 帳號，且無論免費版或付費版皆自動彈出《服務條款與資料授權合約》確認視窗
     async function handleSelectPlan(planKey) {
       if (!currentUser) {
         pendingPlanSelection = planKey;
@@ -1393,11 +1473,32 @@
           openAuthMsgBanner(data.message);
           return;
         }
+        const paidBtns = document.getElementById("pp-paid-buttons");
+        const freeBtns = document.getElementById("pp-free-buttons");
+        const descText = document.getElementById("pp-desc-text");
+        const chk = document.getElementById("pp-agree-terms");
+        if (chk) chk.checked = false;
+
         if (planKey === "free" && data.next_url) {
-          window.location.href = `${data.next_url}&lang=${currentLang}`;
+          document.getElementById("paypal-plan-summary").textContent = `${dict.plan1_name} — NT$ 0 (免費體驗版・每月 50 次 AI 對話)`;
+          document.getElementById("pp-buyer-email").textContent = currentUser.email;
+          document.getElementById("pp-order-id").textContent = data.order ? data.order.order_id : "FREE-TRIAL";
+          const upgEl = document.getElementById("pp-upgrade-notice");
+          if (upgEl) upgEl.classList.add("hidden");
+          if (paidBtns) paidBtns.classList.add("hidden");
+          if (freeBtns) freeBtns.classList.remove("hidden");
+          if (descText) descText.classList.add("hidden");
+          const freeConfirm = document.getElementById("free-plan-confirm-link");
+          if (freeConfirm) freeConfirm.href = `${data.next_url}&lang=${currentLang}`;
+          const modal = document.getElementById("paypal-modal");
+          modal.classList.remove("hidden");
+          modal.classList.add("flex");
           return;
         }
         if (data.checkout_url && data.order) {
+          if (paidBtns) paidBtns.classList.remove("hidden");
+          if (freeBtns) freeBtns.classList.add("hidden");
+          if (descText) descText.classList.remove("hidden");
           const planTitle = planKey === "pro" ? dict.plan3_name : dict.plan2_name;
           const priceStr = planKey === "pro" ? dict.plan3_price : dict.plan2_price;
           const twdBase = planKey === "pro" ? "NT$ 2,980 TWD" : "NT$ 1,680 TWD";
@@ -1544,8 +1645,17 @@
                   <input type="text" id="st-name-${s.tenant_id}" value="${s.client_name.replace(/"/g, '&quot;')}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
                 </div>
                 <div>
-                  <label class="block text-slate-400 mb-1">Google 試算表 CSV 網址</label>
-                  <input type="url" id="st-sheet-${s.tenant_id}" value="${(s.sheet_csv_url || '').replace(/"/g, '&quot;')}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-slate-400">Google 試算表網址（一般網址或 CSV 皆可自動轉換）</label>
+                    <a href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener noreferrer" class="text-[11px] text-emerald-400 underline font-bold">🔗 開啟 Google 試算表 ↗</a>
+                  </div>
+                  <div class="flex gap-1.5">
+                    <input type="url" id="st-sheet-${s.tenant_id}" value="${(s.sheet_csv_url || '').replace(/"/g, '&quot;')}" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                    <button type="button" onclick="testPortalSheetCsv('${s.tenant_id}')" class="px-3 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 font-bold text-xs shrink-0 hover:bg-cyan-500/30">
+                      🔍 測試讀取
+                    </button>
+                  </div>
+                  <div id="st-sheet-msg-${s.tenant_id}" class="hidden mt-1.5 p-2 rounded-lg text-[11px] whitespace-pre-wrap"></div>
                 </div>
               </div>
 
@@ -1621,6 +1731,36 @@
       const res = await userFetch("/api/account/send_security_otp", { method: "POST" });
       const data = await res.json();
       openAuthMsgBanner(data.creator_test_code ? `${data.message} (預覽驗證碼: ${data.creator_test_code})` : (data.message || "已發送驗證碼"));
+    }
+
+    async function testPortalSheetCsv(tid) {
+      const inp = document.getElementById(`st-sheet-${tid}`);
+      const box = document.getElementById(`st-sheet-msg-${tid}`);
+      const url = inp ? inp.value.trim() : "";
+      if (!box) return;
+      box.classList.remove("hidden");
+      box.className = "mt-1.5 p-2 rounded-lg text-[11px] bg-slate-900 border border-slate-700 text-slate-300 whitespace-pre-wrap";
+      box.textContent = "⏳ 正在測試讀取 Google 試算表...";
+      try {
+        const res = await userFetch("/api/test_sheet_csv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sheet_csv_url: url })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          if (data.normalized_url && inp) inp.value = data.normalized_url;
+          box.className = "mt-1.5 p-2 rounded-lg text-[11px] bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 whitespace-pre-wrap";
+          const preview = (data.preview_lines || []).slice(0, 5).join("\n");
+          box.textContent = `${data.message}\n${preview ? "📋 預覽前 5 筆：\n" + preview : ""}`;
+        } else {
+          box.className = "mt-1.5 p-2 rounded-lg text-[11px] bg-rose-500/15 border border-rose-500/40 text-rose-300 whitespace-pre-wrap";
+          box.textContent = data.message || "讀取失敗，請確認試算表權限已設為「知道連結的任何人皆可檢視」。";
+        }
+      } catch (e) {
+        box.className = "mt-1.5 p-2 rounded-lg text-[11px] bg-rose-500/15 border border-rose-500/40 text-rose-300";
+        box.textContent = "連線異常，請稍後再試。";
+      }
     }
 
     async function saveStoreSettings(tid) {

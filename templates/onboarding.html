@@ -10,19 +10,61 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; transition: background-color 0.25s, color 0.25s; }
+    /* ☀️ 淺色模式 (Light Mode) 全域智慧配色覆寫 */
+    html.light-mode body { background-color: #f8fafc !important; color: #0f172a !important; }
+    html.light-mode header { background-color: rgba(255,255,255,0.92) !important; border-color: #cbd5e1 !important; }
+    html.light-mode .bg-slate-950,
+    html.light-mode .bg-slate-950\/95,
+    html.light-mode .bg-slate-950\/90,
+    html.light-mode .bg-slate-950\/80,
+    html.light-mode .bg-slate-950\/60 { background-color: #f1f5f9 !important; color: #0f172a !important; }
+    html.light-mode .bg-slate-900,
+    html.light-mode .bg-slate-900\/90,
+    html.light-mode .bg-slate-900\/85,
+    html.light-mode .bg-slate-900\/80,
+    html.light-mode .bg-slate-900\/70,
+    html.light-mode .bg-slate-900\/60 { background-color: #ffffff !important; color: #0f172a !important; box-shadow: 0 4px 16px rgba(15,23,42,0.06); }
+    html.light-mode .bg-slate-800 { background-color: #e2e8f0 !important; color: #0f172a !important; }
+    html.light-mode .border-slate-800,
+    html.light-mode .border-slate-800\/80,
+    html.light-mode .border-slate-800\/90,
+    html.light-mode .border-slate-700 { border-color: #cbd5e1 !important; }
+    html.light-mode .text-white { color: #0f172a !important; }
+    html.light-mode .text-slate-100,
+    html.light-mode .text-slate-200,
+    html.light-mode .text-slate-300 { color: #334155 !important; }
+    html.light-mode .text-slate-400 { color: #475569 !important; }
+    html.light-mode .text-emerald-400,
+    html.light-mode .text-emerald-300 { color: #047857 !important; }
+    html.light-mode .text-cyan-400,
+    html.light-mode .text-cyan-300 { color: #0369a1 !important; }
+    html.light-mode .text-amber-300,
+    html.light-mode .text-amber-200,
+    html.light-mode .text-amber-100 { color: #b45309 !important; }
+    html.light-mode .text-rose-400,
+    html.light-mode .text-rose-300 { color: #be123c !important; }
+    html.light-mode input,
+    html.light-mode textarea,
+    html.light-mode select { background-color: #ffffff !important; color: #0f172a !important; border-color: #94a3b8 !important; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
 
-  <!-- 頂部導覽列 (5 國語系切換 + 會員設定入口 + 退訂救援，無內部測試後台連結) -->
+  <!-- 頂部導覽列 (5 國語系切換 + 深淺色切換 + 個人檔案與店家後台 + 退訂救援) -->
   <header class="border-b border-slate-800 bg-slate-900/85 backdrop-blur sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
       <a href="/index.html" class="flex items-center gap-2.5 shrink-0">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black">S</div>
-        <span data-i18n="header_title" class="font-extrabold text-white tracking-tight text-sm sm:text-base">SmartHost 線上開通中心</span>
+        <span data-i18n="header_title" class="font-extrabold text-white tracking-tight text-sm sm:text-base">SmartHost 個人檔案與開通中心</span>
       </a>
-      <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-1.5 sm:gap-2.5">
+        <button type="button" id="theme-toggle-btn" onclick="toggleTheme()"
+          class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 hover:border-emerald-400 font-bold transition"
+          title="切換深色 / 淺色模式">
+          ☀️ 淺色
+        </button>
+
         <select id="lang-switcher" aria-label="Language" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-emerald-400">
           <option value="zh-TW">🇹🇼 繁體中文</option>
           <option value="en">🇺🇸 English</option>
@@ -31,13 +73,13 @@
           <option value="it">🇮🇹 Italiano</option>
         </select>
 
-        <a href="/index.html" onclick="localStorage.setItem('open_portal','1')" data-i18n="btn_my_orders"
+        <button type="button" onclick="focusCustomerProfileBackend()" data-i18n="btn_my_orders"
           class="hidden sm:inline-block text-xs px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 font-bold transition">
-          📋 購買紀錄與設定修改
-        </a>
+          👤 個人檔案與店家後台
+        </button>
 
         <button type="button" onclick="openResilienceModal()" data-i18n="btn_rescue"
-          class="text-xs px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 font-semibold transition">
+          class="text-xs px-2.5 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 font-semibold transition">
           🛠️ 開通問題 / 取消訂閱
         </button>
 
@@ -48,20 +90,20 @@
 
   <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-12">
 
-    <!-- 頁面主標題 (已移除多餘的 Plan A 徽章) -->
-    <div class="text-center max-w-3xl mx-auto mb-10">
+    <!-- 頁面主標題 -->
+    <div class="text-center max-w-3xl mx-auto mb-8">
       <h1 data-i18n="page_h1" class="text-2xl sm:text-4xl font-black text-white mb-3">
         3 分鐘完成 LINE 官方帳號 AI 管家串接
       </h1>
       <p data-i18n="page_sub" class="text-slate-400 text-sm sm:text-base leading-relaxed">
-        以下 4 步教學已根據您選擇的語系，精準標示對應語言 LINE 後台的「真實按鈕名稱」，對照點擊即可快速完成！
+        首次申請只需填寫「商家名稱」與「LINE 金鑰」即可立即取得專屬 Webhook 網址！AI 資料庫與試算表皆可於開通後在您的「👤 個人檔案與店家後台」隨時填寫與保存。
       </p>
     </div>
 
     <!-- Google 帳號登入狀態提示列 -->
     <div id="auth-banner-unlogged" class="hidden mb-8 bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
       <div class="text-xs sm:text-sm text-amber-200 font-medium" data-i18n="need_login_banner">
-        🔐 為保留您的購買紀錄與日後修改設定權限，請先登入您的 Google 帳號後再送出開通表單。
+        🔐 為保留您的店家資料庫與日後登入自動載入設定權限，請先登入您的 Google 帳號。
       </div>
       <button type="button" onclick="openLoginModal()" data-i18n="btn_login_now"
         class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shrink-0 transition">
@@ -71,17 +113,199 @@
 
     <div id="auth-banner-logged" class="hidden mb-8 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
       <div>
-        <span class="text-emerald-400 font-bold" data-i18n="logged_as">✅ 已綁定 Google 會員帳號：</span>
+        <span class="text-emerald-400 font-bold" data-i18n="logged_as">✅ 已登入 Google 會員帳號：</span>
         <strong id="logged-email-display" class="text-white font-mono ml-1"></strong>
       </div>
-      <span class="text-slate-400" data-i18n="logged_edit_hint">開通後隨時可於「購買紀錄與設定修改」更新預約連結、通知信箱或重設金鑰</span>
+      <div class="flex items-center gap-3">
+        <span class="text-slate-400" data-i18n="logged_edit_hint">您的重要資料皆加密保存於雲端伺服器，每次登入自動從後端安全載入，絕不暴露於前端</span>
+        <button type="button" onclick="logoutOnboarding()" data-i18n="btn_logout_ob" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold">登出</button>
+      </div>
     </div>
 
-    <!-- 自助開通 4 步圖文指引 (隨語系動態顯示 LINE 真實按鈕名稱) -->
+    <!-- ===================================================================== -->
+    <!-- 👤 客戶專屬「個人檔案與店家管理後台」（當登入帳號已申請過店家時自動顯示！） -->
+    <!-- ===================================================================== -->
+    <section id="customer-profile-backend" class="hidden mb-12 bg-slate-900/90 border-2 border-emerald-500/50 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold mb-2">
+            <span>👤</span>
+            <span data-i18n="prof_badge">個人檔案與店家專屬管理後台（雲端安全留存）</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-black text-white" data-i18n="prof_title">我的店家 AI 資料庫與連線設定中心</h2>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="prof_desc">
+            您在此處輸入的 AI 資料庫、Google 試算表與預約連結皆安全儲存在後端伺服器；每次登入自動載入，且 LINE 敏感金鑰全程遮罩不外露於前端。
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="prof-store-select" onchange="selectProfileStore(this.value)" class="hidden bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold"></select>
+          <span id="prof-plan-badge" class="px-3 py-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-xs font-extrabold"></span>
+          <a href="/index.html#pricing" data-i18n="prof_btn_upgrade" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold transition">⚡ 升級 / 變更方案</a>
+        </div>
+      </div>
+
+      <!-- 1. 留存之專屬 Webhook 網址 ＋ 一鍵綁定店長 LINE -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-emerald-400" data-i18n="prof_webhook_lbl">🔗 您的專屬 Webhook 網址（貼於 LINE Developers）</span>
+            <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-[11px] font-bold text-cyan-400 hover:underline">
+              前往 LINE Developers 後台 ↗
+            </a>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="prof_webhook_url" readonly class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 font-mono text-xs text-emerald-400 font-bold" />
+            <button type="button" onclick="copyProfileWebhook()" data-i18n="btn_copy" class="shrink-0 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs">
+              複製網址
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-emerald-400" data-i18n="prof_bind_lbl">📲 店長個人 LINE 接收轉接通知綁定</span>
+            <span id="prof_bound_count" class="text-[11px] text-slate-400"></span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <a id="prof_oneclick_bind" href="#" target="_blank" data-i18n="btn_oneclick_line"
+              class="px-3.5 py-2 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-extrabold text-xs transition inline-block">
+              📲 點此一鍵打開 LINE 自動綁定店長通知帳號
+            </a>
+            <code id="prof_bind_cmd" class="text-[11px] font-mono text-emerald-300 bg-slate-900 px-2.5 py-1.5 rounded border border-slate-800 select-all"></code>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 店家名稱與 AI 資料庫設定 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1" data-i18n="lbl_client_name">商家 / 品牌名稱（將顯示於 AI 管家接待問候語）</label>
+          <input type="text" id="prof_client_name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1" data-i18n="prof_lbl_admin_uid">手動指定店長 LINE User ID（選填，U 開頭 33 碼）</label>
+          <input type="text" id="prof_admin_user_id" placeholder="U1234567890abcdef..." class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
+        </div>
+      </div>
+
+      <!-- 3. 外部 Google 試算表網址（含直達連結 ＋ 一鍵測試讀取按鈕） -->
+      <div class="bg-slate-950/90 border border-cyan-500/30 rounded-xl p-4 space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label class="text-xs font-extrabold text-cyan-400" data-i18n="prof_lbl_sheet">
+            📊 外部 Google 試算表網址（直接貼上一般試算表網址即可，系統自動轉為 CSV 並備份！）
+          </label>
+          <a href="https://docs.google.com/spreadsheets/" target="_blank" data-i18n="link_open_gsheet" class="text-xs font-bold text-cyan-300 hover:underline">
+            🔗 點此打開 Google 試算表 (Google Sheets) ↗
+          </a>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="url" id="prof_sheet_csv_url" placeholder="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing"
+            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400" />
+          <button type="button" onclick="testGoogleSheetUrl('prof_sheet_csv_url', 'prof-sheet-test-box')" data-i18n="btn_test_sheet"
+            class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs shrink-0 transition">
+            🔍 測試讀取試算表內容
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-400" data-i18n="sheet_share_hint">
+          💡 提醒：請在您的 Google 試算表右上角點擊「共用 (Share)」➔ 將一般存取權設為「知道連結的任何人皆可檢視」，再點上方「🔍 測試讀取試算表內容」確認 AI 已抓到資料！
+        </p>
+        <div id="prof-sheet-test-box" class="hidden rounded-xl p-3 text-xs leading-relaxed"></div>
+      </div>
+
+      <!-- 4. 網頁直接輸入 AI 資料庫（永久保存於雲端後端） -->
+      <div class="bg-slate-950/95 border border-emerald-500/30 rounded-xl p-4 space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label class="text-xs font-extrabold text-emerald-400" data-i18n="lbl_custom_kb">
+            📝 直接填寫 AI 資料庫問答與不接受事項（可搭配或取代 Google 試算表・零幻覺防答錯）
+          </label>
+          <button type="button" onclick="fillStandardKbTemplateTarget('prof_custom_kb_text')" data-i18n="btn_fill_kb_tpl"
+            class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold transition">
+            ✨ 點此載入防出錯標準填寫範本
+          </button>
+        </div>
+        <textarea id="prof_custom_kb_text" rows="6" data-i18n-placeholder="ph_custom_kb"
+          placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。"
+          class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+      </div>
+
+      <!-- 5. 預約多組連結 ＋ 原 LINE 機器人關鍵字禮讓 ＋ 緊急通知信箱/Telegram -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1" data-i18n="lbl_booking">
+            線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組）
+          </label>
+          <textarea id="prof_booking_links" rows="3" data-i18n-placeholder="ph_booking"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-cyan-300 mb-1" data-i18n="lbl_ignore_kw">
+              🤖 原 LINE 機器人禮讓關鍵字（以逗號分隔，AI 自動靜音不搶話）
+            </label>
+            <input type="text" id="prof_ignore_keywords" data-i18n-placeholder="ph_ignore_kw"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 mb-1" data-i18n="prof_lbl_emails">緊急通知信箱（最多 3 組，逗號分隔）</label>
+              <input type="text" id="prof_alert_emails" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[11px] font-bold text-slate-300">Telegram Chat ID</label>
+                <a href="https://t.me/userinfobot" target="_blank" class="text-[11px] font-bold text-cyan-400 hover:underline">@userinfobot ↗</a>
+              </div>
+              <input type="text" id="prof_telegram_chat_id" class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 儲存按鈕與回饋訊息 -->
+      <div class="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-800">
+        <div class="text-xs text-slate-400">
+          🔒 <span data-i18n="prof_masked_keys_label">已綁定保護之 LINE 金鑰（前端不留存明文）：</span>
+          <code id="prof_masked_keys" class="font-mono text-emerald-400 ml-1"></code>
+        </div>
+        <button type="button" id="btn-save-profile" onclick="saveProfileStoreSettings()" data-i18n="btn_save_profile"
+          class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/20 transition">
+          💾 儲存並更新我的 AI 資料庫與店家設定
+        </button>
+      </div>
+      <div id="prof-save-msg" class="hidden rounded-xl p-3 text-xs font-bold text-center"></div>
+
+      <!-- 選用：安全重設 LINE 金鑰（需收信 6 位數驗證碼）與申請新分店切換 -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80 text-xs">
+        <details class="w-full sm:w-auto">
+          <summary class="cursor-pointer text-amber-300 font-bold hover:underline" data-i18n="prof_reset_key_toggle">
+            🔐 需要更換 LINE Channel Secret / Access Token？（點此發送 6 位數信箱驗證碼安全重設）
+          </summary>
+          <div class="mt-3 p-4 bg-slate-950 border border-amber-500/40 rounded-xl space-y-2.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="sendProfileKeyOtp()" data-i18n="btn_send_key_otp" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-xs">
+                📧 寄送 6 位數安全驗證碼至信箱与 LINE
+              </button>
+              <input type="text" id="prof_key_otp" maxlength="6" placeholder="輸入 6 位數驗證碼" class="w-36 font-mono text-center bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+            </div>
+            <input type="text" id="prof_new_secret" placeholder="新的 32 碼 LINE Channel Secret" class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white" />
+            <textarea id="prof_new_token" rows="2" placeholder="新的 170+ 碼 LINE Channel Access Token" class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
+            <p class="text-[11px] text-slate-400">填入驗證碼與新金鑰後，直接點擊上方「💾 儲存並更新」即可完成重設。</p>
+          </div>
+        </details>
+
+        <button type="button" onclick="toggleNewStoreApplicationSection()" data-i18n="btn_toggle_new_store"
+          class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs transition">
+          ➕ 申請串接另一個 LINE 官方帳號 / 查看 4 步教學
+        </button>
+      </div>
+    </section>
+
+    <!-- 自助開通 4 步圖文指引 + 申請表單外層容器（未申請過店家時預設展開；已申請過店家時可點按鈕展開） -->
+    <div id="new-store-application-wrapper">
     <section class="mb-10">
       <h2 class="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-2">
         <span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 text-xs font-black flex items-center justify-center">i</span>
-        <span data-i18n="guide_title">LINE 官方後台 4 步按鈕名稱對照教學</span>
+        <span data-i18n="guide_title">LINE 官方後台 4 步按鈕名稱對照教學（附官方後台直達連結）</span>
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
@@ -92,48 +316,69 @@
               進入 LINE 官方帳號後台，點右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong> ➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。
             </p>
           </div>
-          <div class="flex flex-col gap-1 pt-2 border-t border-slate-800/80">
-            <a href="https://manager.line.biz/" target="_blank" class="text-xs font-semibold text-cyan-400 hover:underline">
-              1. LINE Official Account Manager ↗
+          <div class="flex flex-col gap-1.5 pt-2 border-t border-slate-800/80">
+            <a href="https://manager.line.biz/" target="_blank" class="text-xs font-bold text-cyan-400 hover:underline">
+              🔗 1. 點此開啟 LINE Official Account Manager ↗
             </a>
-            <a href="https://developers.line.biz/console/" target="_blank" class="text-xs font-semibold text-emerald-400 hover:underline">
-              2. LINE Developers Console ↗
+            <a href="https://developers.line.biz/console/" target="_blank" class="text-xs font-bold text-emerald-400 hover:underline">
+              🔗 2. 點此開啟 LINE Developers Console ↗
             </a>
           </div>
         </div>
 
-        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
-          <div class="text-xs font-bold text-emerald-400 mb-1">STEP 2</div>
-          <h3 data-i18n="s2_title" class="font-bold text-white text-sm mb-2">複製 Channel Secret</h3>
-          <p data-i18n="s2_desc" class="text-xs text-slate-300 leading-relaxed">
-            打開 LINE Developers Console 點選您的頻道 ➔ 點上方分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊 <strong>「Copy」</strong>。
-          </p>
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold text-emerald-400 mb-1">STEP 2</div>
+            <h3 data-i18n="s2_title" class="font-bold text-white text-sm mb-2">複製 Channel Secret</h3>
+            <p data-i18n="s2_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
+              打開 LINE Developers Console 點選您的頻道 ➔ 點上方分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊 <strong>「Copy」</strong>。
+            </p>
+          </div>
+          <div class="pt-2 border-t border-slate-800/80">
+            <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-emerald-400 hover:underline">
+              🔗 前往 LINE Developers Console 複製 ↗
+            </a>
+          </div>
         </div>
 
-        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
-          <div class="text-xs font-bold text-emerald-400 mb-1">STEP 3</div>
-          <h3 data-i18n="s3_title" class="font-bold text-white text-sm mb-2">發行 Channel Access Token</h3>
-          <p data-i18n="s3_desc" class="text-xs text-slate-300 leading-relaxed">
-            切換至上方分頁 <strong>「Messaging API」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue」</strong> ➔ 點擊 <strong>「Copy」</strong>。
-          </p>
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold text-emerald-400 mb-1">STEP 3</div>
+            <h3 data-i18n="s3_title" class="font-bold text-white text-sm mb-2">發行 Channel Access Token</h3>
+            <p data-i18n="s3_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
+              切換至上方分頁 <strong>「Messaging API」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue」</strong> ➔ 點擊 <strong>「Copy」</strong>。
+            </p>
+          </div>
+          <div class="pt-2 border-t border-slate-800/80">
+            <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-emerald-400 hover:underline">
+              🔗 前往 LINE Developers Console 發行 ↗
+            </a>
+          </div>
         </div>
 
-        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5">
-          <div class="text-xs font-bold text-emerald-400 mb-1">STEP 4</div>
-          <h3 data-i18n="s4_title" class="font-bold text-white text-sm mb-2">貼上 Webhook 並開啟開關</h3>
-          <p data-i18n="s4_desc" class="text-xs text-slate-300 leading-relaxed">
-            送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 貼上並按 <strong>「Update」</strong> ➔ 開啟 <strong>「Use webhook」</strong> 綠色開關！
-          </p>
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="text-xs font-bold text-emerald-400 mb-1">STEP 4</div>
+            <h3 data-i18n="s4_title" class="font-bold text-white text-sm mb-2">貼上 Webhook 並開啟開關</h3>
+            <p data-i18n="s4_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
+              送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 貼上並按 <strong>「Update」</strong> ➔ 開啟 <strong>「Use webhook」</strong> 綠色開關！
+            </p>
+          </div>
+          <div class="pt-2 border-t border-slate-800/80">
+            <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-cyan-400 hover:underline">
+              🔗 前往 LINE Developers Console 貼上 ↗
+            </a>
+          </div>
         </div>
       </div>
 
-      <!-- 新增：防機器人打架黃金 3 開關提醒（避免 LINE 內建罐頭訊息與 AI 同時回覆） -->
+      <!-- 防機器人打架黃金 3 開關提醒 -->
       <div data-i18n="conflict_box_html" class="mt-4 bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 text-xs text-amber-100 leading-relaxed">
         <div class="font-extrabold text-amber-300 text-sm mb-1.5">
           🛡️ 必看！防止「LINE 內建罐頭機器人」與「AI 管家」搶話打架的黃金 3 開關：
         </div>
         <p class="text-slate-300 mb-2">
-          為了避免客人傳訊息時，LINE 內建的預設罐頭訊息（「感謝您的來信，目前無法個別回覆...」）跳出來跟 AI 管家同時回覆，請至 <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager</a> 右上角齒輪 <strong>「設定 (Settings) ➔ 回應設定 (Response settings)」</strong> 確認以下 3 個開關：
+          為了避免客人傳訊息時，LINE 內建的預設罐頭訊息（「感謝您的來信，目前無法個別回覆...」）跳出來跟 AI 管家同時回覆，請至 <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager ↗</a> 右上角齒輪 <strong>「設定 (Settings) ➔ 回應設定 (Response settings)」</strong> 確認以下 3 個開關：
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]">
           <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5">
@@ -155,17 +400,17 @@
     <!-- 表單與結果雙欄區塊 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-      <!-- 左欄：商業級安全開通表單 (免填英文代號，系統自動加密生成；防重複金鑰；支援3信箱與多連結) -->
+      <!-- 左欄：極簡 3 必填快速取得 Webhook 表單（其他資料庫與通知設定皆列為選填摺疊，開通後隨時可在個人檔案後台設定！） -->
       <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-6">
           <h2 data-i18n="form_title" class="text-lg sm:text-xl font-bold text-white">線上安全開通設定表單</h2>
           <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold" data-i18n="lock_badge">
-            🔒 防重複綁定 ＋ 信箱驗證修改保護
+            🔒 只需填 3 項必填即可立即取得 Webhook
           </span>
         </div>
 
         <form id="onboarding-form" class="space-y-5" novalidate>
-          <!-- 必填 1：商家名稱 (系統自動產生專屬加密 ID，客戶無須填寫 tenant_id) -->
+          <!-- 必填 1：商家名稱 -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">
               <span data-i18n="lbl_client_name">商家 / 品牌名稱（將顯示於 AI 管家接待問候語）</span> <span class="text-rose-400">*</span>
@@ -175,11 +420,16 @@
             <p id="err-name" data-i18n="err_name" class="hidden text-xs text-rose-400 mt-1">⚠️ 請輸入貴店的商家或品牌名稱。</p>
           </div>
 
-          <!-- 必填 2：Channel Secret -->
+          <!-- 必填 2：Channel Secret（附直達連結） -->
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
-              <span data-i18n="lbl_secret">LINE Channel Secret（Basic settings 分頁底部 32 碼英數）</span> <span class="text-rose-400">*</span>
-            </label>
+            <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+              <label class="text-xs font-semibold text-slate-300">
+                <span data-i18n="lbl_secret">LINE Channel Secret（Basic settings 分頁底部 32 碼英數）</span> <span class="text-rose-400">*</span>
+              </label>
+              <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-cyan-400 hover:underline">
+                🔗 點此開啟 LINE Developers Console 複製 ↗
+              </a>
+            </div>
             <input type="text" id="channel_secret" required placeholder="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
               class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
             <p id="err-secret" data-i18n="err_secret" class="hidden text-xs text-rose-400 mt-1">
@@ -187,11 +437,16 @@
             </p>
           </div>
 
-          <!-- 必填 3：Channel Access Token -->
+          <!-- 必填 3：Channel Access Token（附直達連結） -->
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
-              <span data-i18n="lbl_token">LINE Channel Access Token（Messaging API 分頁底部約 170+ 碼）</span> <span class="text-rose-400">*</span>
-            </label>
+            <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+              <label class="text-xs font-semibold text-slate-300">
+                <span data-i18n="lbl_token">LINE Channel Access Token（Messaging API 分頁底部約 170+ 碼）</span> <span class="text-rose-400">*</span>
+              </label>
+              <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-emerald-400 hover:underline">
+                🔗 點此開啟 LINE Developers Console 發行 ↗
+              </a>
+            </div>
             <textarea id="channel_access_token" rows="3" required data-i18n-placeholder="ph_token" placeholder="貼上點擊 Issue 後複製之長效 Channel access token..."
               class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 transition"></textarea>
             <p id="err-token" data-i18n="err_token" class="hidden text-xs text-rose-400 mt-1">
@@ -199,136 +454,173 @@
             </p>
           </div>
 
-          <!-- 複合轉接通知設定區塊 (全數標明選填、後續可隨時修改，且完整展開說明不遮擋) -->
-          <div class="pt-4 border-t border-slate-800 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 data-i18n="notify_title" class="text-sm font-extrabold text-emerald-400">
-                🔔 真人客服轉接通知設定（A + B + C 多重管道）
-              </h3>
-              <span data-i18n="opt_later_badge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-cyan-300 font-semibold">
-                選填・開通後隨時可於會員設定修改
+          <!-- 選填摺疊區：申請時可先不用填寫！取得 Webhook 後隨時可在「個人檔案與店家後台」填寫與修改 -->
+          <details id="optional-init-drawer" class="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 sm:p-5">
+            <summary class="cursor-pointer select-none flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-extrabold text-cyan-400" data-i18n="opt_drawer_title">
+                📂 進階選填設定：AI 資料庫、Google 試算表、預約連結與通知（申請時可先免填！開通後隨時可在「👤 個人檔案後台」填寫）
               </span>
-            </div>
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-emerald-300 font-bold" data-i18n="opt_later_badge">
+                選填・可開通後再填
+              </span>
+            </summary>
 
-            <!-- 管道 A：店長 LINE 帳號綁定 (支援開通後一鍵打開 LINE 自動綁定！文字放在輸入框下方完整顯示不遮擋) -->
-            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
-              <label class="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" id="chk_notify_line" checked class="mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0" />
-                <span data-i18n="chk_a_label" class="text-xs sm:text-sm font-bold text-white">
-                  管道 A：店長個人 LINE 推播通知（推薦・支援開通後「一鍵打開 LINE 自動綁定」）
-                </span>
-              </label>
-              <p data-i18n="chk_a_help" class="text-xs text-slate-300 leading-relaxed pl-6">
-                💡 <strong>免手動查代碼！</strong>此欄現在可先留空，送出下方表單完成驗證後，畫面會出現<strong>「📲 一鍵打開 LINE 自動綁定店長通知」</strong>按鈕，點擊即可直接綁定您的 LINE 帳號！（若您已有 U 開頭 33 碼 User ID 亦可直接填入下方）：
-              </p>
-              <div class="pl-6">
-                <input type="text" id="admin_user_id" data-i18n-placeholder="ph_line_uid" placeholder="選填（可留空，送出表單後點按鈕直接一鍵綁定 LINE）"
-                  class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+            <div class="mt-5 space-y-5 pt-4 border-t border-slate-800">
+              <!-- 複合轉接通知設定區塊 -->
+              <div class="space-y-4">
+                <h3 data-i18n="notify_title" class="text-sm font-extrabold text-emerald-400">
+                  🔔 真人客服轉接通知設定（A + B + C 多重管道）
+                </h3>
+
+                <!-- 管道 A：店長 LINE 帳號綁定 -->
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
+                  <label class="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" id="chk_notify_line" checked class="mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0" />
+                    <span data-i18n="chk_a_label" class="text-xs sm:text-sm font-bold text-white">
+                      管道 A：店長個人 LINE 推播通知（推薦・支援開通後「一鍵打開 LINE 自動綁定」）
+                    </span>
+                  </label>
+                  <p data-i18n="chk_a_help" class="text-xs text-slate-300 leading-relaxed pl-6">
+                    💡 <strong>免手動查代碼！</strong>此欄現在可先留空，送出表單完成驗證後，畫面會出現<strong>「📲 一鍵打開 LINE 自動綁定店長通知」</strong>按鈕！
+                  </p>
+                  <div class="pl-6">
+                    <input type="text" id="admin_user_id" data-i18n-placeholder="ph_line_uid" placeholder="選填（可留空，送出表單後點按鈕直接一鍵綁定 LINE）"
+                      class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+                  </div>
+                </div>
+
+                <!-- 管道 B：Telegram Chat ID (附 @userinfobot 直達連結) -->
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                      <input type="checkbox" id="chk_notify_tg" checked class="mt-0.5 w-4 h-4 rounded accent-cyan-500 shrink-0" />
+                      <span data-i18n="chk_b_label" class="text-xs sm:text-sm font-bold text-white">
+                        管道 B：Telegram 即時推播備援（選填・免費無則數上限，後續可隨時修改）
+                      </span>
+                    </label>
+                    <a href="https://t.me/userinfobot" target="_blank" class="text-xs font-bold text-cyan-400 hover:underline">
+                      🔗 點此開啟 Telegram @userinfobot 查詢 ↗
+                    </a>
+                  </div>
+                  <div class="pl-6 space-y-2">
+                    <input type="text" id="telegram_chat_id" data-i18n-placeholder="ph_tg_id" placeholder="選填，例如：123456789（開通後亦可隨時補填）"
+                      class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
+                    <div data-i18n="chk_b_tutorial" class="bg-slate-900/80 border border-slate-800/90 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed">
+                      📖 <strong>30 秒取得 Telegram Chat ID 教學：</strong><br/>
+                      1. 點擊上方 <a href="https://t.me/userinfobot" target="_blank" class="text-cyan-400 underline font-bold">@userinfobot ↗</a> 並點擊 <strong>Start</strong>。<br/>
+                      2. 機器人會立即回覆一串純數字 <strong>Id</strong>（例如 <code>123456789</code>），複製填入上方欄位即可！
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 管道 C：最多 3 組緊急通知 Email -->
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
+                  <label class="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" id="chk_notify_email" checked class="mt-0.5 w-4 h-4 rounded accent-indigo-500 shrink-0" />
+                    <span data-i18n="chk_c_label" class="text-xs sm:text-sm font-bold text-white">
+                      管道 C：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）
+                    </span>
+                  </label>
+                  <div class="pl-6 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input type="email" id="alert_email_1" data-i18n-placeholder="ph_em1" placeholder="通知信箱 1 (主信箱)"
+                      class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+                    <input type="email" id="alert_email_2" data-i18n-placeholder="ph_em2" placeholder="通知信箱 2 (選填)"
+                      class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+                    <input type="email" id="alert_email_3" data-i18n-placeholder="ph_em3" placeholder="通知信箱 3 (選填)"
+                      class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <!-- 管道 B：Telegram Chat ID (附完整 30 秒取得教學 + 標註選填後續可改) -->
-            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
-              <label class="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" id="chk_notify_tg" checked class="mt-0.5 w-4 h-4 rounded accent-cyan-500 shrink-0" />
-                <span data-i18n="chk_b_label" class="text-xs sm:text-sm font-bold text-white">
-                  管道 B：Telegram 即時推播備援（選填・免費無則數上限，後續可隨時修改）
-                </span>
-              </label>
-              <div class="pl-6 space-y-2">
-                <input type="text" id="telegram_chat_id" data-i18n-placeholder="ph_tg_id" placeholder="選填，例如：123456789（開通後亦可隨時補填）"
-                  class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
-                <div data-i18n="chk_b_tutorial" class="bg-slate-900/80 border border-slate-800/90 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed">
-                  📖 <strong>30 秒取得 Telegram Chat ID 教學：</strong><br/>
-                  1. 打開 Telegram 搜尋官方查詢機器人 <code>@userinfobot</code> 並點擊 <strong>Start</strong>。<br/>
-                  2. 機器人會立即回覆一串純數字 <strong>Id</strong>（例如 <code>123456789</code>），複製填入上方欄位即可！
+              <!-- 多組預約/菜單連結 與 Google 試算表設定 -->
+              <div class="pt-4 border-t border-slate-800 space-y-4">
+                <p data-i18n="opt_title" class="text-xs sm:text-sm font-extrabold text-cyan-400">✨ 多組預約/菜單連結 ＆ Google 試算表 / AI 資料庫</p>
+
+                <div>
+                  <label data-i18n="lbl_booking" class="block text-xs font-semibold text-slate-300 mb-1">
+                    線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組，AI 會依客人問題自動提供對應網址）
+                  </label>
+                  <textarea id="booking_links" rows="3" data-i18n-placeholder="ph_booking"
+                    placeholder="例如：&#10;線上訂房預約：https://inline.app/booking/...&#10;餐廳菜單介紹：https://example.com/menu"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
+                </div>
+
+                <div>
+                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <label data-i18n="lbl_sheet" class="text-xs font-semibold text-slate-300">
+                      Google 試算表知識庫網址（直接貼上一般試算表網址即可，系統自動轉為 CSV）
+                    </label>
+                    <a href="https://docs.google.com/spreadsheets/" target="_blank" data-i18n="link_open_gsheet" class="text-xs font-bold text-cyan-400 hover:underline">
+                      🔗 點此打開 Google 試算表 (Google Sheets) ↗
+                    </a>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="url" id="sheet_csv_url" placeholder="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing"
+                      class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
+                    <button type="button" onclick="testGoogleSheetUrl('sheet_csv_url', 'onboard-sheet-test-box')" data-i18n="btn_test_sheet"
+                      class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs shrink-0 transition">
+                      🔍 測試讀取試算表內容
+                    </button>
+                  </div>
+                  <div id="onboard-sheet-test-box" class="hidden mt-2 rounded-xl p-3 text-xs leading-relaxed"></div>
+                </div>
+
+                <!-- 直接在網頁填寫店家問答與禁忌清單 -->
+                <div class="bg-slate-950/95 border border-emerald-500/30 rounded-xl p-4 space-y-2.5">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <label data-i18n="lbl_custom_kb" class="text-xs font-extrabold text-emerald-400">
+                      📝 直接填寫 AI 資料庫問答與不接受事項（可搭配或取代 Google 試算表・零幻覺防答錯）
+                    </label>
+                    <button type="button" onclick="fillStandardKbTemplateOnboard()" data-i18n="btn_fill_kb_tpl"
+                      class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold transition">
+                      ✨ 點此載入防出錯標準填寫範本
+                    </button>
+                  </div>
+                  <textarea id="custom_kb_text" rows="5" data-i18n-placeholder="ph_custom_kb"
+                    placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。&#10;⚠️ 嚴格防答錯保護：只要 AI 資料庫中沒有找到相關資料的問題，AI 一律回答『目前 AI 資料庫中沒有找到相關資料，已為您通知專人客服』並立即通知您！"
+                    class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+                  <div data-i18n="kb_guide_html" class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed space-y-1">
+                    <div class="font-bold text-amber-300">💡 怎麼填寫最不會出錯？推薦填寫以下 6 大黃金欄位（Google 試算表亦同）：</div>
+                    <div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div>
+                    <div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額（勿只寫「依現場為主」）。</div>
+                    <div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div>
+                    <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
+                    <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div>
+                    <div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：若您將原本 LINE 機器人的回覆內容貼進試算表，日後哪一條暫時不用，只要在該列開頭加上 <code>[停用]</code>（或在試算表第 3 欄填 <code>停用</code>），AI 就會自動排除不回答！</div>
+                    <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！只要 AI 資料庫中沒有找到相關資料的問題，AI 都會百分之百轉交給您！</div>
+                  </div>
+
+                  <!-- 保留原 LINE 關鍵字機器人「不打架禮讓設定」 -->
+                  <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
+                    <label data-i18n="lbl_ignore_kw" class="block text-xs font-bold text-cyan-300">
+                      🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）
+                    </label>
+                    <input type="text" id="ignore_keywords" data-i18n-placeholder="ph_ignore_kw"
+                      placeholder="填入您已在 LINE 後台設定過的關鍵字（以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動）"
+                      class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
+                    <p data-i18n="help_ignore_kw" class="text-[11px] text-slate-400 leading-relaxed">
+                      💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
+          </details>
 
-            <!-- 管道 C：最多 3 組緊急通知 Email -->
-            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
-              <label class="flex items-start gap-2.5 cursor-pointer">
-                <input type="checkbox" id="chk_notify_email" checked class="mt-0.5 w-4 h-4 rounded accent-indigo-500 shrink-0" />
-                <span data-i18n="chk_c_label" class="text-xs sm:text-sm font-bold text-white">
-                  管道 C：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）
-                </span>
-              </label>
-              <div class="pl-6 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <input type="email" id="alert_email_1" data-i18n-placeholder="ph_em1" placeholder="通知信箱 1 (主信箱)"
-                  class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
-                <input type="email" id="alert_email_2" data-i18n-placeholder="ph_em2" placeholder="通知信箱 2 (選填)"
-                  class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
-                <input type="email" id="alert_email_3" data-i18n-placeholder="ph_em3" placeholder="通知信箱 3 (選填)"
-                  class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
-              </div>
-            </div>
-          </div>
-
-          <!-- 多組預約/菜單連結 與 Google 試算表設定 (清楚標明選填、後續可修改) -->
-          <div class="pt-4 border-t border-slate-800 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <p data-i18n="opt_title" class="text-xs sm:text-sm font-extrabold text-cyan-400">✨ 多組預約/菜單連結 ＆ Google 試算表知識庫</p>
-              <span data-i18n="opt_later_badge2" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                選填・日後隨時可修改
-              </span>
-            </div>
-
-            <div>
-              <label data-i18n="lbl_booking" class="block text-xs font-semibold text-slate-300 mb-1">
-                線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組，AI 會依客人問題自動提供對應網址）
-              </label>
-              <textarea id="booking_links" rows="3" data-i18n-placeholder="ph_booking"
-                placeholder="例如：&#10;線上訂房預約：https://inline.app/booking/...&#10;餐廳菜單介紹：https://example.com/menu"
-                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
-            </div>
-
-            <div>
-              <label data-i18n="lbl_sheet" class="block text-xs font-semibold text-slate-300 mb-1">
-                Google 試算表知識庫 CSV 網址（內建試算表誤刪自動快照備份）
-              </label>
-              <input type="url" id="sheet_csv_url" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
-                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
-            </div>
-
-            <!-- 新增：直接在網頁填寫店家問答與禁忌清單 + 防出錯填寫指南 -->
-            <div class="bg-slate-950/95 border border-emerald-500/30 rounded-xl p-4 space-y-2.5">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <label data-i18n="lbl_custom_kb" class="text-xs font-extrabold text-emerald-400">
-                  📝 直接填寫 AI 資料庫問答與不接受事項（可搭配或取代 Google 試算表・零幻覺防答錯）
-                </label>
-                <button type="button" onclick="fillStandardKbTemplateOnboard()" data-i18n="btn_fill_kb_tpl"
-                  class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold transition">
-                  ✨ 點此載入防出錯標準填寫範本
+          <!-- 必勾選：服務條款與資料授權合約（免費版方案 A 與付費方案皆須勾選同意！） -->
+          <div class="bg-slate-950/90 border border-emerald-500/40 rounded-xl p-4 space-y-2">
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="chk_agree_tos" required class="mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0" />
+              <span class="text-xs text-slate-200 leading-relaxed">
+                <span data-i18n="tos_agree_label">我已詳細閱讀並同意《服務條款、退款條件、跨國匯率差額聲明暨 Google/AI 資料授權合約》（含免費體驗版與付費方案規範）</span>
+                <button type="button" onclick="openOnboardTermsModal()" data-i18n="btn_view_tos" class="ml-1 text-emerald-400 underline font-bold hover:text-emerald-300">
+                  📜 點此檢視完整合約條款
                 </button>
-              </div>
-              <textarea id="custom_kb_text" rows="5" data-i18n-placeholder="ph_custom_kb"
-                placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。&#10;⚠️ 嚴格防答錯保護：只要 AI 資料庫中沒有找到相關資料的問題，AI 一律回答『目前 AI 資料庫中沒有找到相關資料，已為您通知專人客服』並立即通知您！"
-                class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
-              <div data-i18n="kb_guide_html" class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed space-y-1">
-                <div class="font-bold text-amber-300">💡 怎麼填寫最不會出錯？推薦填寫以下 6 大黃金欄位（Google 試算表亦同）：</div>
-                <div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div>
-                <div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額（勿只寫「依現場為主」）。</div>
-                <div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div>
-                <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
-                <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div>
-                <div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：若您將原本 LINE 機器人的回覆內容貼進試算表，日後哪一條暫時不用，只要在該列開頭加上 <code>[停用]</code>（或在試算表第 3 欄填 <code>停用</code>），AI 就會自動排除不回答！</div>
-                <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！只要 AI 資料庫中沒有找到相關資料的問題，AI 都會百分之百轉交給您！</div>
-              </div>
-
-              <!-- 新增：保留原 LINE 關鍵字機器人「不打架禮讓設定」 -->
-              <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
-                <label data-i18n="lbl_ignore_kw" class="block text-xs font-bold text-cyan-300">
-                  🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）
-                </label>
-                <input type="text" id="ignore_keywords" data-i18n-placeholder="ph_ignore_kw"
-                  placeholder="填入您已在 LINE 後台設定過的關鍵字（以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動）"
-                  class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
-                <p data-i18n="help_ignore_kw" class="text-[11px] text-slate-400 leading-relaxed">
-                  💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！
-                </p>
-              </div>
-            </div>
+              </span>
+            </label>
+            <p id="err-tos" data-i18n="err_tos" class="hidden text-xs text-rose-400 font-bold pl-6">
+              ⚠️ 請先勾選同意《服務條款暨資料授權合約》後再進行開通！
+            </p>
           </div>
 
           <button type="submit" id="submit-btn" data-i18n="btn_submit"
@@ -401,7 +693,27 @@
       </div>
 
     </div>
+    </div><!-- /#new-store-application-wrapper -->
   </main>
+
+  <!-- 📜 服務條款、退款條件與資料授權合約彈窗（免費版與付費版皆適用，支援 5 國語系） -->
+  <div id="onboard-terms-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] flex flex-col">
+      <button type="button" onclick="closeOnboardTermsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
+      <h3 data-i18n="tos_modal_title" class="text-lg font-extrabold text-white mb-3">📜 服務條款、退款條件與 Google/AI 資料授權合約</h3>
+      <div data-i18n="tos_modal_html" class="flex-1 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2.5 leading-relaxed">
+        <p><strong>1. 服務內容與免費/付費方案規範：</strong>方案 A（0 元體驗版）每月提供 50 次免費 AI 自動回覆與最近 3 句對話記憶；方案 B 與方案 C 提供無限次 AI 回覆與最近 10 句記憶（方案 C 另含熟客重點資料卡雲端建檔）。</p>
+        <p><strong>2. AI 資料庫授權與零幻覺原則：</strong>您填寫於後台之 AI 資料庫與 Google 試算表內容僅供您的專屬 AI 管家回覆顧客使用；未記載於 AI 資料庫之問題，AI 一律回答「目前 AI 資料庫中沒有找到相關資料」並轉接專人。</p>
+        <p><strong>3. 資安與金鑰保護：</strong>您的 LINE Channel Secret 與 Access Token 全程加密保存於雲端後端資料庫，絕不儲存於瀏覽器前端（localStorage），更換金鑰須經註冊信箱 6 位數驗證碼確認。</p>
+        <p><strong>4. 取消訂閱、升級與跨國匯率退款條款：</strong>隨時可於個人檔案後台一鍵取消訂閱並降級回方案 A；若由方案 B 升級至方案 C，系統自動標記退還當月原方案款項。跨國幣別結帳若遇發卡機構或 PayPal 匯率波動，退款依原交易幣別實收金額退刷。</p>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" onclick="acceptAndCloseOnboardTerms()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+          ✅ 我已閱讀並同意條款
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Google 登入彈窗 -->
   <div id="login-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
@@ -629,7 +941,32 @@
         kb_guide_html: `<div class="font-bold text-amber-300">💡 怎麼填寫最不會出錯？推薦填寫以下 6 大黃金欄位（Google 試算表亦同）：</div><div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div><div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額（勿只寫「依現場為主」）。</div><div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div><div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div><div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div><div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：若您將原本 LINE 機器人的回覆內容貼進試算表，日後哪一條暫時不用，只要在該列開頭加上 <code>[停用]</code>（或在試算表第 3 欄填 <code>停用</code>），AI 就會自動排除不回答！</div><div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！只要 AI 資料庫中沒有找到相關資料的問題，AI 都會百分之百轉交給您！</div>`,
         lbl_ignore_kw: "🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）",
         ph_ignore_kw: "填入您已在 LINE 後台設定過的關鍵字（以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動）",
-        help_ignore_kw: "💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！"
+        help_ignore_kw: "💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！",
+        btn_logout_ob: "登出",
+        prof_badge: "個人檔案與店家專屬管理後台（雲端安全留存）",
+        prof_title: "我的店家 AI 資料庫與連線設定中心",
+        prof_desc: "您在此處輸入的 AI 資料庫、Google 試算表與預約連結皆安全儲存在後端伺服器；每次登入自動載入，且 LINE 敏感金鑰全程遮罩不外露於前端。",
+        prof_btn_upgrade: "⚡ 升級 / 變更方案",
+        prof_webhook_lbl: "🔗 您的專屬 Webhook 網址（貼於 LINE Developers）",
+        link_go_line_dev: "🔗 前往 LINE Developers Console 後台 ↗",
+        prof_bind_lbl: "📲 店長個人 LINE 接收轉接通知綁定",
+        prof_lbl_admin_uid: "手動指定店長 LINE User ID（選填，U 開頭 33 碼）",
+        prof_lbl_sheet: "📊 外部 Google 試算表網址（直接貼上一般試算表網址即可，系統自動轉為 CSV 並備份！）",
+        link_open_gsheet: "🔗 點此打開 Google 試算表 (Google Sheets) ↗",
+        btn_test_sheet: "🔍 測試讀取試算表內容",
+        sheet_share_hint: "💡 提醒：請在您的 Google 試算表右上角點擊「共用 (Share)」➔ 將一般存取權設為「知道連結的任何人皆可檢視」，再點上方「🔍 測試讀取試算表內容」確認 AI 已抓到資料！",
+        prof_lbl_emails: "緊急通知信箱（最多 3 組，逗號分隔）",
+        prof_masked_keys_label: "已綁定保護之 LINE 金鑰（前端不留存明文）：",
+        btn_save_profile: "💾 儲存並更新我的 AI 資料庫與店家設定",
+        prof_reset_key_toggle: "🔐 需要更換 LINE Channel Secret / Access Token？（點此發送 6 位數信箱驗證碼安全重設）",
+        btn_send_key_otp: "📧 寄送 6 位數安全驗證碼至信箱與 LINE",
+        btn_toggle_new_store: "➕ 申請串接另一個 LINE 官方帳號 / 查看 4 步教學",
+        opt_drawer_title: "📂 進階選填設定：AI 資料庫、Google 試算表、預約連結與通知（申請時可先免填！開通後隨時可在「👤 個人檔案後台」填寫）",
+        tos_agree_label: "我已詳細閱讀並同意《服務條款、退款條件、跨國匯率差額聲明暨 Google/AI 資料授權合約》（含免費體驗版與付費方案規範）",
+        btn_view_tos: "📜 點此檢視完整合約條款",
+        err_tos: "⚠️ 請先勾選同意《服務條款暨資料授權合約》後再進行開通！",
+        tos_modal_title: "📜 服務條款、退款條件與 Google/AI 資料授權合約",
+        tos_modal_html: `<p><strong>1. 服務內容與免費/付費方案規範：</strong>方案 A（0 元體驗版）每月提供 50 次免費 AI 自動回覆與最近 3 句對話記憶；方案 B 與方案 C 提供無限次 AI 回覆與最近 10 句記憶（方案 C 另含熟客重點資料卡雲端建檔）。</p><p><strong>2. AI 資料庫授權與零幻覺原則：</strong>您填寫於後台之 AI 資料庫與 Google 試算表內容僅供您的專屬 AI 管家回覆顧客使用；未記載於 AI 資料庫之問題，AI 一律回答「目前 AI 資料庫中沒有找到相關資料」並轉接專人。</p><p><strong>3. 資安與金鑰保護：</strong>您的 LINE Channel Secret 與 Access Token 全程加密保存於雲端後端資料庫，絕不儲存於瀏覽器前端（localStorage），更換金鑰須經註冊信箱 6 位數驗證碼確認。</p><p><strong>4. 取消訂閱、升級與跨國匯率退款條款：</strong>隨時可於個人檔案後台一鍵取消訂閱並降級回方案 A；若由方案 B 升級至方案 C，系統自動標記退還當月原方案款項。跨國幣別結帳若遇發卡機構或 PayPal 匯率波動，退款依原交易幣別實收金額退刷。</p>`
       },
       "en": {
         header_title: "SmartHost Onboarding Center",
@@ -708,7 +1045,32 @@
         kb_guide_html: `<div class="font-bold text-amber-300">💡 6 Golden Categories for 100% Accurate AI Replies (also applies to Google Sheets):</div><div>1. <strong>[Hours & Check-in/Service Time]</strong>: Opening hours, closed days, latest check-in/entry time.</div><div>2. <strong>[Room / Service / Product Pricing]</strong>: Clear item names and exact prices.</div><div>3. <strong>[Store Restrictions & Unacceptable Requests]</strong>: e.g., "Non-smoking, no pets, no extra beds".</div><div>4. <strong>[Address, Transit & Parking]</strong>: Directions, subway exit, parking availability & rates.</div><div>5. <strong>[Payment & Cancellation Policy]</strong>: Accepted payment methods and refund/reschedule rules.</div><div>6. <strong>[Pause Any Row Anytime with [停用]]</strong>: Prefix any row with <code>[停用]</code> (or put <code>disabled</code> in Column 3 of your Sheet) to temporarily mute that rule!</div><div class="text-emerald-300 font-semibold pt-1">🛡️ Peace of Mind: Auto-translates into 100+ languages! Anything not in your AI Database is 100% escalated to your staff!</div>`,
         lbl_ignore_kw: "🤖 Want to Keep Using LINE's Built-in Keyword Replies / Rich Menu? (Optional · AI Auto-Mute Yield)",
         ph_ignore_kw: "Enter keywords configured in LINE Auto-Response (comma-separated, e.g., Promo, Loyalty Card, Lucky Draw)",
-        help_ignore_kw: "💡 When a guest sends any keyword listed above, our AI Concierge <strong>automatically stays silent (0 reply, 0 quota used)</strong> so your built-in LINE keyword rule can reply without conflict!"
+        help_ignore_kw: "💡 When a guest sends any keyword listed above, our AI Concierge <strong>automatically stays silent (0 reply, 0 quota used)</strong> so your built-in LINE keyword rule can reply without conflict!",
+        btn_logout_ob: "Sign Out",
+        prof_badge: "My Profile & Store Management Backend (Cloud Saved)",
+        prof_title: "My Store AI Database & Connection Settings",
+        prof_desc: "Your AI Database, Google Sheet URL, and booking links are safely stored on our backend server and loaded automatically on login. Sensitive LINE keys are masked and never exposed in frontend storage.",
+        prof_btn_upgrade: "⚡ Upgrade / Change Plan",
+        prof_webhook_lbl: "🔗 Your Dedicated Webhook URL (Paste in LINE Developers)",
+        link_go_line_dev: "🔗 Open LINE Developers Console ↗",
+        prof_bind_lbl: "📲 Bind Owner Personal LINE for Alerts",
+        prof_lbl_admin_uid: "Manual Owner LINE User ID (Optional, 33-char U...)",
+        prof_lbl_sheet: "📊 External Google Sheet URL (Paste any Google Sheet link—auto-converts to CSV!)",
+        link_open_gsheet: "🔗 Open Google Sheets ↗",
+        btn_test_sheet: "🔍 Test Reading Google Sheet",
+        sheet_share_hint: "💡 Tip: In Google Sheets, click top-right 'Share' ➔ set access to 'Anyone with the link can view', then click '🔍 Test Reading Google Sheet' above to verify!",
+        prof_lbl_emails: "Alert Emails (Up to 3, comma-separated)",
+        prof_masked_keys_label: "Protected LINE Keys (Masked, never stored in frontend):",
+        btn_save_profile: "💾 Save & Update My AI Database & Store Settings",
+        prof_reset_key_toggle: "🔐 Need to Replace LINE Channel Secret / Access Token? (Click to reset via 6-digit Email OTP)",
+        btn_send_key_otp: "📧 Send 6-Digit Security OTP to Email & LINE",
+        btn_toggle_new_store: "➕ Connect Another LINE Official Account / View 4-Step Guide",
+        opt_drawer_title: "📂 Optional Settings: AI Database, Google Sheet, Links & Alerts (Skip during initial setup—edit anytime in '👤 My Profile & Store Backend'!)",
+        tos_agree_label: "I have read and agree to the Terms of Service, Refund Policy, FX Notice & Google/AI Data Authorization Agreement (applies to Free & Paid plans)",
+        btn_view_tos: "📜 View Full Agreement",
+        err_tos: "⚠️ Please check the box to agree to the Terms of Service before activating!",
+        tos_modal_title: "📜 Terms of Service, Refund Policy & Google/AI Data Agreement",
+        tos_modal_html: `<p><strong>1. Service Plans:</strong> Plan A ($0 Free) includes 50 AI replies/month + 3-turn memory; Plan B & Plan C include unlimited AI replies + 10-turn memory (Plan C adds VIP guest profile cards).</p><p><strong>2. AI Database & Zero-Hallucination:</strong> Your AI Database and Google Sheet are used exclusively to answer your customers. For any unlisted question, AI replies 'No relevant data was found in the AI Database' and escalates to your staff.</p><p><strong>3. Key Security:</strong> LINE Channel Secret and Access Token are encrypted on the backend server and never stored in browser localStorage. Replacing keys requires a 6-digit Email OTP.</p><p><strong>4. Cancellation & FX Refund Policy:</strong> Cancel or downgrade to Plan A anytime with 1 click. Upgrading from Plan B to Plan C automatically flags your prior Plan B payment for refund.</p>`
       },
       "ja": {
         header_title: "SmartHost オンライン開通センター",
@@ -787,7 +1149,32 @@
         kb_guide_html: `<div class="font-bold text-amber-300">💡 正確にAIへ回答させるための6大推奨項目（スプレッドシートも同様）：</div><div>1. <strong>【営業時間・チェックイン/受付時間】</strong>：営業時間、定休日、最終受付時間。</div><div>2. <strong>【料金表・メニュー】</strong>：プラン名やサービス名と正確な金額。</div><div>3. <strong>【対応不可事項・禁止事項】</strong>：例「全館禁煙、ペット不可、エキストラベッド無し」。</div><div>4. <strong>【アクセス・駐車場案内】</strong>：住所、最寄り駅出口、駐車場の有無・料金。</div><div>5. <strong>【お支払い方法・キャンセル規定】</strong>：利用可能な決済手段、キャンセル料規定。</div><div>6. <strong>【行頭に [停用] を付けていつでも一時停止】</strong>：行頭に <code>[停用]</code> を付けるだけで、削除せずにその回答を一時無効化できます！</div><div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保証：世界100言語以上へ自動翻訳！AIデータベースにない質問は100%スタッフへ通知します！</div>`,
         lbl_ignore_kw: "🤖 LINE既存の「キーワード自動応答・リッチメニュー」を併用しますか？（任意・AI自動ミュート機能）",
         ph_ignore_kw: "LINE管理画面で設定済みのキーワードをカンマ区切りで入力（例：最新キャンペーン, ポイントカード, クーポン）",
-        help_ignore_kw: "💡 お客様が上記のキーワードを送信した際、AIコンシェルジュは<strong>自動的に沈黙（返信せず・枠消費なし）</strong>し、既存のLINEキーワード応答のみを動作させます！"
+        help_ignore_kw: "💡 お客様が上記のキーワードを送信した際、AIコンシェルジュは<strong>自動的に沈黙（返信せず・枠消費なし）</strong>し、既存のLINEキーワード応答のみを動作させます！",
+        btn_logout_ob: "ログアウト",
+        prof_badge: "マイプロフィール＆店舗管理画面（クラウド安全保存）",
+        prof_title: "店舗AIデータベース＆連携設定センター",
+        prof_desc: "入力したAIデータベース・Googleスプレッドシート・予約リンクはバックエンドサーバーに安全に保存され、ログイン時に自動読込されます（LINE機密キーはフロントエンドに保存されません）。",
+        prof_btn_upgrade: "⚡ プラン変更・アップグレード",
+        prof_webhook_lbl: "🔗 専用 Webhook URL（LINE Developersに貼り付け）",
+        link_go_line_dev: "🔗 LINE Developers コンソールを開く ↗",
+        prof_bind_lbl: "📲 オーナー個人LINE通知連携",
+        prof_lbl_admin_uid: "オーナーLINE User ID 手動指定（任意・Uから始まる33文字）",
+        prof_lbl_sheet: "📊 外部GoogleスプレッドシートURL（通常の共有URLをそのまま貼り付け可能・自動でCSV変換！）",
+        link_open_gsheet: "🔗 Googleスプレッドシートを開く ↗",
+        btn_test_sheet: "🔍 シート読込テスト",
+        sheet_share_hint: "💡 ヒント：スプレッドシート右上の「共有」➔「リンクを知っている全員が閲覧可」に設定し、「🔍 シート読込テスト」でAIが読み取れるか確認してください！",
+        prof_lbl_emails: "緊急通知メール（最大3件・カンマ区切り）",
+        prof_masked_keys_label: "保護されたLINEキー（フロントエンドには非表示）：",
+        btn_save_profile: "💾 AIデータベースと店舗設定を保存・更新する",
+        prof_reset_key_toggle: "🔐 LINE チャネルシークレット / トークンを変更しますか？（6桁メール認証コードで安全に再設定）",
+        btn_send_key_otp: "📧 6桁の認証コードをメールとLINEへ送信",
+        btn_toggle_new_store: "➕ 別のLINE公式アカウントを追加申請 / 4ステップ手順を見る",
+        opt_drawer_title: "📂 任意設定：AIデータベース・Googleシート・予約URL・通知（申請時は入力不要！開通後に「👤 マイプロフィール管理画面」からいつでも設定可能）",
+        tos_agree_label: "『利用規約・返金条件・為替差額免責およびGoogle/AIデータ利用許諾契約』（無料プラン・有料プラン共通）に同意します",
+        btn_view_tos: "📜 規約全文を表示",
+        err_tos: "⚠️ 開通前に『利用規約およびデータ利用許諾契約』への同意にチェックを入れてください！",
+        tos_modal_title: "📜 利用規約・返金条件およびGoogle/AIデータ利用許諾契約",
+        tos_modal_html: `<p><strong>1. プラン内容：</strong>プランA（0円無料版）は月50回のAI自動応答＋直近3往復の記憶、プランB・Cは無制限AI応答＋直近10往復の記憶（プランCは顧客カルテ永久保存付）を提供します。</p><p><strong>2. AIデータベースとゼロ・ハルシネーション原則：</strong>入力されたAIデータベースおよびスプレッドシートは貴店のAI応答のみに使用されます。未記載の質問には『現在AIデータベースに関連情報が見つかりません』と回答しスタッフへ通知します。</p><p><strong>3. セキュリティ保護：</strong>LINEキーはサーバー側で暗号化保存され、ブラウザのlocalStorageには保存されません。</p><p><strong>4. 解約・返金規定：</strong>マイページからいつでもワンクリックで解約・無料プランへ変更可能です。</p>`
       },
       "id": {
         header_title: "Pusat Aktivasi Online SmartHost",
@@ -866,7 +1253,32 @@
         kb_guide_html: `<div class="font-bold text-amber-300">💡 6 Kategori Penting untuk Akurasi 100% (berlaku juga di Google Sheets):</div><div>1. <strong>[Jam Operasional & Check-in]</strong>: Jam buka, hari libur, batas waktu check-in.</div><div>2. <strong>[Daftar Harga Kamar / Layanan]</strong>: Nama layanan dan harga lengkap.</div><div>3. <strong>[Batasan & Larangan Toko]</strong>: Misal: "Dilarang merokok, tidak menerima hewan peliharaan".</div><div>4. <strong>[Alamat & Parkir]</strong>: Petunjuk arah dan info parkir.</div><div>5. <strong>[Pembayaran & Pembatalan]</strong>: Metode pembayaran & aturan refund.</div><div>6. <strong>[Nonaktifkan Baris dengan [停用]]</strong>: Tambahkan <code>[停用]</code> di awal baris kapan saja untuk menonaktifkan jawaban tanpa menghapusnya!</div><div class="text-emerald-300 font-semibold pt-1">🛡️ Jaminan Aman: Terjemahan otomatis 100+ bahasa! Pertanyaan di luar Database AI 100% diteruskan ke staf Anda!</div>`,
         lbl_ignore_kw: "🤖 Ingin Tetap Memakai Balasan Kata Kunci Bawaan LINE / Rich Menu? (Opsional · AI Otomatis Diam)",
         ph_ignore_kw: "Masukkan kata kunci bawaan LINE (pisahkan dengan koma, misal: Promo, Member Card, Undian)",
-        help_ignore_kw: "💡 Saat tamu mengetik kata kunci di atas, AI kami <strong>otomatis diam (0 balasan, tanpa potong kuota)</strong> agar bot kata kunci LINE Anda membalas sendiri tanpa bentrok!"
+        help_ignore_kw: "💡 Saat tamu mengetik kata kunci di atas, AI kami <strong>otomatis diam (0 balasan, tanpa potong kuota)</strong> agar bot kata kunci LINE Anda membalas sendiri tanpa bentrok!",
+        btn_logout_ob: "Keluar",
+        prof_badge: "Profil Saya & Backend Manajemen Toko (Tersimpan di Cloud)",
+        prof_title: "Pusat Database AI & Pengaturan Koneksi Toko Saya",
+        prof_desc: "Database AI, Google Sheets, dan link booking Anda disimpan aman di server backend dan dimuat otomatis saat login. Kunci sensitif LINE disamarkan dan tidak pernah disimpan di frontend.",
+        prof_btn_upgrade: "⚡ Upgrade / Ubah Paket",
+        prof_webhook_lbl: "🔗 URL Webhook Khusus Anda (Tempel di LINE Developers)",
+        link_go_line_dev: "🔗 Buka LINE Developers Console ↗",
+        prof_bind_lbl: "📲 Ikat LINE Pribadi Pemilik untuk Notifikasi",
+        prof_lbl_admin_uid: "LINE User ID Pemilik Manual (Opsional, 33 karakter U...)",
+        prof_lbl_sheet: "📊 URL Google Sheets Eksternal (Tempel link Google Sheets biasa—otomatis dikonversi ke CSV!)",
+        link_open_gsheet: "🔗 Buka Google Sheets ↗",
+        btn_test_sheet: "🔍 Tes Baca Google Sheet",
+        sheet_share_hint: "💡 Tips: Di Google Sheets, klik 'Bagikan (Share)' di kanan atas ➔ atur akses ke 'Siapa saja yang memiliki link dapat melihat', lalu klik '🔍 Tes Baca Google Sheet'!",
+        prof_lbl_emails: "Email Darurat (Maks 3, pisahkan dengan koma)",
+        prof_masked_keys_label: "Kunci LINE Terlindungi (Disamarkan, tidak disimpan di frontend):",
+        btn_save_profile: "💾 Simpan & Perbarui Database AI & Pengaturan Toko",
+        prof_reset_key_toggle: "🔐 Ingin Mengganti LINE Channel Secret / Access Token? (Klik untuk reset aman dengan OTP Email 6 digit)",
+        btn_send_key_otp: "📧 Kirim Kode OTP 6 Digit ke Email & LINE",
+        btn_toggle_new_store: "➕ Hubungkan Akun LINE Resmi Lainnya / Lihat Panduan 4 Langkah",
+        opt_drawer_title: "📂 Pengaturan Opsional: Database AI, Google Sheets, Link & Notifikasi (Bisa dilewati saat pendaftaran awal—atur kapan saja di '👤 Profil & Backend Toko'!)",
+        tos_agree_label: "Saya telah membaca dan menyetujui Ketentuan Layanan, Kebijakan Refund, Selisih Kurs & Perjanjian Otorisasi Data Google/AI (berlaku untuk paket Gratis & Berbayar)",
+        btn_view_tos: "📜 Lihat Kontrak Lengkap",
+        err_tos: "⚠️ Harap centang persetujuan Ketentuan Layanan sebelum mengaktifkan!",
+        tos_modal_title: "📜 Ketentuan Layanan, Kebijakan Refund & Perjanjian Data Google/AI",
+        tos_modal_html: `<p><strong>1. Paket Layanan:</strong> Paket A (Gratis Rp 0) mencakup 50 balasan AI/bulan + memori 3 pesan; Paket B & C mencakup balasan tanpa batas + memori 10 pesan.</p><p><strong>2. Database AI & Anti-Halusinasi:</strong> Untuk pertanyaan yang tidak ada di Database AI, AI menjawab 'Data terkait belum ditemukan di Database AI' dan meneruskan ke staf Anda.</p><p><strong>3. Keamanan Kunci:</strong> Kunci LINE disimpan terenkripsi di server backend dan tidak pernah disimpan di localStorage browser.</p>`
       },
       "it": {
         header_title: "Centro di Attivazione SmartHost",
@@ -945,7 +1357,32 @@
         kb_guide_html: `<div class="font-bold text-amber-300">💡 6 Categorie Consigliate per Risposte IA Perfette (anche su Google Sheets):</div><div>1. <strong>[Orari di Apertura e Check-in]</strong>: Orari, giorni di chiusura, ultimo orario utile.</div><div>2. <strong>[Listino Prezzi Camere / Servizi]</strong>: Nomi completi e prezzi esatti.</div><div>3. <strong>[Limitazioni e Servizi Non Offerti]</strong>: Es: "Vietato fumare, niente animali, nessun letto aggiuntivo".</div><div>4. <strong>[Indirizzo, Trasporti e Parcheggio]</strong>: Indicazioni stradali e tariffe parcheggio.</div><div>5. <strong>[Pagamenti e Cancellazioni]</strong>: Metodi accettati e regole di rimborso.</div><div>6. <strong>[Sospendi Qualsiasi Riga con [停用]]</strong>: Aggiungi <code>[停用]</code> all'inizio di una riga per disattivarla temporaneamente!</div><div class="text-emerald-300 font-semibold pt-1">🛡️ Garanzia Totale: Traduzione automatica in oltre 100 lingue! Ogni domanda fuori dal Database IA viene inoltrata al tuo staff!</div>`,
         lbl_ignore_kw: "🤖 Vuoi Continuare a Usare le Parole Chiave di LINE / Rich Menu? (Opzionale · Silenziamento Automatico IA)",
         ph_ignore_kw: "Inserisci le parole chiave configurate su LINE (separate da virgola, es: Promo, Carta Fedeltà, Evento)",
-        help_ignore_kw: "💡 Quando un cliente invia una delle parole chiave indicate sopra, l'IA <strong>resta automaticamente in silenzio (0 risposte, 0 consumo quota)</strong> lasciando rispondere il tuo bot LINE!"
+        help_ignore_kw: "💡 Quando un cliente invia una delle parole chiave indicate sopra, l'IA <strong>resta automaticamente in silenzio (0 risposte, 0 consumo quota)</strong> lasciando rispondere il tuo bot LINE!",
+        btn_logout_ob: "Esci",
+        prof_badge: "Il Mio Profilo e Backend Negozio (Salvato in Cloud)",
+        prof_title: "Database IA e Impostazioni di Connessione del Negozio",
+        prof_desc: "Il Database IA, il foglio Google e i link di prenotazione sono salvati in sicurezza sul server backend e caricati automaticamente all'accesso. Le chiavi LINE sono mascherate e mai esposte nel frontend.",
+        prof_btn_upgrade: "⚡ Cambia / Aggiorna Piano",
+        prof_webhook_lbl: "🔗 Il Tuo URL Webhook Dedicato (Incolla in LINE Developers)",
+        link_go_line_dev: "🔗 Apri LINE Developers Console ↗",
+        prof_bind_lbl: "📲 Collega il LINE Personale del Titolare per le Notifiche",
+        prof_lbl_admin_uid: "LINE User ID Titolare Manuale (Opzionale, 33 caratteri U...)",
+        prof_lbl_sheet: "📊 URL Google Sheets Esterno (Incolla il normale link del foglio—conversione CSV automatica!)",
+        link_open_gsheet: "🔗 Apri Google Sheets ↗",
+        btn_test_sheet: "🔍 Testa Lettura Foglio Google",
+        sheet_share_hint: "💡 Suggerimento: In Google Sheets clicca in alto a destra su 'Condividi' ➔ imposta su 'Chiunque abbia il link può visualizzare', poi clicca '🔍 Testa Lettura Foglio Google'!",
+        prof_lbl_emails: "Email di Emergenza (Max 3, separate da virgola)",
+        prof_masked_keys_label: "Chiavi LINE Protette (Mascherate, mai salvate nel frontend):",
+        btn_save_profile: "💾 Salva e Aggiorna Database IA e Impostazioni Negozio",
+        prof_reset_key_toggle: "🔐 Devi Sostituire LINE Channel Secret / Access Token? (Clicca per reimpostare con codice OTP Email a 6 cifre)",
+        btn_send_key_otp: "📧 Invia Codice OTP a 6 Cifre via Email e LINE",
+        btn_toggle_new_store: "➕ Collega un Altro Account Ufficiale LINE / Vedi Guida in 4 Passi",
+        opt_drawer_title: "📂 Impostazioni Opzionali: Database IA, Foglio Google, Link e Notifiche (Puoi saltarle ora e compilarle dopo nel '👤 Mio Profilo e Backend Negozio'!)",
+        tos_agree_label: "Ho letto e accetto i Termini di Servizio, le Condizioni di Rimborso, l'Informativa sul Cambio Valuta e il Contratto di Autorizzazione Dati Google/IA (valido per piani Gratuiti e a Pagamento)",
+        btn_view_tos: "📜 Visualizza Contratto Completo",
+        err_tos: "⚠️ Seleziona la casella per accettare i Termini di Servizio prima dell'attivazione!",
+        tos_modal_title: "📜 Termini di Servizio, Politica di Rimborso e Contratto Dati Google/IA",
+        tos_modal_html: `<p><strong>1. Piani di Servizio:</strong> Il Piano A (€0 Gratuito) offre 50 risposte IA/mese + memoria di 3 messaggi; i Piani B e C offrono risposte illimitate + memoria di 10 messaggi.</p><p><strong>2. Database IA e Zero-Allucinazioni:</strong> Per domande non presenti nel Database IA, l'IA risponde 'Non sono stati trovati dati nel Database IA' e avvisa il tuo staff.</p><p><strong>3. Sicurezza delle Chiavi:</strong> Le chiavi LINE sono crittografate sul server backend e mai salvate nel localStorage del browser.</p>`
       }
     };
 
@@ -953,9 +1390,42 @@
     const plan = (params.get("plan") || "free").toLowerCase();
     const orderId = params.get("order_id") || "";
     const urlLang = params.get("lang");
+    // 【State（當下畫面狀態，只活在當下記憶體中，重新整理即歸零）】
     let currentLang = "zh-TW";
     let currentUser = null;
+    let myStores = [];
+    let activeStoreId = "";
     let publicCfg = {};
+
+    // 【資安清理】：確保登入憑證 Token 只存於 7 天自動到期之 HttpOnly Cookie，絕不存於 localStorage！
+    try {
+      localStorage.removeItem("smarthost_user_token");
+      localStorage.removeItem("smarthost_creator_token");
+    } catch (_) {}
+
+    const THEME_LABELS = {
+      "zh-TW": { light: "☀️ 淺色", dark: "🌙 深色" },
+      "en": { light: "☀️ Light", dark: "🌙 Dark" },
+      "ja": { light: "☀️ ライト", dark: "🌙 ダーク" },
+      "id": { light: "☀️ Terang", dark: "🌙 Gelap" },
+      "it": { light: "☀️ Chiaro", dark: "🌙 Scuro" }
+    };
+
+    function applyTheme(mode) {
+      const isLight = mode === "light";
+      document.documentElement.classList.toggle("light-mode", isLight);
+      const btn = document.getElementById("theme-toggle-btn");
+      if (btn) {
+        const t = THEME_LABELS[currentLang] || THEME_LABELS["zh-TW"];
+        btn.textContent = isLight ? t.dark : t.light;
+      }
+    }
+
+    function toggleTheme() {
+      const next = document.documentElement.classList.contains("light-mode") ? "dark" : "light";
+      try { localStorage.setItem("smarthost_theme", next); } catch (_) {}
+      applyTheme(next);
+    }
 
     function applyOnboardingLang(langCode) {
       currentLang = ONBOARD_I18N[langCode] ? langCode : "zh-TW";
@@ -970,6 +1440,7 @@
         if (dict[k]) el.setAttribute("placeholder", dict[k]);
       });
       document.getElementById("lang-switcher").value = currentLang;
+      applyTheme(localStorage.getItem("smarthost_theme") || "dark");
     }
 
     const initLang = urlLang || localStorage.getItem("smarthost_lang") || "zh-TW";
@@ -977,24 +1448,34 @@
 
     document.getElementById("lang-switcher").addEventListener("change", (e) => {
       const selected = e.target.value;
+      // 【localStorage】：僅存介面語言與深淺色偏好、未送出之非敏感草稿
       localStorage.setItem("smarthost_lang", selected);
       applyOnboardingLang(selected);
     });
 
-    function getUserToken() {
-      try { return localStorage.getItem("smarthost_user_token") || ""; } catch (e) { return ""; }
-    }
-    function setUserToken(tok) {
+    // 【localStorage 草稿暫存】：未開通前在申請頁輸入的 AI 資料庫草稿暫存於本機，避免誤關分頁遺失（不含任何金鑰！）
+    const kbDraftEl = document.getElementById("custom_kb_text");
+    if (kbDraftEl) {
       try {
-        if (tok) localStorage.setItem("smarthost_user_token", tok);
-        else localStorage.removeItem("smarthost_user_token");
-      } catch (e) {}
+        const savedDraft = localStorage.getItem("smarthost_draft_kb");
+        if (savedDraft && !kbDraftEl.value) kbDraftEl.value = savedDraft;
+      } catch (_) {}
+      kbDraftEl.addEventListener("input", () => {
+        try { localStorage.setItem("smarthost_draft_kb", kbDraftEl.value); } catch (_) {}
+      });
     }
+
+    // 【Cookie 自動夾帶】：每次請求由瀏覽器自動帶上 7 天有效期的 HttpOnly Cookie (smarthost_user_session)
     async function userFetch(url, options = {}) {
       const headers = Object.assign({}, options.headers || {});
-      const tok = getUserToken();
-      if (tok) headers["X-User-Token"] = tok;
       return fetch(url, Object.assign({}, options, { headers, credentials: "same-origin" }));
+    }
+
+    async function logoutOnboarding() {
+      await userFetch("/api/auth/logout", { method: "POST" });
+      currentUser = null;
+      myStores = [];
+      await checkOnboardingAuth();
     }
 
     async function checkOnboardingAuth() {
@@ -1004,20 +1485,233 @@
         const me = await mRes.json();
         if (me.authenticated && me.user) {
           currentUser = me.user;
+          myStores = me.stores || [];
           document.getElementById("auth-banner-unlogged").classList.add("hidden");
           document.getElementById("auth-banner-logged").classList.remove("hidden");
           document.getElementById("logged-email-display").textContent = me.user.email;
           const em1 = document.getElementById("alert_email_1");
-          if (!em1.value) em1.value = me.user.email;
+          if (em1 && !em1.value) em1.value = me.user.email;
+
+          // 若此客戶已申請過店家，自動展開「👤 個人檔案與店家管理後台」並從後端載入所有留存設定！
+          const profSec = document.getElementById("customer-profile-backend");
+          const newStoreWrap = document.getElementById("new-store-application-wrapper");
+          if (myStores.length > 0) {
+            profSec.classList.remove("hidden");
+            const sel = document.getElementById("prof-store-select");
+            if (myStores.length > 1) {
+              sel.classList.remove("hidden");
+              sel.innerHTML = myStores.map(s => `<option value="${s.tenant_id}">${s.client_name} (${s.tenant_id})</option>`).join("");
+            } else {
+              sel.classList.add("hidden");
+            }
+            const targetTid = activeStoreId && myStores.some(s => s.tenant_id === activeStoreId)
+              ? activeStoreId
+              : myStores[0].tenant_id;
+            selectProfileStore(targetTid);
+            // 已申請完成的客戶進入此頁時，預設優先呈現「個人檔案與店家管理後台」，將新申請表單收合（可隨時點按鈕展開）
+            if (newStoreWrap && !params.get("new_store")) {
+              newStoreWrap.classList.add("hidden");
+            }
+          } else {
+            profSec.classList.add("hidden");
+            if (newStoreWrap) newStoreWrap.classList.remove("hidden");
+          }
         } else {
           currentUser = null;
+          myStores = [];
           document.getElementById("auth-banner-logged").classList.add("hidden");
           document.getElementById("auth-banner-unlogged").classList.remove("hidden");
+          document.getElementById("customer-profile-backend").classList.add("hidden");
+          const newStoreWrap = document.getElementById("new-store-application-wrapper");
+          if (newStoreWrap) newStoreWrap.classList.remove("hidden");
         }
         renderOnboardGsi();
       } catch (e) {
         console.warn(e);
       }
+    }
+
+    function selectProfileStore(tid) {
+      const store = myStores.find(s => s.tenant_id === tid) || myStores[0];
+      if (!store) return;
+      activeStoreId = store.tenant_id;
+      const sel = document.getElementById("prof-store-select");
+      if (sel) sel.value = activeStoreId;
+
+      const planNames = { free: "Plan A (0元體驗版)", basic: "Plan B (Basic 輕量版)", pro: "Plan C (Pro 專業版)" };
+      document.getElementById("prof-plan-badge").textContent = `${planNames[store.plan] || store.plan} ｜ 本月用量：${store.monthly_usage} / ${store.monthly_quota}`;
+      document.getElementById("prof_webhook_url").value = store.webhook_url || "";
+      document.getElementById("prof_client_name").value = store.client_name || "";
+      document.getElementById("prof_sheet_csv_url").value = store.sheet_csv_url || "";
+      document.getElementById("prof_custom_kb_text").value = store.custom_kb_text || "";
+      document.getElementById("prof_booking_links").value = store.booking_links || "";
+      document.getElementById("prof_ignore_keywords").value = store.ignore_keywords || "";
+      document.getElementById("prof_alert_emails").value = (store.alert_emails || []).join(", ");
+      document.getElementById("prof_telegram_chat_id").value = store.telegram_chat_id || "";
+      document.getElementById("prof_masked_keys").textContent = `Secret: ${store.masked_secret || "已加密"} / Token: ${store.masked_token || "已加密"}`;
+      document.getElementById("prof_bound_count").textContent = store.admin_line_bound_count > 0
+        ? `✅ 已綁定 ${store.admin_line_bound_count} 位店長 LINE`
+        : "⚠️ 尚未綁定店長 LINE";
+
+      const bindBtn = document.getElementById("prof_oneclick_bind");
+      const bindCmd = document.getElementById("prof_bind_cmd");
+      if (store.one_time_bind) {
+        bindCmd.textContent = store.one_time_bind.bind_command || "/綁定店長";
+        if (store.one_time_bind.line_deep_link) {
+          bindBtn.href = store.one_time_bind.line_deep_link;
+          bindBtn.classList.remove("hidden");
+        } else {
+          bindBtn.classList.add("hidden");
+        }
+      }
+    }
+
+    function focusCustomerProfileBackend() {
+      if (!currentUser) {
+        openLoginModal();
+        return;
+      }
+      if (myStores.length > 0) {
+        const profSec = document.getElementById("customer-profile-backend");
+        profSec.classList.remove("hidden");
+        profSec.scrollIntoView({ behavior: "smooth" });
+      } else {
+        const formEl = document.getElementById("onboarding-form");
+        if (formEl) formEl.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    function toggleNewStoreApplicationSection() {
+      const wrap = document.getElementById("new-store-application-wrapper");
+      if (!wrap) return;
+      wrap.classList.toggle("hidden");
+      if (!wrap.classList.contains("hidden")) {
+        wrap.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    function copyProfileWebhook() {
+      const inp = document.getElementById("prof_webhook_url");
+      if (!inp) return;
+      navigator.clipboard.writeText(inp.value);
+      alert("✅ 已複製您的專屬 Webhook 網址！");
+    }
+
+    async function testGoogleSheetUrl(inputId, boxId) {
+      const inp = document.getElementById(inputId);
+      const box = document.getElementById(boxId);
+      if (!inp || !box) return;
+      const urlVal = inp.value.trim();
+      box.classList.remove("hidden");
+      if (!urlVal) {
+        box.className = "mt-2 rounded-xl p-3 text-xs bg-rose-950/50 border border-rose-500/40 text-rose-300 font-bold";
+        box.textContent = "⚠️ 請先貼上您的 Google 試算表網址！";
+        return;
+      }
+      box.className = "mt-2 rounded-xl p-3 text-xs bg-slate-900 border border-slate-700 text-cyan-300";
+      box.textContent = "⏳ 正在連線讀取 Google 試算表並測試解析...";
+      try {
+        const res = await userFetch("/api/test_sheet_csv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sheet_csv_url: urlVal })
+        });
+        const data = await res.json();
+        if (data.normalized_url) inp.value = data.normalized_url;
+        if (res.ok && data.status === "success") {
+          box.className = "mt-2 rounded-xl p-3 text-xs bg-emerald-950/40 border border-emerald-500/50 text-emerald-200 space-y-1.5";
+          const previewHtml = (data.preview || []).map(l => `<div class="text-slate-300 font-mono text-[11px]">${l.replace(/</g, "&lt;")}</div>`).join("");
+          box.innerHTML = `<div class="font-extrabold text-emerald-400">${data.message}</div><div class="text-[11px] text-slate-400">預覽前幾筆已讀取資料（請記得點擊下方「💾 儲存」以永久保存網址）：</div>${previewHtml}`;
+        } else {
+          box.className = "mt-2 rounded-xl p-3 text-xs bg-rose-950/50 border border-rose-500/50 text-rose-300 font-bold";
+          box.textContent = data.message || "讀取失敗，請確認試算表權限已設為「知道連結的任何人皆可檢視」。";
+        }
+      } catch (e) {
+        box.className = "mt-2 rounded-xl p-3 text-xs bg-rose-950/50 border border-rose-500/50 text-rose-300 font-bold";
+        box.textContent = "連線測試失敗，請稍後再試。";
+      }
+    }
+
+    async function sendProfileKeyOtp() {
+      const res = await userFetch("/api/account/send_security_otp", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        if (data.creator_test_code) document.getElementById("prof_key_otp").value = data.creator_test_code;
+        alert(data.message || "✅ 6 位數驗證碼已寄出！");
+      } else {
+        alert(data.message || "寄送驗證碼失敗");
+      }
+    }
+
+    async function saveProfileStoreSettings() {
+      if (!activeStoreId) return;
+      const btn = document.getElementById("btn-save-profile");
+      const msgBox = document.getElementById("prof-save-msg");
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "⏳ 儲存中...";
+      msgBox.classList.add("hidden");
+      try {
+        const payload = {
+          tenant_id: activeStoreId,
+          client_name: document.getElementById("prof_client_name").value.trim(),
+          admin_user_id: document.getElementById("prof_admin_user_id").value.trim(),
+          sheet_csv_url: document.getElementById("prof_sheet_csv_url").value.trim(),
+          custom_kb_text: document.getElementById("prof_custom_kb_text").value.trim(),
+          booking_links: document.getElementById("prof_booking_links").value.trim(),
+          ignore_keywords: document.getElementById("prof_ignore_keywords").value.trim(),
+          alert_emails: document.getElementById("prof_alert_emails").value.trim(),
+          telegram_chat_id: document.getElementById("prof_telegram_chat_id").value.trim(),
+          otp_code: (document.getElementById("prof_key_otp")?.value || "").trim(),
+          new_channel_secret: (document.getElementById("prof_new_secret")?.value || "").trim(),
+          new_channel_access_token: (document.getElementById("prof_new_token")?.value || "").trim()
+        };
+        const res = await userFetch("/api/account/update_settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        msgBox.classList.remove("hidden");
+        if (res.ok && data.status === "success") {
+          msgBox.className = "rounded-xl p-3 text-xs font-extrabold text-center bg-emerald-950/50 border border-emerald-500/50 text-emerald-300";
+          msgBox.textContent = data.message || "✅ 店家 AI 資料庫與設定已成功保存於雲端伺服器！";
+          if (document.getElementById("prof_new_secret")) document.getElementById("prof_new_secret").value = "";
+          if (document.getElementById("prof_new_token")) document.getElementById("prof_new_token").value = "";
+          if (document.getElementById("prof_key_otp")) document.getElementById("prof_key_otp").value = "";
+          await checkOnboardingAuth();
+        } else {
+          msgBox.className = "rounded-xl p-3 text-xs font-extrabold text-center bg-rose-950/50 border border-rose-500/50 text-rose-300";
+          msgBox.textContent = data.message || "儲存失敗";
+        }
+      } catch (e) {
+        msgBox.classList.remove("hidden");
+        msgBox.className = "rounded-xl p-3 text-xs font-extrabold text-center bg-rose-950/50 border border-rose-500/50 text-rose-300";
+        msgBox.textContent = "連線異常，請稍後再試";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+
+    function openOnboardTermsModal() {
+      const m = document.getElementById("onboard-terms-modal");
+      m.classList.remove("hidden");
+      m.classList.add("flex");
+    }
+
+    function closeOnboardTermsModal() {
+      const m = document.getElementById("onboard-terms-modal");
+      m.classList.add("hidden");
+      m.classList.remove("flex");
+    }
+
+    function acceptAndCloseOnboardTerms() {
+      const chk = document.getElementById("chk_agree_tos");
+      if (chk) chk.checked = true;
+      const err = document.getElementById("err-tos");
+      if (err) err.classList.add("hidden");
+      closeOnboardTermsModal();
     }
 
     function renderOnboardGsi() {
@@ -1033,7 +1727,6 @@
             });
             const d = await r.json();
             if (r.ok && d.status === "success") {
-              if (d.token) setUserToken(d.token);
               closeLoginModal();
               await checkOnboardingAuth();
             }
@@ -1072,7 +1765,6 @@
       });
       const data = await res.json();
       if (res.ok && data.status === "success") {
-        if (data.token) setUserToken(data.token);
         closeLoginModal();
         await checkOnboardingAuth();
       }
@@ -1123,7 +1815,6 @@
       });
       const data = await res.json();
       if (res.ok && data.status === "success") {
-        if (data.token) setUserToken(data.token);
         closeLoginModal();
         await checkOnboardingAuth();
       } else {
@@ -1139,9 +1830,9 @@
         document.getElementById("modal-error-reason").textContent = reasonText;
       }
       const modal = document.getElementById("resilience-modal");
-      // 免費方案 A 沒有付款，不顯示「取消訂閱／退費」選項
+      const hasPaidStore = myStores.some(s => s.plan !== "free");
       const cancelOpt = document.getElementById("cancel-refund-option");
-      if (cancelOpt) cancelOpt.classList.toggle("hidden", plan === "free");
+      if (cancelOpt) cancelOpt.classList.toggle("hidden", plan === "free" && !hasPaidStore);
       modal.classList.remove("hidden");
       modal.classList.add("flex");
     }
@@ -1171,10 +1862,11 @@
         const res = await userFetch("/api/orders/cancel_or_refund", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order_id: orderId, reason: "客戶於開通頁面申請一鍵取消訂閱 / 退費" })
+          body: JSON.stringify({ order_id: orderId, tenant_id: activeStoreId, reason: "客戶於開通頁面申請一鍵取消訂閱 / 退費" })
         });
         const data = await res.json();
         box.textContent = "✅ " + (data.message || "已切換回方案 A（0 元免費版）並完成退訂申請！");
+        await checkOnboardingAuth();
       } catch (e) {
         box.textContent = "連線異常，請稍後再試。";
       }
@@ -1191,8 +1883,8 @@
       }
     }
 
-    function fillStandardKbTemplateOnboard() {
-      const el = document.getElementById("custom_kb_text");
+    function fillStandardKbTemplateTarget(targetId) {
+      const el = document.getElementById(targetId);
       if (!el) return;
       el.value = [
         "【營業時間與入住退房規定】：入住時間 15:00 後，退房時間 11:00 前；櫃檯服務時間 08:00-22:00。",
@@ -1202,6 +1894,10 @@
         "【店家不提供項目與禁忌規定】：全館嚴禁吸菸、禁止攜帶寵物入住、不提供加床服務、22:00 後謝絕訪客。",
         "【預約與退改規定】：入住前 7 日可免費取消；3 日內取消收取首晚 50% 手續費。"
       ].join("\n");
+    }
+
+    function fillStandardKbTemplateOnboard() {
+      fillStandardKbTemplateTarget("custom_kb_text");
     }
 
     document.getElementById("onboarding-form").addEventListener("submit", async (e) => {
@@ -1215,6 +1911,7 @@
       const clientName = document.getElementById("client_name").value.trim();
       const secret = document.getElementById("channel_secret").value.trim();
       const token = document.getElementById("channel_access_token").value.trim();
+      const agreeTos = document.getElementById("chk_agree_tos").checked;
       const adminUserId = document.getElementById("admin_user_id").value.trim();
       const telegramChatId = document.getElementById("telegram_chat_id").value.trim();
       const alertEmails = [
@@ -1240,11 +1937,11 @@
         const inputEl = document.getElementById(inputId);
         const errEl = document.getElementById(errId);
         if (!isValid) {
-          inputEl.classList.add("border-rose-500", "ring-2", "ring-rose-500/30");
+          if (inputEl) inputEl.classList.add("border-rose-500", "ring-2", "ring-rose-500/30");
           if (errEl) errEl.classList.remove("hidden");
           hasError = true;
         } else {
-          inputEl.classList.remove("border-rose-500", "ring-2", "ring-rose-500/30");
+          if (inputEl) inputEl.classList.remove("border-rose-500", "ring-2", "ring-rose-500/30");
           if (errEl) errEl.classList.add("hidden");
         }
       };
@@ -1252,6 +1949,7 @@
       setFieldState("client_name", "err-name", clientName.length >= 1);
       setFieldState("channel_secret", "err-secret", secretRegex.test(secret));
       setFieldState("channel_access_token", "err-token", tokenRegex.test(token) && token !== secret);
+      setFieldState("chk_agree_tos", "err-tos", agreeTos);
 
       if (hasError) return;
 
@@ -1283,6 +1981,11 @@
 
         const data = await res.json();
         if (res.ok && data.status === "success") {
+          try { localStorage.removeItem("smarthost_draft_kb"); } catch (_) {}
+          // 清空前端表單上的敏感金鑰輸入框，確保前端記憶體也不殘留明文
+          document.getElementById("channel_secret").value = "";
+          document.getElementById("channel_access_token").value = "";
+
           document.getElementById("confirmed-email").textContent = (data.alert_emails || [currentUser.email]).join(", ");
           document.getElementById("generated-webhook-url").value = data.webhook_url;
 
@@ -1297,6 +2000,8 @@
             }
           }
 
+          activeStoreId = data.tenant_id;
+          await checkOnboardingAuth();
           document.getElementById("webhook-success-card").classList.remove("hidden");
           document.getElementById("webhook-success-card").scrollIntoView({ behavior: "smooth" });
         } else {

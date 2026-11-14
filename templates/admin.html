@@ -10,14 +10,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; transition: background-color 0.25s, color 0.25s; }
+    /* 淺色模式 (Light Mode) 全域覆寫樣式 */
+    html.light-mode body { background-color: #f8fafc !important; color: #0f172a !important; }
+    html.light-mode header { background-color: rgba(255,255,255,0.92) !important; border-color: #cbd5e1 !important; }
+    html.light-mode .bg-slate-950, html.light-mode .bg-slate-950\/80, html.light-mode .bg-slate-950\/90 { background-color: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
+    html.light-mode .bg-slate-900, html.light-mode .bg-slate-900\/80, html.light-mode .bg-slate-900\/60, html.light-mode .bg-slate-900\/90 { background-color: #ffffff !important; color: #0f172a !important; border-color: #cbd5e1 !important; box-shadow: 0 4px 14px rgba(15,23,42,0.06); }
+    html.light-mode .bg-slate-800 { background-color: #e2e8f0 !important; color: #0f172a !important; border-color: #94a3b8 !important; }
+    html.light-mode .text-white, html.light-mode .text-slate-100, html.light-mode .text-slate-200 { color: #0f172a !important; }
+    html.light-mode .text-slate-300, html.light-mode .text-slate-400 { color: #334155 !important; }
+    html.light-mode .text-emerald-300, html.light-mode .text-emerald-400 { color: #047857 !important; }
+    html.light-mode .text-cyan-300, html.light-mode .text-cyan-400 { color: #0369a1 !important; }
+    html.light-mode .text-amber-300, html.light-mode .text-amber-400 { color: #b45309 !important; }
+    html.light-mode input, html.light-mode textarea, html.light-mode select { background-color: #ffffff !important; color: #0f172a !important; border-color: #94a3b8 !important; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased min-h-screen">
 
   <!-- ==================== 1. 未授權時顯示：創建者密碼鎖定閘門 ==================== -->
   <div id="login-gate" class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-8 shadow-2xl">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-8 shadow-2xl relative">
+      <button type="button" onclick="toggleTheme()" class="absolute top-4 right-4 text-xs px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 hover:border-emerald-400">
+        🌓 深淺色切換
+      </button>
       <div class="text-center mb-6">
         <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-3xl mx-auto mb-3">🔐</div>
         <h1 class="text-xl font-extrabold text-white">SmartHost 創建者專屬總管理後台</h1>
@@ -60,6 +75,10 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <button type="button" id="theme-toggle-btn" onclick="toggleTheme()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 hover:border-emerald-400 font-semibold flex items-center gap-1">
+            <span id="theme-icon">☀️</span>
+            <span id="theme-label">淺色</span>
+          </button>
           <button type="button" onclick="quickCreatorCustomerPreview()" class="text-xs px-3 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 font-bold">
             👁️ 以前台會員視角開啟官網
           </button>
@@ -243,19 +262,37 @@
   </div>
 
   <script>
-    function getCreatorToken() {
-      try { return localStorage.getItem("smarthost_creator_token") || ""; } catch (e) { return ""; }
+    // ================= 儲存分類架構說明 (State vs localStorage vs Cookie) =================
+    // • State: 只活在當下畫面記憶體
+    // • localStorage: 僅存深淺色模式 (smarthost_theme)，絕不儲存後台登入憑證或金鑰
+    // • Cookie: 創建者登入 Session 存於 HttpOnly 7 天效期 Cookie，每次請求自動帶給伺服器
+    try {
+      localStorage.removeItem("smarthost_creator_token");
+      localStorage.removeItem("smarthost_user_token");
+    } catch (e) {}
+
+    function applyTheme(mode) {
+      const isLight = mode === "light";
+      document.documentElement.classList.toggle("light-mode", isLight);
+      const iconEl = document.getElementById("theme-icon");
+      const lblEl = document.getElementById("theme-label");
+      if (iconEl) iconEl.textContent = isLight ? "🌙" : "☀️";
+      if (lblEl) lblEl.textContent = isLight ? "深色" : "淺色";
     }
-    function setCreatorToken(tok) {
-      try {
-        if (tok) localStorage.setItem("smarthost_creator_token", tok);
-        else localStorage.removeItem("smarthost_creator_token");
-      } catch (e) {}
+    function toggleTheme() {
+      const isCurrentlyLight = document.documentElement.classList.contains("light-mode");
+      const next = isCurrentlyLight ? "dark" : "light";
+      try { localStorage.setItem("smarthost_theme", next); } catch (e) {}
+      applyTheme(next);
     }
+    (function initTheme() {
+      let saved = "dark";
+      try { saved = localStorage.getItem("smarthost_theme") || "dark"; } catch (e) {}
+      applyTheme(saved);
+    })();
+
     async function creatorFetch(url, options = {}) {
       const headers = Object.assign({}, options.headers || {});
-      const tok = getCreatorToken();
-      if (tok) headers["X-Creator-Token"] = tok;
       return fetch(url, Object.assign({}, options, { headers, credentials: "same-origin" }));
     }
 
@@ -296,7 +333,6 @@
         });
         const data = await res.json();
         if (res.ok && data.status === "success") {
-          if (data.token) setCreatorToken(data.token);
           errEl.classList.add("hidden");
           await loadOverview();
         } else {
@@ -313,7 +349,6 @@
     });
 
     async function creatorLogout() {
-      setCreatorToken("");
       await creatorFetch("/api/creator/logout", { method: "POST" });
       document.getElementById("master-console").classList.add("hidden");
       document.getElementById("login-gate").classList.remove("hidden");
@@ -472,9 +507,19 @@
                     class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">${safeLinks}</textarea>
                 </div>
                 <div>
-                  <label class="block text-slate-400 font-semibold mb-1">外部 Google 試算表 CSV 網址（選填，支援開頭加 [停用] 動態關閉特定回覆）</label>
-                  <input type="url" id="adm-sheet-${t.tenant_id}" value="${safeSheet}" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-slate-400 font-semibold">外部 Google 試算表網址（一般網址或 CSV 皆可自動轉換，支援 [停用]）</label>
+                    <a href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener noreferrer" class="text-[11px] text-emerald-400 underline font-bold">🔗 開啟 Google 試算表 ↗</a>
+                  </div>
+                  <div class="flex gap-1.5">
+                    <input type="url" id="adm-sheet-${t.tenant_id}" value="${safeSheet}" placeholder="貼上 Google 試算表網址（系統會自動轉換為 CSV 讀取）"
+                      class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                    <button type="button" onclick="testAdminSheetCsv('${t.tenant_id}')"
+                      class="px-3 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 text-cyan-300 font-extrabold text-xs shrink-0 transition">
+                      🔍 測試讀取試算表內容
+                    </button>
+                  </div>
+                  <div id="adm-sheet-msg-${t.tenant_id}" class="hidden mt-1.5 p-2.5 rounded-lg text-[11px] whitespace-pre-wrap leading-relaxed"></div>
                 </div>
               </div>
 
@@ -597,6 +642,36 @@
       const el = document.getElementById(`adm-kb-${tid}`);
       if (el) el.value = sample;
       showToast("✨ 已載入防出錯標準填寫範本！您可自由修改文字後點擊下方「儲存」立即生效！");
+    }
+
+    async function testAdminSheetCsv(tid) {
+      const inp = document.getElementById(`adm-sheet-${tid}`);
+      const box = document.getElementById(`adm-sheet-msg-${tid}`);
+      const url = inp ? inp.value.trim() : "";
+      if (!box) return;
+      box.classList.remove("hidden");
+      box.className = "mt-1.5 p-2.5 rounded-lg text-[11px] bg-slate-900 border border-slate-700 text-slate-300 whitespace-pre-wrap leading-relaxed";
+      box.textContent = "⏳ 正在連線並測試讀取 Google 試算表...";
+      try {
+        const res = await creatorFetch("/api/test_sheet_csv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sheet_csv_url: url })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+          if (data.normalized_url && inp) inp.value = data.normalized_url;
+          box.className = "mt-1.5 p-2.5 rounded-lg text-[11px] bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 whitespace-pre-wrap leading-relaxed";
+          const preview = (data.preview_lines || []).slice(0, 6).join("\n");
+          box.textContent = `${data.message}\n${preview ? "📋 試算表讀取預覽：\n" + preview : ""}\n💡 確認無誤後請點擊下方綠色「💾 儲存」按鈕讓 AI 立即同步！`;
+        } else {
+          box.className = "mt-1.5 p-2.5 rounded-lg text-[11px] bg-rose-500/15 border border-rose-500/40 text-rose-300 whitespace-pre-wrap leading-relaxed";
+          box.textContent = data.message || "讀取失敗，請確認試算表右上角「共用」已設為「知道連結的任何人皆可檢視」。";
+        }
+      } catch (e) {
+        box.className = "mt-1.5 p-2.5 rounded-lg text-[11px] bg-rose-500/15 border border-rose-500/40 text-rose-300";
+        box.textContent = "連線異常，請稍後再試。";
+      }
     }
 
     async function saveTenantDetailsFromAdmin(tid) {
@@ -726,12 +801,9 @@
         body: JSON.stringify({ action: "quick_creator_customer_login", email })
       });
       const data = await res.json();
-      if (data && data.token) {
-        try {
-          localStorage.setItem("smarthost_user_token", data.token);
-          localStorage.setItem("open_portal", "1");
-        } catch (e) {}
-      }
+      try {
+        localStorage.setItem("open_portal", "1");
+      } catch (e) {}
       window.location.href = "/index.html";
     }
 

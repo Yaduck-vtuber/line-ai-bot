@@ -272,31 +272,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 歐盟 AI 法案、跨國匯率差額聲明、方案升級先退款機制與完整合約 (全 5 國語系翻譯) -->
-      <div class="mt-14 bg-amber-500/5 border border-amber-500/30 rounded-2xl p-6 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-3">
-        <div class="flex items-start gap-3">
-          <span class="text-xl">⚖️</span>
-          <div class="space-y-2">
-            <h4 class="font-bold text-amber-400" data-i18n="legal_title">
-              歐盟 AI 法案第 50 條透明度聲明、SLA 99.5% 可用性保證與自助退費規範
-            </h4>
-            <p data-i18n="legal_body" class="text-slate-400">
-              1. <strong>生成式 AI 透明度規範（EU AI Act Article 50）</strong>：本系統產生之所有回覆末端均自動附帶 AI 輔助回覆標示與保留記憶句數提醒（方案 A 完整記錄前 3 句／方案 B・C 完整記錄前 10 句），且僅依據店家填寫之表單回答；表單未記載之問題一律自動轉接真人客服。<br/>
-              2. <strong>跨國幣別匯率差額與發卡行手續費聲明（Currency & FX Notice）</strong>：本平台基準結算幣別為<strong>新臺幣（TWD：方案 B NT$ 1,680／月、方案 C NT$ 2,980／月）</strong>。外語頁面所列之 USD / JPY / IDR / EUR 金額為匯率估算參考值；實際扣款依 PayPal 收銀台顯示幣別及您發卡銀行當日即時匯率換算（可能產生匯率差額或跨國刷卡手續費）。<br/>
-              3. <strong>方案升級「先退當月原方案、再扣新方案」與隨時退訂保障</strong>：若您於當月由方案 B 升級至方案 C，完成方案 C 付款後系統將<strong>自動把當月原方案 B 已付全額款項標記優先退刷回您的原付款帳戶</strong>！您亦可隨時於右上角「我的購買紀錄與設定」一鍵取消訂閱或申請退費。
-            </p>
-            <div class="pt-1 flex flex-wrap gap-3">
-              <button type="button" onclick="openLegalTermsModal()" class="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-extrabold text-xs transition">
-                📜 點此查閱完整《服務條款、退款條件、跨國匯率差額聲明暨 Google/AI 資料授權合約》
-              </button>
-              <a href="#contact" onclick="prefillBugReport()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs transition">
-                🐞 系統錯誤或功能建議回報 →
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -348,8 +323,8 @@
               <div id="public-service-hours" class="font-semibold text-slate-200">週一至週五 09:30–18:30 (GMT+8)｜AI 客服 24H 全年無休</div>
             </div>
             <div class="pt-2 border-t border-slate-800">
-              <button type="button" onclick="prefillBugReport()" class="w-full py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition">
-                🐞 點此快速帶入「錯誤回報 / 功能建議」主旨（或於 LINE 輸入 /回報）
+              <button type="button" onclick="prefillBugReport()" data-i18n="c_bug_btn" class="w-full py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition">
+                🐞 點此快速帶入「錯誤回報 / 功能建議」主旨
               </button>
             </div>
           </div>
@@ -398,6 +373,7 @@
         <a href="#pricing" data-i18n="nav_pricing" class="hover:text-emerald-400">訂閱方案</a>
         <a href="#faq" data-i18n="nav_faq" class="hover:text-emerald-400">常見問題</a>
         <a href="#contact" data-i18n="nav_contact" class="hover:text-emerald-400">聯絡我們</a>
+        <button type="button" onclick="openLegalTermsModal()" data-i18n="footer_terms" class="hover:text-amber-400 underline">📜 服務條款與退款合約</button>
       </div>
     </div>
   </footer>
@@ -480,24 +456,30 @@
         </div>
       </div>
       <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 space-y-1 mb-3">
-        <div><span class="text-slate-400">Google 購買帳號：</span><strong id="pp-buyer-email" class="text-white"></strong></div>
-        <div><span class="text-slate-400">專屬訂單編號：</span><strong id="pp-order-id" class="text-cyan-400 font-mono"></strong></div>
-        <div id="pp-upgrade-notice" class="hidden text-emerald-400 font-bold pt-1">
+        <div><span class="text-slate-400" data-i18n="pp_lbl_buyer">Google 購買帳號：</span><strong id="pp-buyer-email" class="text-white"></strong></div>
+        <div><span class="text-slate-400" data-i18n="pp_lbl_order">專屬訂單編號：</span><strong id="pp-order-id" class="text-cyan-400 font-mono"></strong></div>
+        <div id="pp-upgrade-notice" data-i18n="pp_upgrade_msg" class="hidden text-emerald-400 font-bold pt-1">
           🔄 系統偵測到您正由方案 B 升級至方案 C：完成付款後，系統將依約優先為您辦理當月原方案 B 款項退刷！
         </div>
       </div>
 
-      <!-- 匯率差額與台幣基準結算警語 -->
-      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-[11px] text-amber-200 leading-relaxed mb-3">
-        💱 <strong>結帳幣別與匯率差額提醒：</strong>本站收款連結以<strong>新臺幣（TWD：方案 B NT$ 1,680 / 方案 C NT$ 2,980）</strong>為基準計價。若您使用非新臺幣信用卡或外幣 PayPal 帳戶付款，PayPal 或您的發卡銀行將依當日即時匯率自動換算，可能產生些微匯率差額或跨國刷卡手續費。
+      <!-- 結帳頁面自動彈出之服務條款、退款條件與匯率差額摘要（全 5 國語系翻譯） -->
+      <div class="bg-slate-950 border border-amber-500/40 rounded-xl p-3 text-[11px] text-slate-300 leading-relaxed mb-3 max-h-36 overflow-y-auto space-y-1.5">
+        <div class="font-extrabold text-amber-300" data-i18n="pp_terms_box_title">📜 付款前合約與退款條件確認（自動彈出）：</div>
+        <div data-i18n="pp_fx_notice" class="text-amber-200/90">
+          💱 <strong>結帳幣別與匯率差額提醒：</strong>本站收款以<strong>新臺幣（TWD：方案 B NT$ 1,680 / 方案 C NT$ 2,980）</strong>為基準。若使用外幣信用卡或外幣 PayPal 付款，將依當日匯率自動換算，可能產生匯率差額或跨國手續費。
+        </div>
+        <div data-i18n="pp_refund_summary" class="text-slate-400">
+          • <strong>7 日猶豫期退費：</strong>首次訂閱 7 日內且 AI 回覆未滿 20 次可申請全額退費；升級方案 C 時自動退還當月原方案 B 款項；隨時可取消下期續訂。
+        </div>
       </div>
 
       <!-- 強制勾選服務條款與退款合約 -->
-      <label class="flex items-start gap-2.5 text-xs text-slate-200 bg-slate-950 border border-slate-800 rounded-xl p-3 mb-4 cursor-pointer">
-        <input type="checkbox" id="pp-agree-terms" checked class="mt-0.5 w-4 h-4 accent-emerald-500 shrink-0" />
+      <label class="flex items-start gap-2.5 text-xs text-slate-200 bg-slate-950 border border-emerald-500/40 rounded-xl p-3 mb-4 cursor-pointer">
+        <input type="checkbox" id="pp-agree-terms" class="mt-0.5 w-4 h-4 accent-emerald-500 shrink-0" />
         <span>
-          我已詳細閱讀並同意
-          <button type="button" onclick="openLegalTermsModal()" class="text-emerald-400 underline font-bold">《服務條款、7日退款條件、方案升級先退後扣規範、匯率差額聲明暨 Google/AI 資料授權合約》</button>
+          <span data-i18n="pp_agree_prefix">我已詳細閱讀並同意</span>
+          <button type="button" onclick="openLegalTermsModal()" data-i18n="pp_agree_link" class="text-emerald-400 underline font-bold">《服務條款、7日退款條件、方案升級先退後扣規範、匯率差額聲明暨 Google/AI 資料授權合約》</button>
         </span>
       </label>
 
@@ -505,11 +487,11 @@
         點擊下方黃色按鈕將開啟 PayPal 官方加密收銀台（支援信用卡或 PayPal 付款）：
       </p>
       <div class="space-y-2.5">
-        <a id="paypal-checkout-link" href="#" target="_blank" rel="noopener noreferrer" onclick="return checkTermsBeforePayPal()"
+        <a id="paypal-checkout-link" href="#" target="_blank" rel="noopener noreferrer" onclick="return checkTermsBeforePayPal()" data-i18n="pp_btn_pay"
           class="block w-full text-center py-3.5 rounded-xl bg-[#FFC439] hover:bg-[#f4b829] text-slate-950 font-extrabold text-sm shadow-lg transition">
           🔒 1. 前往 PayPal 官方安全付款 (開啟新分頁) ↗
         </a>
-        <a id="paypal-confirm-return-link" href="#"
+        <a id="paypal-confirm-return-link" href="#" data-i18n="pp_btn_confirm"
           class="block w-full text-center py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 font-extrabold text-xs transition">
           ✅ 2. 已於 PayPal 分頁完成付款？點此確認並進入 LINE 開通頁面 →
         </a>
@@ -521,11 +503,11 @@
   <div id="legal-terms-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 overflow-y-auto">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto text-xs sm:text-sm text-slate-300 leading-relaxed space-y-4">
       <button type="button" onclick="closeLegalTermsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl leading-none">✕</button>
-      <h3 class="text-lg sm:text-xl font-extrabold text-white border-b border-slate-800 pb-3">
+      <h3 data-i18n="lt_modal_title" class="text-lg sm:text-xl font-extrabold text-white border-b border-slate-800 pb-3">
         📜 SmartHost 服務條款、退款與方案升級規範、跨國匯率聲明暨 Google/AI 資料授權合約
       </h3>
 
-      <div class="space-y-3">
+      <div id="legal-terms-body" data-i18n="lt_modal_body" class="space-y-3">
         <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
           <h4 class="font-bold text-emerald-400 mb-1">第一條：退款條件與消費者保護規範（Refund & Cancellation Conditions）</h4>
           <p>1. <strong>7 日猶豫期全額退費條件</strong>：凡首次付費訂閱方案 B 或方案 C 之客戶，自付款日起算 <strong>7 日內</strong>，若該店家頻道累積使用 AI 自動回覆未滿 20 次，得隨時於官網右上角「我的購買紀錄與設定」一鍵申請全額退費，無須負擔任何違約金。</p>
@@ -544,8 +526,8 @@
         </div>
 
         <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
-          <h4 class="font-bold text-indigo-400 mb-1">第四條：AI 依表單知識庫回覆原則、未知問題轉真人與免責聲明</h4>
-          <p>1. 本系統採用 Google Gemini 生成式 AI 技術，嚴格設定為<strong>「僅依據店家於 Google 試算表或後台表單明確填寫之資訊回答」</strong>，對於表單未記載之問題將自動回覆「已通知專人客服確認」並推播予店家接手。</p>
+          <h4 class="font-bold text-indigo-400 mb-1">第四條：AI 資料庫回覆原則、未知問題轉真人與免責聲明</h4>
+          <p>1. 本系統採用 Google Gemini 生成式 AI 技術，嚴格設定為<strong>「僅依據店家於 AI 資料庫明確填寫之資訊回答」</strong>，對於 AI 資料庫中沒有找到相關資料之問題將自動回覆「已通知專人客服確認」並推播予店家接手。</p>
           <p class="mt-1">2. 店家應確保所填寫之價格、營業時間及「店家不提供項目與限制」真實完整。本平台提供技術託管服務，不介入店家與其終端消費者間之商品或住宿交易糾紛；本平台依法所負之累計損害賠償責任上限，以該店家當月實際支付予本平台之訂閱費用為限。</p>
         </div>
 
@@ -557,7 +539,7 @@
       </div>
 
       <div class="flex justify-end pt-2">
-        <button type="button" onclick="closeLegalTermsModal()" class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm">
+        <button type="button" onclick="closeLegalTermsModal()" data-i18n="lt_btn_close" class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm">
           我已閱讀並了解
         </button>
       </div>
@@ -725,6 +707,22 @@
         auth_verify_btn: "確認驗證碼並登入",
         pp_title: "PayPal 官方安全結帳",
         pp_desc: "點擊下方按鈕將前往 PayPal 官方加密收銀台（支援信用卡或 PayPal 付款）。完成付款後系統將自動寄發扣款憑證信並引導您進入開通頁面：",
+        pp_lbl_buyer: "Google 購買帳號：",
+        pp_lbl_order: "專屬訂單編號：",
+        pp_upgrade_msg: "🔄 系統偵測到您正由方案 B 升級至方案 C：完成付款後，系統將依約優先為您辦理當月原方案 B 款項退刷！",
+        pp_terms_box_title: "📜 付款前合約與退款條件確認（自動彈出）：",
+        pp_fx_notice: "💱 <strong>結帳幣別與匯率差額提醒：</strong>本站收款以<strong>新臺幣（TWD：方案 B NT$ 1,680 / 方案 C NT$ 2,980）</strong>為基準。若使用外幣信用卡或外幣 PayPal 付款，將依當日匯率自動換算，可能產生匯率差額或跨國手續費。",
+        pp_refund_summary: "• <strong>7 日猶豫期退費：</strong>首次訂閱 7 日內且 AI 回覆未滿 20 次可申請全額退費；升級方案 C 時自動退還當月原方案 B 款項；隨時可取消下期續訂。",
+        pp_agree_prefix: "我已詳細閱讀並同意",
+        pp_agree_link: "《服務條款、7日退款條件、方案升級先退後扣規範、匯率差額聲明暨 Google/AI 資料授權合約》",
+        pp_btn_pay: "🔒 1. 前往 PayPal 官方安全付款 (開啟新分頁) ↗",
+        pp_btn_confirm: "✅ 2. 已於 PayPal 分頁完成付款？點此確認並進入 LINE 開通頁面 →",
+        pp_err_terms: "⚠️ 請先勾選同意《服務條款與退款合約》後再前往付款！",
+        c_bug_btn: "🐞 點此快速帶入「錯誤回報 / 功能建議」主旨",
+        footer_terms: "📜 服務條款與退款合約",
+        lt_modal_title: "📜 SmartHost 服務條款、退款與方案升級規範、跨國匯率聲明暨 Google/AI 資料授權合約",
+        lt_modal_body: `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-emerald-400 mb-1">第一條：退款條件與消費者保護規範</h4><p>1. <strong>7 日猶豫期全額退費</strong>：首次付費訂閱 7 日內且 AI 自動回覆未滿 20 次，得隨時於「我的購買紀錄與設定」一鍵申請全額退費。<br/>2. <strong>方案升級退還與隨時取消</strong>：升級方案 C 時自動退還當月原方案 B 款項；超過 7 日仍可隨時取消下期續訂，絕無綁約。</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-amber-400 mb-1">第二條：PayPal 新臺幣（TWD）基準結算與跨國匯率差額警語</h4><p>所有付費方案均以新臺幣（TWD：方案 B NT$ 1,680、方案 C NT$ 2,980）為基準結算貨幣。外語頁面標價為匯率估算參考值；實際扣款與退費依 PayPal 或發卡機構當日結匯匯率計算，匯差與跨國手續費由買方發卡行依約計收。</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-indigo-400 mb-1">第三條：AI 資料庫回覆原則、未知問題轉真人與隱私保護</h4><p>1. 系統嚴格依據店家於 AI 資料庫填寫之資訊回答；AI 資料庫中沒有找到相關資料之問題一律自動回覆「已通知專人客服」並推播予店家接手。<br/>2. 方案 A 記錄最近 3 句、方案 B/C 記錄最近 10 句對話；Google 登入僅取得基本 Email 與名稱以綁定訂單。</p></div>`,
+        lt_btn_close: "我已閱讀並了解",
         mem_portal_title: "📋 我的購買紀錄與店家設定中心"
       },
       "en": {
@@ -803,6 +801,22 @@
         auth_verify_btn: "Verify & Sign In",
         pp_title: "PayPal Secure Checkout",
         pp_desc: "Click below to proceed to PayPal's official encrypted checkout (credit card or PayPal supported). After payment, your receipt will be emailed and you'll be redirected to setup:",
+        pp_lbl_buyer: "Google Buyer Account: ",
+        pp_lbl_order: "Order ID: ",
+        pp_upgrade_msg: "🔄 Upgrade Detected (Plan B ➔ Plan C): Upon payment, your current month's Plan B payment will be automatically flagged for a full priority refund!",
+        pp_terms_box_title: "📜 Pre-Payment Terms & Refund Policy Confirmation:",
+        pp_fx_notice: "💱 <strong>Currency & FX Notice:</strong> All plans are settled in <strong>New Taiwan Dollars (TWD: Plan B NT$1,680 / Plan C NT$2,980)</strong>. Displayed USD/JPY/EUR prices are estimates; your card issuer or PayPal will convert at live exchange rates (minor FX differences or bank fees may apply).",
+        pp_refund_summary: "• <strong>7-Day Full Refund Guarantee:</strong> Full refund available within 7 days of first subscription if under 20 AI replies are used. Plan B-to-C upgrades automatically refund your unused Plan B month. Cancel renewal anytime.",
+        pp_agree_prefix: "I have read and agree to the ",
+        pp_agree_link: "Terms of Service, 7-Day Refund Policy, Upgrade Refund Rules, FX Notice & Google/AI Data Agreement",
+        pp_btn_pay: "🔒 1. Proceed to PayPal Official Checkout (Opens New Tab) ↗",
+        pp_btn_confirm: "✅ 2. Completed Payment on PayPal? Click Here to Enter LINE Setup →",
+        pp_err_terms: "⚠️ Please check the box to agree to the Terms of Service & Refund Policy before proceeding to payment!",
+        c_bug_btn: "🐞 Click to pre-fill 'Bug Report / Feature Suggestion'",
+        footer_terms: "📜 Terms of Service & Refund Policy",
+        lt_modal_title: "📜 SmartHost Terms of Service, Refund & Upgrade Policy, FX Notice & Google/AI Data Agreement",
+        lt_modal_body: `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-emerald-400 mb-1">Article 1: 7-Day Refund Policy & Anytime Cancellation</h4><p>1. <strong>7-Day Cooling-Off Full Refund</strong>: First-time subscribers to Plan B or C may request a full refund within 7 days of payment if fewer than 20 AI replies have been used.<br/>2. <strong>Upgrade Refunds & Anytime Cancellation</strong>: Upgrading from Plan B to Plan C automatically flags your current month's Plan B fee for refund. You may cancel future renewals anytime with zero lock-in.</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-amber-400 mb-1">Article 2: TWD Settlement Currency & Foreign Exchange (FX) Notice</h4><p>All plans are settled in New Taiwan Dollars (TWD: Plan B NT$1,680 / Plan C NT$2,980). Foreign currency figures are reference estimates; actual charges and refunds follow PayPal or your card issuer's exchange rate on the transaction date.</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-indigo-400 mb-1">Article 3: AI Database Zero-Hallucination & Data Privacy</h4><p>1. AI answers strictly based on your configured AI Database. If information is not found in the AI Database, AI politely informs the guest and notifies human staff.<br/>2. Plan A keeps the last 3 messages; Plan B/C keeps the last 10 messages. Google Sign-In only accesses your basic email and display name to bind orders.</p></div>`,
+        lt_btn_close: "I Understand & Agree",
         mem_portal_title: "📋 My Orders & Store Settings"
       },
       "ja": {
@@ -881,6 +895,22 @@
         auth_verify_btn: "認証してログイン",
         pp_title: "PayPal 公式セキュリティ決済",
         pp_desc: "下のボタンを押すとPayPal公式の暗号化決済画面へ移動します（クレジットカードまたはPayPal残高対応）。決済完了後、自動で領収書メールが送信され開通ページへ進みます：",
+        pp_lbl_buyer: "Google 購入アカウント：",
+        pp_lbl_order: "注文番号：",
+        pp_upgrade_msg: "🔄 プランBからプランCへのアップグレードを検知しました：決済完了後、当月の旧プランB料金は優先的に全額返金処理されます！",
+        pp_terms_box_title: "📜 決済前の利用規約・返金条件の確認（自動表示）：",
+        pp_fx_notice: "💱 <strong>決済通貨と為替差額のご案内：</strong>当サイトの決済は<strong>台湾ドル（TWD：プランB NT$ 1,680 / プランC NT$ 2,980）</strong>基準です。外貨カードやPayPal決済時は当日の為替レートで自動換算され、為替差額や海外事務手数料が生じる場合があります。",
+        pp_refund_summary: "• <strong>7日間全額返金保証：</strong>初回購読から7日以内かつAI応答20回未満の場合は全額返金申請が可能。プランCへのアップグレード時は当月の旧プランB料金を自動返金。いつでも解約可能。",
+        pp_agree_prefix: "私は以下の規約を読み、同意します：",
+        pp_agree_link: "《利用規約・7日間返金規定・アップグレード返金規約・為替差額声明およびGoogle/AIデータ利用規約》",
+        pp_btn_pay: "🔒 1. PayPal 公式安全決済へ進む（別タブで開きます）↗",
+        pp_btn_confirm: "✅ 2. PayPalでの決済完了後、こちらをクリックしてLINE開通設定へ →",
+        pp_err_terms: "⚠️ 決済へ進む前に《利用規約および返金規定》への同意にチェックを入れてください！",
+        c_bug_btn: "🐞 「不具合報告・機能要望」の件名を自動入力する",
+        footer_terms: "📜 利用規約・返金規定",
+        lt_modal_title: "📜 SmartHost 利用規約・返金およびアップグレード規定・為替声明・Google/AIデータ規約",
+        lt_modal_body: `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-emerald-400 mb-1">第1条：返金条件および消費者保護規約</h4><p>1. <strong>7日間全額返金保証</strong>：初回決済から7日以内かつAI自動応答が20回未満の場合、「購入履歴・設定管理」よりワンクリックで全額返金を申請できます。<br/>2. <strong>アップグレード返金・いつでも解約</strong>：プランBからCへ変更時は当月のプランB料金を優先返金します。縛りなしでいつでも次回更新を停止できます。</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-amber-400 mb-1">第2条：台湾ドル（TWD）基準決済および為替差額に関する声明</h4><p>すべての有料プランは台湾ドル（TWD：プランB NT$1,680、プランC NT$2,980）を基準通貨とします。日本円等の表示価格は参考換算値であり、実際の請求・返金金額はPayPalまたはカード会社の決済日レートにより計算されます。</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-indigo-400 mb-1">第3条：AIデータベース応答原則・有人引き継ぎおよびプライバシー保護</h4><p>1. AIは登録されたAIデータベースの情報のみに基づいて回答し、AIデータベースに該当データがない質問は「担当者へ引き継ぎました」と案内してオーナーへ即時通知します。<br/>2. プランAは直近3往復、プランB/Cは直近10往復を記憶します。</p></div>`,
+        lt_btn_close: "内容を確認し同意します",
         mem_portal_title: "📋 購入履歴・店舗設定センター"
       },
       "id": {
@@ -959,6 +989,22 @@
         auth_verify_btn: "Verifikasi & Login",
         pp_title: "Pembayaran Resmi PayPal",
         pp_desc: "Klik tombol di bawah untuk menuju halaman pembayaran terenkripsi PayPal (mendukung kartu kredit atau PayPal). Bukti pembayaran akan dikirim ke email Anda secara otomatis:",
+        pp_lbl_buyer: "Akun Google Pembeli: ",
+        pp_lbl_order: "ID Pesanan: ",
+        pp_upgrade_msg: "🔄 Upgrade Terdeteksi (Paket B ➔ Paket C): Setelah pembayaran selesai, biaya Paket B bulan berjalan Anda akan otomatis diprioritaskan untuk refund penuh!",
+        pp_terms_box_title: "📜 Konfirmasi Syarat Layanan & Kebijakan Refund:",
+        pp_fx_notice: "💱 <strong>Info Mata Uang & Kurs:</strong> Pembayaran diproses dalam <strong>Dolar Taiwan Baru (TWD: Paket B NT$1.680 / Paket C NT$2.980)</strong>. Harga USD/IDR adalah estimasi; PayPal atau bank penerbit kartu Anda akan mengonversi sesuai kurs hari transaksi.",
+        pp_refund_summary: "• <strong>Jaminan Refund 7 Hari:</strong> Refund penuh tersedia dalam 7 hari pertama jika penggunaan di bawah 20 balasan AI. Upgrade ke Paket C otomatis mengembalikan biaya Paket B bulan berjalan. Batalkan kapan saja.",
+        pp_agree_prefix: "Saya telah membaca dan menyetujui ",
+        pp_agree_link: "《Syarat Layanan, Kebijakan Refund 7 Hari, Aturan Upgrade, Pernyataan Kurs & Perjanjian Data Google/AI》",
+        pp_btn_pay: "🔒 1. Lanjut ke Pembayaran Resmi PayPal (Tab Baru) ↗",
+        pp_btn_confirm: "✅ 2. Sudah Bayar di Tab PayPal? Klik di Sini untuk Masuk ke Aktivasi LINE →",
+        pp_err_terms: "⚠️ Harap centang persetujuan Syarat Layanan & Kebijakan Refund terlebih dahulu sebelum membayar!",
+        c_bug_btn: "🐞 Klik untuk isi cepat 'Laporan Bug / Saran Fitur'",
+        footer_terms: "📜 Syarat Layanan & Kebijakan Refund",
+        lt_modal_title: "📜 Syarat Layanan SmartHost, Kebijakan Refund & Upgrade, Info Kurs & Perjanjian Data Google/AI",
+        lt_modal_body: `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-emerald-400 mb-1">Pasal 1: Kebijakan Refund 7 Hari & Pembatalan Kapan Saja</h4><p>1. <strong>Refund Penuh 7 Hari</strong>: Pelanggan baru Paket B atau C dapat mengajukan refund penuh dalam 7 hari sejak pembayaran jika penggunaan AI di bawah 20 balasan.<br/>2. <strong>Refund Upgrade & Batal Kapan Saja</strong>: Saat upgrade dari Paket B ke C, biaya Paket B bulan berjalan otomatis ditandai untuk refund penuh.</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-amber-400 mb-1">Pasal 2: Mata Uang Penyelesaian TWD & Selisih Kurs</h4><p>Semua paket diselesaikan dalam Dolar Taiwan Baru (TWD: Paket B NT$1.680 / Paket C NT$2.980). Nilai mata uang asing adalah estimasi; tagihan aktual mengikuti kurs PayPal atau bank penerbit kartu Anda.</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-indigo-400 mb-1">Pasal 3: Prinsip Database AI & Privasi Data</h4><p>1. AI hanya menjawab berdasarkan Database AI toko Anda; jika data tidak ditemukan di Database AI, AI akan memberi tahu tamu dan meneruskan ke staf.<br/>2. Paket A menyimpan 3 pesan terakhir; Paket B/C menyimpan 10 pesan terakhir.</p></div>`,
+        lt_btn_close: "Saya Mengerti & Setuju",
         mem_portal_title: "📋 Riwayat Pesanan & Pengaturan Toko"
       },
       "it": {
@@ -1037,6 +1083,22 @@
         auth_verify_btn: "Verifica e Accedi",
         pp_title: "Pagamento Sicuro Ufficiale PayPal",
         pp_desc: "Clicca qui sotto per procedere alla cassa crittografata ufficiale PayPal (carta di credito o PayPal). Dopo il pagamento riceverai la ricevuta via email e passerai all'attivazione:",
+        pp_lbl_buyer: "Account Google Acquirente: ",
+        pp_lbl_order: "ID Ordine: ",
+        pp_upgrade_msg: "🔄 Rilevato Upgrade (Piano B ➔ Piano C): Dopo il pagamento, la quota del Piano B del mese corrente verrà rimborsata con priorità!",
+        pp_terms_box_title: "📜 Conferma Termini di Servizio e Rimborso prima del Pagamento:",
+        pp_fx_notice: "💱 <strong>Avviso Valuta e Tasso di Cambio:</strong> Tutti i piani sono regolati in <strong>Nuovi Dollari Taiwanesi (TWD: Piano B NT$1.680 / Piano C NT$2.980)</strong>. I prezzi in EUR/USD sono stime indicative; PayPal o la tua banca applicheranno il tasso di cambio del giorno.",
+        pp_refund_summary: "• <strong>Garanzia di Rimborso 7 Giorni:</strong> Rimborso completo entro 7 giorni dal primo abbonamento se sono state usate meno di 20 risposte IA. L'upgrade al Piano C rimborsa automaticamente il Piano B del mese in corso. Disdici quando vuoi.",
+        pp_agree_prefix: "Ho letto e accetto i ",
+        pp_agree_link: "《Termini di Servizio, Condizioni di Rimborso 7 Giorni, Regole di Upgrade, Avviso Cambio Valuta e Contratto Dati Google/IA》",
+        pp_btn_pay: "🔒 1. Vai al Pagamento Sicuro PayPal (Nuova Scheda) ↗",
+        pp_btn_confirm: "✅ 2. Pagamento Completato su PayPal? Clicca Qui per Configurare LINE →",
+        pp_err_terms: "⚠️ Seleziona la casella per accettare i Termini di Servizio e le Condizioni di Rimborso prima di procedere al pagamento!",
+        c_bug_btn: "🐞 Clicca per compilare 'Segnalazione Bug / Suggerimento'",
+        footer_terms: "📜 Termini di Servizio e Rimborsi",
+        lt_modal_title: "📜 Termini di Servizio SmartHost, Politica di Rimborso e Upgrade, Avviso Valuta e Contratto Dati Google/IA",
+        lt_modal_body: `<div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-emerald-400 mb-1">Articolo 1: Condizioni di Rimborso 7 Giorni e Disdetta</h4><p>1. <strong>Rimborso Completo entro 7 Giorni</strong>: I nuovi abbonati al Piano B o C possono richiedere il rimborso totale entro 7 giorni dal pagamento se hanno utilizzato meno di 20 risposte IA.<br/>2. <strong>Rimborso per Upgrade e Disdetta Libera</strong>: Passando dal Piano B al Piano C nello stesso mese, la quota del Piano B viene rimborsata automaticamente.</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-amber-400 mb-1">Articolo 2: Valuta di Regolamento TWD e Differenze di Cambio</h4><p>Tutti i piani sono regolati in Nuovi Dollari Taiwanesi (TWD: Piano B NT$1.680 / Piano C NT$2.980). Gli importi in EUR sono indicativi; l'addebito effettivo segue il tasso di cambio applicato da PayPal o dalla banca emittente.</p></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-4"><h4 class="font-bold text-indigo-400 mb-1">Articolo 3: Database IA, Passaggio Operatore e Privacy</h4><p>1. L'IA risponde esclusivamente in base al Database IA configurato; se un'informazione non è presente nel Database IA, l'IA avvisa l'ospite e inoltra la richiesta allo staff.<br/>2. Il Piano A conserva gli ultimi 3 messaggi; i Piani B/C conservano gli ultimi 10 messaggi.</p></div>`,
+        lt_btn_close: "Ho Letto e Accetto",
         mem_portal_title: "📋 I Miei Ordini e Impostazioni Negozio"
       }
     };
@@ -1363,7 +1425,8 @@
     function checkTermsBeforePayPal() {
       const chk = document.getElementById("pp-agree-terms");
       if (chk && !chk.checked) {
-        openAuthMsgBanner("⚠️ 請先勾選同意《服務條款、退款條件、匯率差額聲明暨 Google/AI 資料授權合約》後再前往付款！");
+        const dict = I18N_DICT[currentLang] || I18N_DICT["zh-TW"];
+        openAuthMsgBanner(dict.pp_err_terms || "⚠️ 請先勾選同意《服務條款與退款合約》後再前往付款！");
         return false;
       }
       return true;
@@ -1379,6 +1442,8 @@
       const m = document.getElementById("legal-terms-modal");
       m.classList.add("hidden");
       m.classList.remove("flex");
+      const chk = document.getElementById("pp-agree-terms");
+      if (chk) chk.checked = true;
     }
 
     function prefillBugReport() {

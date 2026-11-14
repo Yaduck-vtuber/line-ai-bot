@@ -43,7 +43,7 @@ def main():
                 if k in target_keys and v and k not in recovered:
                     recovered[k] = v
 
-    recovered["FORCE_DEPLOY_VER"] = "20261114_v2"
+    recovered["FORCE_DEPLOY_VER"] = "20261114_v3"
     # 輸出給 gcloud --env-vars-file 使用的 YAML 格式
     with open(".cloudrun_env.yaml", "w", encoding="utf-8") as f:
         for k, v in recovered.items():

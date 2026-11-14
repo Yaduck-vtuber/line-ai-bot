@@ -128,7 +128,7 @@
       </div>
 
       <!-- 新增：防機器人打架黃金 3 開關提醒（避免 LINE 內建罐頭訊息與 AI 同時回覆） -->
-      <div class="mt-4 bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 text-xs text-amber-100 leading-relaxed">
+      <div data-i18n="conflict_box_html" class="mt-4 bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 text-xs text-amber-100 leading-relaxed">
         <div class="font-extrabold text-amber-300 text-sm mb-1.5">
           🛡️ 必看！防止「LINE 內建罐頭機器人」與「AI 管家」搶話打架的黃金 3 開關：
         </div>
@@ -294,18 +294,18 @@
             <!-- 新增：直接在網頁填寫店家問答與禁忌清單 + 防出錯填寫指南 -->
             <div class="bg-slate-950/95 border border-emerald-500/30 rounded-xl p-4 space-y-2.5">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <label class="text-xs font-extrabold text-emerald-400">
-                  📝 直接填寫店家問答表單與不接受事項（可搭配或取代 Google 試算表・零幻覺防答錯）
+                <label data-i18n="lbl_custom_kb" class="text-xs font-extrabold text-emerald-400">
+                  📝 直接填寫 AI 資料庫問答與不接受事項（可搭配或取代 Google 試算表・零幻覺防答錯）
                 </label>
-                <button type="button" onclick="fillStandardKbTemplateOnboard()"
+                <button type="button" onclick="fillStandardKbTemplateOnboard()" data-i18n="btn_fill_kb_tpl"
                   class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold transition">
                   ✨ 點此載入防出錯標準填寫範本
                 </button>
               </div>
-              <textarea id="custom_kb_text" rows="5"
-                placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。&#10;⚠️ 嚴格防答錯保護：只要沒寫在這裡或 Google 試算表內的問題，AI 一律回答『將為您轉交專人客服處理』並立即通知您，絕不亂編答案！"
+              <textarea id="custom_kb_text" rows="5" data-i18n-placeholder="ph_custom_kb"
+                placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。&#10;⚠️ 嚴格防答錯保護：只要 AI 資料庫中沒有找到相關資料的問題，AI 一律回答『目前 AI 資料庫中沒有找到相關資料，已為您通知專人客服』並立即通知您！"
                 class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
-              <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed space-y-1">
+              <div data-i18n="kb_guide_html" class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed space-y-1">
                 <div class="font-bold text-amber-300">💡 怎麼填寫最不會出錯？推薦填寫以下 6 大黃金欄位（Google 試算表亦同）：</div>
                 <div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div>
                 <div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額（勿只寫「依現場為主」）。</div>
@@ -313,18 +313,18 @@
                 <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
                 <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div>
                 <div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：若您將原本 LINE 機器人的回覆內容貼進試算表，日後哪一條暫時不用，只要在該列開頭加上 <code>[停用]</code>（或在試算表第 3 欄填 <code>停用</code>），AI 就會自動排除不回答！</div>
-                <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！客人問任何沒寫在表單裡的問題，AI 都會百分之百轉交給您！</div>
+                <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！只要 AI 資料庫中沒有找到相關資料的問題，AI 都會百分之百轉交給您！</div>
               </div>
 
               <!-- 新增：保留原 LINE 關鍵字機器人「不打架禮讓設定」 -->
               <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
-                <label class="block text-xs font-bold text-cyan-300">
+                <label data-i18n="lbl_ignore_kw" class="block text-xs font-bold text-cyan-300">
                   🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）
                 </label>
-                <input type="text" id="ignore_keywords"
+                <input type="text" id="ignore_keywords" data-i18n-placeholder="ph_ignore_kw"
                   placeholder="填入您已在 LINE 後台設定過的關鍵字（以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動）"
                   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
-                <p class="text-[11px] text-slate-400 leading-relaxed">
+                <p data-i18n="help_ignore_kw" class="text-[11px] text-slate-400 leading-relaxed">
                   💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！
                 </p>
               </div>
@@ -621,7 +621,15 @@
         sup_q2: "🔗 有很多預約連結怎麼填？", sup_q2_text: "請問如果我們有訂房、菜單跟 IG 很多個連結，要怎麼填寫以及之後怎麼修改？",
         sup_placeholder: "請輸入您的問題...", sup_send: "送出",
         login_modal_title: "登入 Google 帳號以綁定店家",
-        login_modal_desc: "登入後系統將自動連結您的購買紀錄與開通權限："
+        login_modal_desc: "登入後系統將自動連結您的購買紀錄與開通權限：",
+        conflict_box_html: `<div class="font-extrabold text-amber-300 text-sm mb-1.5">🛡️ 必看！防止「LINE 內建罐頭機器人」與「AI 管家」搶話打架的黃金 3 開關：</div><p class="text-slate-300 mb-2">為了避免客人傳訊息時，LINE 內建的預設罐頭訊息跳出來跟 AI 管家同時回覆，請至 <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager</a> 右上角齒輪 <strong>「設定 (Settings) ➔ 回應設定 (Response settings)」</strong> 確認以下 3 個開關：</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]"><div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">1. 回應模式 (Response mode)：</span><br/>設為 <strong>「聊天 (Chat)」</strong>（讓您隨時可用手機 App 看對話並真人插話）</div><div class="bg-slate-950/80 border border-rose-500/40 rounded-lg p-2.5"><span class="text-rose-400 font-bold">2. 自動回應訊息 (Auto-response)：</span><br/>務必設為 <strong>「停用 (Disabled / 關閉)」</strong>（關掉內建罐頭才不會跟 AI 打架！）</div><div class="bg-slate-950/80 border border-emerald-500/40 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">3. Webhook：</span><br/>務必設為 <strong>「啟用 (Enabled / 開啟)」</strong>（讓 AI 管家 24H 幫您秒回！）</div></div>`,
+        lbl_custom_kb: "📝 直接填寫 AI 資料庫問答與不接受事項（可搭配或取代 Google 試算表・零幻覺防答錯）",
+        btn_fill_kb_tpl: "✨ 點此載入防出錯標準填寫範本",
+        ph_custom_kb: "建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。\n⚠️ 嚴格防答錯保護：只要 AI 資料庫中沒有找到相關資料的問題，AI 一律回答『目前 AI 資料庫中沒有找到相關資料，已為您通知專人客服』並立即通知您！",
+        kb_guide_html: `<div class="font-bold text-amber-300">💡 怎麼填寫最不會出錯？推薦填寫以下 6 大黃金欄位（Google 試算表亦同）：</div><div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div><div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額（勿只寫「依現場為主」）。</div><div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div><div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div><div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div><div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：若您將原本 LINE 機器人的回覆內容貼進試算表，日後哪一條暫時不用，只要在該列開頭加上 <code>[停用]</code>（或在試算表第 3 欄填 <code>停用</code>），AI 就會自動排除不回答！</div><div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！只要 AI 資料庫中沒有找到相關資料的問題，AI 都會百分之百轉交給您！</div>`,
+        lbl_ignore_kw: "🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）",
+        ph_ignore_kw: "填入您已在 LINE 後台設定過的關鍵字（以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動）",
+        help_ignore_kw: "💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！"
       },
       "en": {
         header_title: "SmartHost Onboarding Center",
@@ -692,7 +700,15 @@
         sup_q2: "🔗 Multiple booking links?", sup_q2_text: "How do I add multiple booking and menu links, and can I edit them later?",
         sup_placeholder: "Ask a question...", sup_send: "Send",
         login_modal_title: "Sign in with Google to Bind Store",
-        login_modal_desc: "Signing in links your purchase history and store management permissions:"
+        login_modal_desc: "Signing in links your purchase history and store management permissions:",
+        conflict_box_html: `<div class="font-extrabold text-amber-300 text-sm mb-1.5">🛡️ Must-Check! 3 Golden Switches to Prevent Built-in LINE Auto-Reply Conflicts:</div><p class="text-slate-300 mb-2">To prevent LINE's default canned replies from clashing with your AI Concierge, open <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager</a> ➔ top-right <strong>"Settings ➔ Response settings"</strong> and verify:</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]"><div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">1. Response mode:</span><br/>Set to <strong>"Chat"</strong> (lets you view chats and reply manually anytime)</div><div class="bg-slate-950/80 border border-rose-500/40 rounded-lg p-2.5"><span class="text-rose-400 font-bold">2. Auto-response:</span><br/>Set to <strong>"Disabled"</strong> (stops default canned messages from clashing with AI!)</div><div class="bg-slate-950/80 border border-emerald-500/40 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">3. Webhook:</span><br/>Set to <strong>"Enabled"</strong> (lets your 24/7 AI Concierge reply instantly!)</div></div>`,
+        lbl_custom_kb: "📝 Directly Fill AI Database Q&A & Store Restrictions (Works alongside or replaces Google Sheets · Zero Hallucination)",
+        btn_fill_kb_tpl: "✨ Load Standard Error-Free Template",
+        ph_custom_kb: "Format as 'Category: Details' (e.g., Hours, Pricing, Parking, Store Restrictions).\n⚠️ Zero-Hallucination Guardrail: For any question not found in your AI Database, AI politely replies 'No relevant data was found in the AI Database—I have notified our staff to assist you!' and alerts you immediately!",
+        kb_guide_html: `<div class="font-bold text-amber-300">💡 6 Golden Categories for 100% Accurate AI Replies (also applies to Google Sheets):</div><div>1. <strong>[Hours & Check-in/Service Time]</strong>: Opening hours, closed days, latest check-in/entry time.</div><div>2. <strong>[Room / Service / Product Pricing]</strong>: Clear item names and exact prices.</div><div>3. <strong>[Store Restrictions & Unacceptable Requests]</strong>: e.g., "Non-smoking, no pets, no extra beds".</div><div>4. <strong>[Address, Transit & Parking]</strong>: Directions, subway exit, parking availability & rates.</div><div>5. <strong>[Payment & Cancellation Policy]</strong>: Accepted payment methods and refund/reschedule rules.</div><div>6. <strong>[Pause Any Row Anytime with [停用]]</strong>: Prefix any row with <code>[停用]</code> (or put <code>disabled</code> in Column 3 of your Sheet) to temporarily mute that rule!</div><div class="text-emerald-300 font-semibold pt-1">🛡️ Peace of Mind: Auto-translates into 100+ languages! Anything not in your AI Database is 100% escalated to your staff!</div>`,
+        lbl_ignore_kw: "🤖 Want to Keep Using LINE's Built-in Keyword Replies / Rich Menu? (Optional · AI Auto-Mute Yield)",
+        ph_ignore_kw: "Enter keywords configured in LINE Auto-Response (comma-separated, e.g., Promo, Loyalty Card, Lucky Draw)",
+        help_ignore_kw: "💡 When a guest sends any keyword listed above, our AI Concierge <strong>automatically stays silent (0 reply, 0 quota used)</strong> so your built-in LINE keyword rule can reply without conflict!"
       },
       "ja": {
         header_title: "SmartHost オンライン開通センター",
@@ -763,7 +779,15 @@
         sup_q2: "🔗 複数のリンクを登録したい", sup_q2_text: "予約ページやメニューなど複数のURLを登録する方法と、後から変更する方法を教えてください。",
         sup_placeholder: "質問を入力してください...", sup_send: "送信",
         login_modal_title: "Google アカウントでログインして店舗連携",
-        login_modal_desc: "ログインすると購入履歴と開通権限が自動で紐付けられます："
+        login_modal_desc: "ログインすると購入履歴と開通権限が自動で紐付けられます：",
+        conflict_box_html: `<div class="font-extrabold text-amber-300 text-sm mb-1.5">🛡️ 必読！LINE公式アカウントの「定型文自動応答」とAIの重複を防ぐ3つの設定：</div><p class="text-slate-300 mb-2">LINE標準の自動応答メッセージがAIと同時に返信されるのを防ぐため、<a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager</a> 右上の歯車 <strong>「設定 ➔ 応答設定」</strong> で以下の3点をご確認ください：</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]"><div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">1. 応答モード：</span><br/><strong>「チャット」</strong>に設定（スマホアプリからいつでも有人チャット可能）</div><div class="bg-slate-950/80 border border-rose-500/40 rounded-lg p-2.5"><span class="text-rose-400 font-bold">2. AI応答メッセージ / 自動応答：</span><br/>必ず<strong>「オフ（無効）」</strong>に設定（定型文との重複を防止！）</div><div class="bg-slate-950/80 border border-emerald-500/40 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">3. Webhook：</span><br/>必ず<strong>「オン（有効）」</strong>に設定（24時間AIが即座に応答！）</div></div>`,
+        lbl_custom_kb: "📝 AIデータベース（Q&A・対応不可事項）を直接入力（Googleスプレッドシートと併用または代替可能）",
+        btn_fill_kb_tpl: "✨ 標準テンプレートを読み込む",
+        ph_custom_kb: "「項目：内容」の形式で記入してください（例：営業時間、料金表、駐車場案内、対応不可事項）。\n⚠️ 誤回答防止保護：AIデータベースに該当データがない質問は『現在AIデータベースに関連情報が見つからないため、担当者へ引き継ぎました』と案内し、オーナーへ即時通知します！",
+        kb_guide_html: `<div class="font-bold text-amber-300">💡 正確にAIへ回答させるための6大推奨項目（スプレッドシートも同様）：</div><div>1. <strong>【営業時間・チェックイン/受付時間】</strong>：営業時間、定休日、最終受付時間。</div><div>2. <strong>【料金表・メニュー】</strong>：プラン名やサービス名と正確な金額。</div><div>3. <strong>【対応不可事項・禁止事項】</strong>：例「全館禁煙、ペット不可、エキストラベッド無し」。</div><div>4. <strong>【アクセス・駐車場案内】</strong>：住所、最寄り駅出口、駐車場の有無・料金。</div><div>5. <strong>【お支払い方法・キャンセル規定】</strong>：利用可能な決済手段、キャンセル料規定。</div><div>6. <strong>【行頭に [停用] を付けていつでも一時停止】</strong>：行頭に <code>[停用]</code> を付けるだけで、削除せずにその回答を一時無効化できます！</div><div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保証：世界100言語以上へ自動翻訳！AIデータベースにない質問は100%スタッフへ通知します！</div>`,
+        lbl_ignore_kw: "🤖 LINE既存の「キーワード自動応答・リッチメニュー」を併用しますか？（任意・AI自動ミュート機能）",
+        ph_ignore_kw: "LINE管理画面で設定済みのキーワードをカンマ区切りで入力（例：最新キャンペーン, ポイントカード, クーポン）",
+        help_ignore_kw: "💡 お客様が上記のキーワードを送信した際、AIコンシェルジュは<strong>自動的に沈黙（返信せず・枠消費なし）</strong>し、既存のLINEキーワード応答のみを動作させます！"
       },
       "id": {
         header_title: "Pusat Aktivasi Online SmartHost",
@@ -834,7 +858,15 @@
         sup_q2: "🔗 Cara isi banyak link?", sup_q2_text: "Bagaimana cara memasukkan banyak link booking/menu dan mengubahnya nanti?",
         sup_placeholder: "Tulis pertanyaan Anda...", sup_send: "Kirim",
         login_modal_title: "Login dengan Google untuk Ikat Toko",
-        login_modal_desc: "Login akan menghubungkan riwayat pembelian dan izin pengelolaan toko Anda:"
+        login_modal_desc: "Login akan menghubungkan riwayat pembelian dan izin pengelolaan toko Anda:",
+        conflict_box_html: `<div class="font-extrabold text-amber-300 text-sm mb-1.5">🛡️ Wajib Cek! 3 Pengaturan Penting agar Bot Bawaan LINE Tidak Bentrok dengan AI:</div><p class="text-slate-300 mb-2">Agar pesan otomatis bawaan LINE tidak membalas bersamaan dengan AI, buka <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager</a> ➔ ikon roda gigi <strong>"Settings ➔ Response settings"</strong>:</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]"><div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">1. Response mode:</span><br/>Atur ke <strong>"Chat"</strong> (agar Anda bisa membalas manual kapan saja)</div><div class="bg-slate-950/80 border border-rose-500/40 rounded-lg p-2.5"><span class="text-rose-400 font-bold">2. Auto-response:</span><br/>Wajib <strong>"Disabled (Matikan)"</strong> (agar tidak bentrok dengan AI!)</div><div class="bg-slate-950/80 border border-emerald-500/40 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">3. Webhook:</span><br/>Wajib <strong>"Enabled (Aktifkan)"</strong> (agar AI membalas 24 jam!)</div></div>`,
+        lbl_custom_kb: "📝 Isi Langsung Tanya-Jawab Database AI & Batasan Toko (Bisa bersama atau menggantikan Google Sheets)",
+        btn_fill_kb_tpl: "✨ Muat Contoh Template Standar",
+        ph_custom_kb: "Format 'Kategori: Isi' (misal: Jam Buka, Daftar Harga, Parkir, Batasan Toko).\n⚠️ Anti-Halusinasi: Jika pertanyaan tidak ditemukan di Database AI, AI menjawab 'Data terkait belum ditemukan di Database AI, kami telah menghubungi staf untuk membantu Anda!'",
+        kb_guide_html: `<div class="font-bold text-amber-300">💡 6 Kategori Penting untuk Akurasi 100% (berlaku juga di Google Sheets):</div><div>1. <strong>[Jam Operasional & Check-in]</strong>: Jam buka, hari libur, batas waktu check-in.</div><div>2. <strong>[Daftar Harga Kamar / Layanan]</strong>: Nama layanan dan harga lengkap.</div><div>3. <strong>[Batasan & Larangan Toko]</strong>: Misal: "Dilarang merokok, tidak menerima hewan peliharaan".</div><div>4. <strong>[Alamat & Parkir]</strong>: Petunjuk arah dan info parkir.</div><div>5. <strong>[Pembayaran & Pembatalan]</strong>: Metode pembayaran & aturan refund.</div><div>6. <strong>[Nonaktifkan Baris dengan [停用]]</strong>: Tambahkan <code>[停用]</code> di awal baris kapan saja untuk menonaktifkan jawaban tanpa menghapusnya!</div><div class="text-emerald-300 font-semibold pt-1">🛡️ Jaminan Aman: Terjemahan otomatis 100+ bahasa! Pertanyaan di luar Database AI 100% diteruskan ke staf Anda!</div>`,
+        lbl_ignore_kw: "🤖 Ingin Tetap Memakai Balasan Kata Kunci Bawaan LINE / Rich Menu? (Opsional · AI Otomatis Diam)",
+        ph_ignore_kw: "Masukkan kata kunci bawaan LINE (pisahkan dengan koma, misal: Promo, Member Card, Undian)",
+        help_ignore_kw: "💡 Saat tamu mengetik kata kunci di atas, AI kami <strong>otomatis diam (0 balasan, tanpa potong kuota)</strong> agar bot kata kunci LINE Anda membalas sendiri tanpa bentrok!"
       },
       "it": {
         header_title: "Centro di Attivazione SmartHost",
@@ -905,7 +937,15 @@
         sup_q2: "🔗 Come inserire più link?", sup_q2_text: "Come posso aggiungere più link di prenotazione/menu e modificarli in seguito?",
         sup_placeholder: "Scrivi la tua domanda...", sup_send: "Invia",
         login_modal_title: "Accedi con Google per Collegare il Negozio",
-        login_modal_desc: "L'accesso associa automaticamente lo storico acquisti e i permessi:"
+        login_modal_desc: "L'accesso associa automaticamente lo storico acquisti e i permessi:",
+        conflict_box_html: `<div class="font-extrabold text-amber-300 text-sm mb-1.5">🛡️ Importante! 3 Impostazioni per Evitare Conflitti con le Risposte Automatiche LINE:</div><p class="text-slate-300 mb-2">Per evitare che i messaggi predefiniti di LINE si sovrappongano all'IA, apri <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager</a> ➔ in alto a destra <strong>"Settings ➔ Response settings"</strong>:</p><div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]"><div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">1. Response mode:</span><br/>Imposta su <strong>"Chat"</strong> (per vedere le chat e intervenire dal telefono)</div><div class="bg-slate-950/80 border border-rose-500/40 rounded-lg p-2.5"><span class="text-rose-400 font-bold">2. Auto-response:</span><br/>Imposta su <strong>"Disabled (Disattivato)"</strong> (evita risposte doppie!)</div><div class="bg-slate-950/80 border border-emerald-500/40 rounded-lg p-2.5"><span class="text-emerald-400 font-bold">3. Webhook:</span><br/>Imposta su <strong>"Enabled (Attivato)"</strong> (per far rispondere l'IA 24/7!)</div></div>`,
+        lbl_custom_kb: "📝 Compila Direttamente il Database IA e le Limitazioni (Usalo insieme o al posto di Google Sheets)",
+        btn_fill_kb_tpl: "✨ Carica Modello Standard Sicuro",
+        ph_custom_kb: "Formato 'Categoria: Dettagli' (es: Orari, Listino Prezzi, Parcheggio, Servizi Non Disponibili).\n⚠️ Protezione Zero-Allucinazioni: Per qualsiasi domanda non presente nel Database IA, l'IA risponde 'Non sono stati trovati dati nel Database IA, ho avvisato il nostro staff!'",
+        kb_guide_html: `<div class="font-bold text-amber-300">💡 6 Categorie Consigliate per Risposte IA Perfette (anche su Google Sheets):</div><div>1. <strong>[Orari di Apertura e Check-in]</strong>: Orari, giorni di chiusura, ultimo orario utile.</div><div>2. <strong>[Listino Prezzi Camere / Servizi]</strong>: Nomi completi e prezzi esatti.</div><div>3. <strong>[Limitazioni e Servizi Non Offerti]</strong>: Es: "Vietato fumare, niente animali, nessun letto aggiuntivo".</div><div>4. <strong>[Indirizzo, Trasporti e Parcheggio]</strong>: Indicazioni stradali e tariffe parcheggio.</div><div>5. <strong>[Pagamenti e Cancellazioni]</strong>: Metodi accettati e regole di rimborso.</div><div>6. <strong>[Sospendi Qualsiasi Riga con [停用]]</strong>: Aggiungi <code>[停用]</code> all'inizio di una riga per disattivarla temporaneamente!</div><div class="text-emerald-300 font-semibold pt-1">🛡️ Garanzia Totale: Traduzione automatica in oltre 100 lingue! Ogni domanda fuori dal Database IA viene inoltrata al tuo staff!</div>`,
+        lbl_ignore_kw: "🤖 Vuoi Continuare a Usare le Parole Chiave di LINE / Rich Menu? (Opzionale · Silenziamento Automatico IA)",
+        ph_ignore_kw: "Inserisci le parole chiave configurate su LINE (separate da virgola, es: Promo, Carta Fedeltà, Evento)",
+        help_ignore_kw: "💡 Quando un cliente invia una delle parole chiave indicate sopra, l'IA <strong>resta automaticamente in silenzio (0 risposte, 0 consumo quota)</strong> lasciando rispondere il tuo bot LINE!"
       }
     };
 

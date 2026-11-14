@@ -229,9 +229,14 @@
               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white" />
           </div>
 
-          <button type="submit" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
-            💾 儲存全站設定（立即生效）
-          </button>
+          <div class="flex flex-wrap gap-2">
+            <button type="submit" class="flex-1 min-w-[200px] py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+              💾 儲存全站設定（立即生效）
+            </button>
+            <button type="button" onclick="testSmtpEmail()" class="py-3.5 px-5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 font-extrabold text-xs sm:text-sm transition">
+              📧 測試 Gmail 自動寄信連線
+            </button>
+          </div>
         </form>
       </section>
     </main>
@@ -426,21 +431,26 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/60 border border-slate-800 rounded-xl p-3">
-                <div>
-                  <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Secret ${t.channel_secret_masked ? `<span class="text-emerald-400">(${t.channel_secret_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
-                  <input type="password" id="adm-sec-${t.tenant_id}" value="" placeholder="${t.channel_secret_masked ? '已連線（若不修改請留白）' : '請貼上 LINE Channel Secret'}"
-                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+              <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 space-y-2">
+                <div class="text-[11px] text-emerald-400 font-bold">
+                  🔒 資安保護說明：完整金鑰僅保存在雲端伺服器後端，前端網頁只顯示末碼遮罩，絕不載入或留存明文金鑰！（若不修改請留白）
                 </div>
-                <div>
-                  <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Access Token ${t.channel_access_token_masked ? `<span class="text-emerald-400">(${t.channel_access_token_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
-                  <input type="password" id="adm-tok-${t.tenant_id}" value="" placeholder="${t.channel_access_token_masked ? '已連線（若不修改請留白）' : '請貼上 LINE Channel Access Token'}"
-                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
-                </div>
-                <div>
-                  <label class="block text-cyan-300 font-semibold mb-1">🤖 Gemini AI 金鑰 ${s.gemini_key_set ? '<span class="text-emerald-400">(已設定)</span>' : '<span class="text-rose-400">(尚未設定)</span>'}</label>
-                  <input type="password" id="adm-gkey-${t.tenant_id}" value="" placeholder="${s.gemini_key_set ? '已設定（若不修改請留白）' : '貼上 GEMINI_API_KEY (AIza...)'}"
-                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Secret ${t.channel_secret_masked ? `<span class="text-emerald-400">(${t.channel_secret_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
+                    <input type="password" autocomplete="new-password" id="adm-sec-${t.tenant_id}" value="" placeholder="${t.channel_secret_masked ? '已連線（不改請留白）' : '請貼上 LINE Channel Secret'}"
+                      class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Access Token ${t.channel_access_token_masked ? `<span class="text-emerald-400">(${t.channel_access_token_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
+                    <input type="password" autocomplete="new-password" id="adm-tok-${t.tenant_id}" value="" placeholder="${t.channel_access_token_masked ? '已連線（不改請留白）' : '請貼上 LINE Channel Access Token'}"
+                      class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-cyan-300 font-semibold mb-1">🤖 Gemini AI 金鑰 ${s.gemini_key_set ? '<span class="text-emerald-400">(已設定)</span>' : '<span class="text-rose-400">(尚未設定)</span>'}</label>
+                    <input type="password" autocomplete="new-password" id="adm-gkey-${t.tenant_id}" value="" placeholder="${s.gemini_key_set ? '已設定（不改請留白）' : '貼上 GEMINI_API_KEY (AIza...)'}"
+                      class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+                  </div>
                 </div>
               </div>
 
@@ -507,10 +517,18 @@
               <div class="text-slate-400">金額：${o.amount} ${o.currency} ｜ 金流：${o.payment_method} (${o.paypal_tx_id || '-'}) ｜ 時間：${o.created_at}</div>
               ${o.refund_reason ? `<div class="text-rose-300 font-semibold">退訂/退費說明：${o.refund_reason}</div>` : ""}
             </div>
-            <div>
+            <div class="flex flex-wrap items-center gap-2">
+              ${o.status === 'Paid' ? `
+                <button onclick="simulateCustomerRefund('${o.order_id}')" class="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-extrabold">
+                  🎭 步驟1：模擬客人申請退費 (通知我的LINE)
+                </button>
+              ` : ""}
               ${o.status === 'Refund_Requested' || o.status === 'Paid' ? `
+                <a href="https://www.paypal.com/activities" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold">
+                  🔗 PayPal 後台退刷 ↗
+                </a>
                 <button onclick="markOrderRefunded('${o.order_id}')" class="px-3.5 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold">
-                  ✅ 核准並標記已完成退費
+                  ✅ ${o.status === 'Refund_Requested' ? '步驟2：已審核・標記完成退費' : '直接核准並標記已完成退費'}
                 </button>
               ` : ""}
             </div>
@@ -655,6 +673,28 @@
       } else {
         showToast("❌ 建立模擬訂單失敗，請重新整理後再試。");
       }
+    }
+
+    async function simulateCustomerRefund(orderId) {
+      const res = await creatorFetch("/api/creator/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "simulate_customer_refund_request", order_id: orderId })
+      });
+      const data = await res.json();
+      showToast(data.message || "已模擬客人端申請退費！");
+      loadOverview();
+    }
+
+    async function testSmtpEmail() {
+      showToast("📧 正在測試 Gmail 自動發信連線...");
+      const res = await creatorFetch("/api/creator/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test_smtp_email" })
+      });
+      const data = await res.json();
+      showToast(data.message || "測試完成");
     }
 
     async function markOrderRefunded(orderId) {

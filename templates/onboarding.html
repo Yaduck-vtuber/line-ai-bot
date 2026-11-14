@@ -461,6 +461,70 @@
         </div>
 
         <form id="onboarding-form" class="space-y-5" novalidate>
+          <!-- 申請表單前置鎖定區：無論先勾服務條款或先登入 Google，必須完成「1. 同意服務條款 ＋ 2. 登入 Google 帳號」才能填寫與送出申請表單！ -->
+          <div id="pre-form-auth-tos-gate" class="bg-slate-950/95 border-2 border-amber-500/50 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-lg">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="text-xs sm:text-sm font-extrabold text-amber-300 flex items-center gap-2">
+                <span>🔐</span>
+                <span data-i18n="gate_step_title">申請前必完成步驟：請先「勾選同意服務條款」並「登入 Google 帳號」以解鎖下方開通表單</span>
+              </div>
+              <span id="gate-status-pill" class="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold" data-i18n="gate_status_locked">
+                🔒 尚未解鎖表單
+              </span>
+            </div>
+
+            <!-- 條件 1：勾選同意服務條款（勾選後若尚未登入 Google 會自動彈出 Google 登入視窗） -->
+            <div class="bg-slate-900/90 border border-emerald-500/40 rounded-xl p-3.5 space-y-1.5">
+              <label class="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" id="chk_agree_tos" required onchange="onTosCheckboxChange()" class="mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0" />
+                <span class="text-xs text-slate-200 leading-relaxed">
+                  <strong class="text-emerald-400" data-i18n="gate_cond1_prefix">步驟 A（必勾）：</strong>
+                  <span data-i18n="tos_agree_label">我已詳細閱讀並同意《服務條款、退款條件、跨國匯率差額聲明暨 Google/AI 資料授權合約》（含免費體驗版與付費方案規範）</span>
+                  <button type="button" onclick="openOnboardTermsModal()" data-i18n="btn_view_tos" class="ml-1 text-emerald-400 underline font-bold hover:text-emerald-300">
+                    📜 點此檢視完整合約條款
+                  </button>
+                </span>
+              </label>
+              <p id="err-tos" data-i18n="err_tos" class="hidden text-xs text-rose-400 font-bold pl-6">
+                ⚠️ 請先勾選同意《服務條款暨資料授權合約》後再進行開通！
+              </p>
+            </div>
+
+            <!-- 條件 2：登入 Google 帳號（可於勾選服務條款之前或之後登入） -->
+            <div id="gate-google-unlogged-row" class="bg-slate-900/90 border border-amber-500/40 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+              <div class="text-xs text-amber-200 leading-relaxed">
+                <strong class="text-amber-400" data-i18n="gate_cond2_prefix">步驟 B（必登）：</strong>
+                <span data-i18n="gate_login_desc">請登入您的 Google 帳號，系統將自動為您綁定專屬店家後台並安全留存所有設定：</span>
+              </div>
+              <button type="button" onclick="openLoginModal()" data-i18n="btn_login_now"
+                class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shrink-0 transition shadow">
+                立即登入 Google 帳號
+              </button>
+            </div>
+
+            <div id="gate-google-logged-row" class="hidden bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div>
+                <span class="text-emerald-400 font-extrabold" data-i18n="logged_as">✅ 已登入 Google 會員帳號：</span>
+                <strong id="gate-logged-email" class="text-white font-mono ml-1"></strong>
+              </div>
+              <span class="text-emerald-300 font-bold text-[11px]" data-i18n="gate_google_ok">✔️ Google 帳號驗證完成</span>
+            </div>
+          </div>
+
+          <!-- 表單輸入欄外層鎖定容器（未同時完成「登入 Google ＋ 勾選服務條款」前自動鎖定無法填寫，點擊會自動引導登入或勾選） -->
+          <div class="relative">
+            <div id="form-lock-overlay" onclick="handleLockedFormClick()"
+              class="z-20 absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] rounded-2xl border border-amber-500/30 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition">
+              <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl mb-3">🔒</div>
+              <p id="form-lock-msg" data-i18n="gate_overlay_msg" class="text-xs sm:text-sm font-extrabold text-amber-300 max-w-md leading-relaxed mb-3">
+                請先於上方完成「1. 勾選同意服務條款」與「2. 登入 Google 帳號」，即可解鎖填寫申請表單！
+              </p>
+              <button type="button" class="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-lg transition" data-i18n="gate_overlay_btn">
+                🔐 點此立即登入 Google / 勾選條款解鎖表單
+              </button>
+            </div>
+
+            <fieldset id="onboard-fields-fieldset" disabled class="space-y-5 opacity-40 pointer-events-none select-none transition">
           <!-- 必填 1：商家名稱 -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">
@@ -675,26 +739,12 @@
             </div>
           </details>
 
-          <!-- 必勾選：服務條款與資料授權合約（免費版方案 A 與付費方案皆須勾選同意！） -->
-          <div class="bg-slate-950/90 border border-emerald-500/40 rounded-xl p-4 space-y-2">
-            <label class="flex items-start gap-2.5 cursor-pointer">
-              <input type="checkbox" id="chk_agree_tos" required class="mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0" />
-              <span class="text-xs text-slate-200 leading-relaxed">
-                <span data-i18n="tos_agree_label">我已詳細閱讀並同意《服務條款、退款條件、跨國匯率差額聲明暨 Google/AI 資料授權合約》（含免費體驗版與付費方案規範）</span>
-                <button type="button" onclick="openOnboardTermsModal()" data-i18n="btn_view_tos" class="ml-1 text-emerald-400 underline font-bold hover:text-emerald-300">
-                  📜 點此檢視完整合約條款
-                </button>
-              </span>
-            </label>
-            <p id="err-tos" data-i18n="err_tos" class="hidden text-xs text-rose-400 font-bold pl-6">
-              ⚠️ 請先勾選同意《服務條款暨資料授權合約》後再進行開通！
-            </p>
-          </div>
-
           <button type="submit" id="submit-btn" data-i18n="btn_submit"
             class="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-emerald-500/20 transition">
             🔍 立即驗證 LINE 金鑰並生成專屬 Webhook 網址
           </button>
+            </fieldset>
+          </div>
         </form>
       </div>
 
@@ -1045,7 +1095,16 @@
         btn_view_tos: "📜 點此檢視完整合約條款",
         err_tos: "⚠️ 請先勾選同意《服務條款暨資料授權合約》後再進行開通！",
         tos_modal_title: "📜 服務條款、退款條件與 Google/AI 資料授權合約",
-        tos_modal_html: `<p><strong>1. 服務內容與免費/付費方案規範：</strong>方案 A（0 元體驗版）每月提供 50 次免費 AI 自動回覆與最近 3 句對話記憶；方案 B 與方案 C 提供無限次 AI 回覆與最近 10 句記憶（方案 C 另含熟客重點資料卡雲端建檔）。</p><p><strong>2. AI 資料庫授權與零幻覺原則：</strong>您填寫於後台之 AI 資料庫與 Google 試算表內容僅供您的專屬 AI 管家回覆顧客使用；未記載於 AI 資料庫之問題，AI 一律回答「目前 AI 資料庫中沒有找到相關資料」並轉接專人。</p><p><strong>3. 資安與金鑰保護：</strong>您的 LINE Channel Secret 與 Access Token 全程加密保存於雲端後端資料庫，絕不儲存於瀏覽器前端（localStorage），更換金鑰須經註冊信箱 6 位數驗證碼確認。</p><p><strong>4. 取消訂閱、升級與跨國匯率退款條款：</strong>隨時可於個人檔案後台一鍵取消訂閱並降級回方案 A；若由方案 B 升級至方案 C，系統自動標記退還當月原方案款項。跨國幣別結帳若遇發卡機構或 PayPal 匯率波動，退款依原交易幣別實收金額退刷。</p>`
+        tos_modal_html: `<p><strong>1. 服務內容與免費/付費方案規範：</strong>方案 A（0 元體驗版）每月提供 50 次免費 AI 自動回覆與最近 3 句對話記憶；方案 B 與方案 C 提供無限次 AI 回覆與最近 10 句記憶（方案 C 另含熟客重點資料卡雲端建檔）。</p><p><strong>2. AI 資料庫授權與零幻覺原則：</strong>您填寫於後台之 AI 資料庫與 Google 試算表內容僅供您的專屬 AI 管家回覆顧客使用；未記載於 AI 資料庫之問題，AI 一律回答「目前 AI 資料庫中沒有找到相關資料」並轉接專人。</p><p><strong>3. 資安與金鑰保護：</strong>您的 LINE Channel Secret 與 Access Token 全程加密保存於雲端後端資料庫，絕不儲存於瀏覽器前端（localStorage），更換金鑰須經註冊信箱 6 位數驗證碼確認。</p><p><strong>4. 取消訂閱、升級與跨國匯率退款條款：</strong>隨時可於個人檔案後台一鍵取消訂閱並降級回方案 A；若由方案 B 升級至方案 C，系統自動標記退還當月原方案款項。跨國幣別結帳若遇發卡機構或 PayPal 匯率波動，退款依原交易幣別實收金額退刷。</p>`,
+        gate_step_title: "申請前必完成步驟：請先「勾選同意服務條款」並「登入 Google 帳號」以解鎖下方開通表單",
+        gate_status_locked: "🔒 尚未解鎖表單",
+        gate_status_unlocked: "🔓 已完成條款與 Google 登入・表單已解鎖",
+        gate_cond1_prefix: "步驟 A（必勾）：",
+        gate_cond2_prefix: "步驟 B（必登）：",
+        gate_login_desc: "請登入您的 Google 帳號，系統將自動為您綁定專屬店家後台並安全留存所有設定：",
+        gate_google_ok: "✔️ Google 帳號驗證完成",
+        gate_overlay_msg: "請先於上方完成「1. 勾選同意服務條款」與「2. 登入 Google 帳號」，即可解鎖填寫申請表單！",
+        gate_overlay_btn: "🔐 點此立即登入 Google / 勾選條款解鎖表單"
       },
       "en": {
         header_title: "SmartHost Onboarding Center",
@@ -1160,7 +1219,16 @@
         btn_view_tos: "📜 View Full Agreement",
         err_tos: "⚠️ Please check the box to agree to the Terms of Service before activating!",
         tos_modal_title: "📜 Terms of Service, Refund Policy & Google/AI Data Agreement",
-        tos_modal_html: `<p><strong>1. Service Plans:</strong> Plan A ($0 Free) includes 50 AI replies/month + 3-turn memory; Plan B & Plan C include unlimited AI replies + 10-turn memory (Plan C adds VIP guest profile cards).</p><p><strong>2. AI Database & Zero-Hallucination:</strong> Your AI Database and Google Sheet are used exclusively to answer your customers. For any unlisted question, AI replies 'No relevant data was found in the AI Database' and escalates to your staff.</p><p><strong>3. Key Security:</strong> LINE Channel Secret and Access Token are encrypted on the backend server and never stored in browser localStorage. Replacing keys requires a 6-digit Email OTP.</p><p><strong>4. Cancellation & FX Refund Policy:</strong> Cancel or downgrade to Plan A anytime with 1 click. Upgrading from Plan B to Plan C automatically flags your prior Plan B payment for refund.</p>`
+        tos_modal_html: `<p><strong>1. Service Plans:</strong> Plan A ($0 Free) includes 50 AI replies/month + 3-turn memory; Plan B & Plan C include unlimited AI replies + 10-turn memory (Plan C adds VIP guest profile cards).</p><p><strong>2. AI Database & Zero-Hallucination:</strong> Your AI Database and Google Sheet are used exclusively to answer your customers. For any unlisted question, AI replies 'No relevant data was found in the AI Database' and escalates to your staff.</p><p><strong>3. Key Security:</strong> LINE Channel Secret and Access Token are encrypted on the backend server and never stored in browser localStorage. Replacing keys requires a 6-digit Email OTP.</p><p><strong>4. Cancellation & FX Refund Policy:</strong> Cancel or downgrade to Plan A anytime with 1 click. Upgrading from Plan B to Plan C automatically flags your prior Plan B payment for refund.</p>`,
+        gate_step_title: "Required Before Applying: Check 'Agree to Terms' & 'Sign in with Google' to unlock the setup form below",
+        gate_status_locked: "🔒 Form Locked",
+        gate_status_unlocked: "🔓 Terms & Google Verified · Form Unlocked",
+        gate_cond1_prefix: "Step A (Required): ",
+        gate_cond2_prefix: "Step B (Required): ",
+        gate_login_desc: "Sign in with your Google account so your store backend and settings are safely linked to you:",
+        gate_google_ok: "✔️ Google Account Verified",
+        gate_overlay_msg: "Please complete '1. Agree to Terms of Service' and '2. Sign in with Google' above to unlock and fill out the setup form!",
+        gate_overlay_btn: "🔐 Click Here to Sign in with Google / Agree to Terms"
       },
       "ja": {
         header_title: "SmartHost オンライン開通センター",
@@ -1275,7 +1343,16 @@
         btn_view_tos: "📜 規約全文を表示",
         err_tos: "⚠️ 開通前に『利用規約およびデータ利用許諾契約』への同意にチェックを入れてください！",
         tos_modal_title: "📜 利用規約・返金条件およびGoogle/AIデータ利用許諾契約",
-        tos_modal_html: `<p><strong>1. プラン内容：</strong>プランA（0円無料版）は月50回のAI自動応答＋直近3往復の記憶、プランB・Cは無制限AI応答＋直近10往復の記憶（プランCは顧客カルテ永久保存付）を提供します。</p><p><strong>2. AIデータベースとゼロ・ハルシネーション原則：</strong>入力されたAIデータベースおよびスプレッドシートは貴店のAI応答のみに使用されます。未記載の質問には『現在AIデータベースに関連情報が見つかりません』と回答しスタッフへ通知します。</p><p><strong>3. セキュリティ保護：</strong>LINEキーはサーバー側で暗号化保存され、ブラウザのlocalStorageには保存されません。</p><p><strong>4. 解約・返金規定：</strong>マイページからいつでもワンクリックで解約・無料プランへ変更可能です。</p>`
+        tos_modal_html: `<p><strong>1. プラン内容：</strong>プランA（0円無料版）は月50回のAI自動応答＋直近3往復の記憶、プランB・Cは無制限AI応答＋直近10往復の記憶（プランCは顧客カルテ永久保存付）を提供します。</p><p><strong>2. AIデータベースとゼロ・ハルシネーション原則：</strong>入力されたAIデータベースおよびスプレッドシートは貴店のAI応答のみに使用されます。未記載の質問には『現在AIデータベースに関連情報が見つかりません』と回答しスタッフへ通知します。</p><p><strong>3. セキュリティ保護：</strong>LINEキーはサーバー側で暗号化保存され、ブラウザのlocalStorageには保存されません。</p><p><strong>4. 解約・返金規定：</strong>マイページからいつでもワンクリックで解約・無料プランへ変更可能です。</p>`,
+        gate_step_title: "申請前の必須ステップ：「利用規約への同意」と「Googleログイン」を完了すると下の開通フォームが解除されます",
+        gate_status_locked: "🔒 フォーム未解除",
+        gate_status_unlocked: "🔓 規約同意＆Google認証完了・入力可能",
+        gate_cond1_prefix: "ステップ A（必須）：",
+        gate_cond2_prefix: "ステップ B（必須）：",
+        gate_login_desc: "店舗管理画面と設定データを安全に紐付けるため、Googleアカウントでログインしてください：",
+        gate_google_ok: "✔️ Googleアカウント認証済み",
+        gate_overlay_msg: "上の「1. 利用規約への同意」と「2. Googleログイン」を完了すると、申請フォームに入力できるようになります！",
+        gate_overlay_btn: "🔐 ここをクリックしてGoogleログイン／規約同意へ"
       },
       "id": {
         header_title: "Pusat Aktivasi Online SmartHost",
@@ -1390,7 +1467,16 @@
         btn_view_tos: "📜 Lihat Kontrak Lengkap",
         err_tos: "⚠️ Harap centang persetujuan Ketentuan Layanan sebelum mengaktifkan!",
         tos_modal_title: "📜 Ketentuan Layanan, Kebijakan Refund & Perjanjian Data Google/AI",
-        tos_modal_html: `<p><strong>1. Paket Layanan:</strong> Paket A (Gratis Rp 0) mencakup 50 balasan AI/bulan + memori 3 pesan; Paket B & C mencakup balasan tanpa batas + memori 10 pesan.</p><p><strong>2. Database AI & Anti-Halusinasi:</strong> Untuk pertanyaan yang tidak ada di Database AI, AI menjawab 'Data terkait belum ditemukan di Database AI' dan meneruskan ke staf Anda.</p><p><strong>3. Keamanan Kunci:</strong> Kunci LINE disimpan terenkripsi di server backend dan tidak pernah disimpan di localStorage browser.</p>`
+        tos_modal_html: `<p><strong>1. Paket Layanan:</strong> Paket A (Gratis Rp 0) mencakup 50 balasan AI/bulan + memori 3 pesan; Paket B & C mencakup balasan tanpa batas + memori 10 pesan.</p><p><strong>2. Database AI & Anti-Halusinasi:</strong> Untuk pertanyaan yang tidak ada di Database AI, AI menjawab 'Data terkait belum ditemukan di Database AI' dan meneruskan ke staf Anda.</p><p><strong>3. Keamanan Kunci:</strong> Kunci LINE disimpan terenkripsi di server backend dan tidak pernah disimpan di localStorage browser.</p>`,
+        gate_step_title: "Wajib Sebelum Mendaftar: Centang 'Setuju Ketentuan Layanan' & 'Login Google' untuk membuka formulir di bawah",
+        gate_status_locked: "🔒 Formulir Terkunci",
+        gate_status_unlocked: "🔓 Ketentuan & Google Terverifikasi · Formulir Terbuka",
+        gate_cond1_prefix: "Langkah A (Wajib): ",
+        gate_cond2_prefix: "Langkah B (Wajib): ",
+        gate_login_desc: "Silakan login dengan akun Google Anda agar backend toko dan pengaturan Anda tersimpan aman:",
+        gate_google_ok: "✔️ Akun Google Terverifikasi",
+        gate_overlay_msg: "Silakan selesaikan '1. Centang Setuju Ketentuan Layanan' dan '2. Login Google' di atas terlebih dahulu untuk mengisi formulir pendaftaran!",
+        gate_overlay_btn: "🔐 Klik di Sini untuk Login Google / Setuju Ketentuan"
       },
       "it": {
         header_title: "Centro di Attivazione SmartHost",
@@ -1505,7 +1591,16 @@
         btn_view_tos: "📜 Visualizza Contratto Completo",
         err_tos: "⚠️ Seleziona la casella per accettare i Termini di Servizio prima dell'attivazione!",
         tos_modal_title: "📜 Termini di Servizio, Politica di Rimborso e Contratto Dati Google/IA",
-        tos_modal_html: `<p><strong>1. Piani di Servizio:</strong> Il Piano A (€0 Gratuito) offre 50 risposte IA/mese + memoria di 3 messaggi; i Piani B e C offrono risposte illimitate + memoria di 10 messaggi.</p><p><strong>2. Database IA e Zero-Allucinazioni:</strong> Per domande non presenti nel Database IA, l'IA risponde 'Non sono stati trovati dati nel Database IA' e avvisa il tuo staff.</p><p><strong>3. Sicurezza delle Chiavi:</strong> Le chiavi LINE sono crittografate sul server backend e mai salvate nel localStorage del browser.</p>`
+        tos_modal_html: `<p><strong>1. Piani di Servizio:</strong> Il Piano A (€0 Gratuito) offre 50 risposte IA/mese + memoria di 3 messaggi; i Piani B e C offrono risposte illimitate + memoria di 10 messaggi.</p><p><strong>2. Database IA e Zero-Allucinazioni:</strong> Per domande non presenti nel Database IA, l'IA risponde 'Non sono stati trovati dati nel Database IA' e avvisa il tuo staff.</p><p><strong>3. Sicurezza delle Chiavi:</strong> Le chiavi LINE sono crittografate sul server backend e mai salvate nel localStorage del browser.</p>`,
+        gate_step_title: "Passaggi Obbligatori: Spunta 'Accetto i Termini di Servizio' e 'Accedi con Google' per sbloccare il modulo qui sotto",
+        gate_status_locked: "🔒 Modulo Bloccato",
+        gate_status_unlocked: "🔓 Termini e Google Verificati · Modulo Sbloccato",
+        gate_cond1_prefix: "Passo A (Obbligatorio): ",
+        gate_cond2_prefix: "Passo B (Obbligatorio): ",
+        gate_login_desc: "Accedi con il tuo account Google per associare e salvare in sicurezza il backend del tuo negozio:",
+        gate_google_ok: "✔️ Account Google Verificato",
+        gate_overlay_msg: "Completa prima '1. Accetta i Termini di Servizio' e '2. Accedi con Google' qui sopra per sbloccare e compilare il modulo!",
+        gate_overlay_btn: "🔐 Clicca Qui per Accedere con Google / Accettare i Termini"
       }
     };
 
@@ -1564,6 +1659,89 @@
       });
       document.getElementById("lang-switcher").value = currentLang;
       applyTheme(localStorage.getItem("smarthost_theme") || "dark");
+      updateFormGateState();
+    }
+
+    function updateFormGateState() {
+      const dict = ONBOARD_I18N[currentLang] || ONBOARD_I18N["zh-TW"];
+      const isLogged = Boolean(currentUser && currentUser.email);
+      const chk = document.getElementById("chk_agree_tos");
+      const isTosChecked = Boolean(chk && chk.checked);
+
+      const unloggedRow = document.getElementById("gate-google-unlogged-row");
+      const loggedRow = document.getElementById("gate-google-logged-row");
+      const loggedEmailEl = document.getElementById("gate-logged-email");
+      if (isLogged) {
+        if (unloggedRow) unloggedRow.classList.add("hidden");
+        if (loggedRow) loggedRow.classList.remove("hidden");
+        if (loggedEmailEl) loggedEmailEl.textContent = currentUser.email;
+      } else {
+        if (unloggedRow) unloggedRow.classList.remove("hidden");
+        if (loggedRow) loggedRow.classList.add("hidden");
+      }
+
+      const gateBox = document.getElementById("pre-form-auth-tos-gate");
+      const pill = document.getElementById("gate-status-pill");
+      const overlay = document.getElementById("form-lock-overlay");
+      const fieldset = document.getElementById("onboard-fields-fieldset");
+      const unlocked = isLogged && isTosChecked;
+
+      if (unlocked) {
+        if (gateBox) {
+          gateBox.classList.remove("border-amber-500/50");
+          gateBox.classList.add("border-emerald-500/50");
+        }
+        if (pill) {
+          pill.className = "text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold";
+          pill.textContent = dict.gate_status_unlocked || "🔓 已完成條款與 Google 登入・表單已解鎖";
+        }
+        if (overlay) overlay.classList.add("hidden");
+        if (fieldset) {
+          fieldset.disabled = false;
+          fieldset.classList.remove("opacity-40", "pointer-events-none", "select-none");
+        }
+      } else {
+        if (gateBox) {
+          gateBox.classList.add("border-amber-500/50");
+          gateBox.classList.remove("border-emerald-500/50");
+        }
+        if (pill) {
+          pill.className = "text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold";
+          pill.textContent = dict.gate_status_locked || "🔒 尚未解鎖表單";
+        }
+        if (overlay) overlay.classList.remove("hidden");
+        if (fieldset) {
+          fieldset.disabled = true;
+          fieldset.classList.add("opacity-40", "pointer-events-none", "select-none");
+        }
+      }
+    }
+
+    function onTosCheckboxChange() {
+      const chk = document.getElementById("chk_agree_tos");
+      const err = document.getElementById("err-tos");
+      if (chk && chk.checked && err) {
+        err.classList.add("hidden");
+      }
+      updateFormGateState();
+      // 若使用者勾選了服務條款，但尚未登入 Google 帳號，立即自動彈出 Google 登入視窗！
+      if (chk && chk.checked && !currentUser) {
+        openLoginModal();
+      }
+    }
+
+    function handleLockedFormClick() {
+      const chk = document.getElementById("chk_agree_tos");
+      if (!currentUser) {
+        openLoginModal();
+        return;
+      }
+      if (chk && !chk.checked) {
+        const err = document.getElementById("err-tos");
+        if (err) err.classList.remove("hidden");
+        chk.focus();
+        document.getElementById("pre-form-auth-tos-gate")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
 
     const initLang = urlLang || localStorage.getItem("smarthost_lang") || "zh-TW";
@@ -1648,6 +1826,7 @@
           const newStoreWrap = document.getElementById("new-store-application-wrapper");
           if (newStoreWrap) newStoreWrap.classList.remove("hidden");
         }
+        updateFormGateState();
         renderOnboardGsi();
       } catch (e) {
         console.warn(e);
@@ -1832,6 +2011,10 @@
       const err = document.getElementById("err-tos");
       if (err) err.classList.add("hidden");
       closeOnboardTermsModal();
+      updateFormGateState();
+      if (!currentUser) {
+        openLoginModal();
+      }
     }
 
     function renderOnboardGsi() {

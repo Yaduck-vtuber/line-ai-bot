@@ -1721,25 +1721,34 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
 
 
 # =============================================================
-# 10. 前端頁面路由與公開設定接口
+# 10. 前端頁面路由與公開設定接口（強制停用瀏覽器快取，確保每次更新立即顯示最新價格與介面）
 # =============================================================
+@app.after_request
+def disable_html_and_api_cache(response):
+    """防止瀏覽器快取舊版 index.html / onboarding.html / admin.html 導致價格或介面沒更新"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 @app.route("/", methods=["GET"])
 def health_check():
     if request.args.get("view") == "site":
-        return send_from_directory(TEMPLATE_DIR, "index.html")
+        return send_from_directory(TEMPLATE_DIR, "index.html", max_age=0)
     return "LINE Bot Service is Healthy!", 200
 
 
 @app.route("/index.html", methods=["GET"])
 @app.route("/site", methods=["GET"])
 def serve_brand_home():
-    return send_from_directory(TEMPLATE_DIR, "index.html")
+    return send_from_directory(TEMPLATE_DIR, "index.html", max_age=0)
 
 
 @app.route("/onboarding.html", methods=["GET"])
 @app.route("/onboarding", methods=["GET"])
 def serve_onboarding_page():
-    return send_from_directory(TEMPLATE_DIR, "onboarding.html")
+    return send_from_directory(TEMPLATE_DIR, "onboarding.html", max_age=0)
 
 
 @app.route("/admin.html", methods=["GET"])
@@ -1747,7 +1756,7 @@ def serve_onboarding_page():
 @app.route("/dashboard", methods=["GET"])
 def serve_admin_dashboard():
     """創建者專屬總管理後台（未輸入創建者主密碼前僅顯示登入鎖定畫面，對一般訪客完全保密）"""
-    return send_from_directory(TEMPLATE_DIR, "admin.html")
+    return send_from_directory(TEMPLATE_DIR, "admin.html", max_age=0)
 
 
 @app.route("/api/public_config", methods=["GET"])

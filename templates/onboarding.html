@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>線上開通與通知設定中心｜SmartHost 24H LINE 智慧 AI 管家</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -54,7 +57,7 @@
   <!-- 頂部導覽列 (5 國語系切換 + 深淺色切換 + 個人檔案與店家後台 + 退訂救援) -->
   <header class="border-b border-slate-800 bg-slate-900/85 backdrop-blur sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
-      <a href="/index.html" class="flex items-center gap-2.5 shrink-0">
+      <a href="/index.html?v=290" class="flex items-center gap-2.5 shrink-0">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black">S</div>
         <span data-i18n="header_title" class="font-extrabold text-white tracking-tight text-sm sm:text-base">SmartHost 個人檔案與開通中心</span>
       </a>
@@ -83,7 +86,7 @@
           🛠️ 開通問題 / 取消訂閱
         </button>
 
-        <a href="/index.html" data-i18n="btn_home" class="text-xs text-slate-400 hover:text-white transition">← 首頁</a>
+        <a href="/index.html?v=290" data-i18n="btn_home" class="text-xs text-slate-400 hover:text-white transition">← 首頁</a>
       </div>
     </div>
   </header>
@@ -140,7 +143,7 @@
         <div class="flex flex-wrap items-center gap-2">
           <select id="prof-store-select" onchange="selectProfileStore(this.value)" class="hidden bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold"></select>
           <span id="prof-plan-badge" class="px-3 py-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-xs font-extrabold"></span>
-          <a href="/index.html#pricing" data-i18n="prof_btn_upgrade" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold transition">⚡ 升級 / 變更方案</a>
+          <a href="/index.html?v=290#pricing" data-i18n="prof_btn_upgrade" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold transition">⚡ 升級 / 變更方案</a>
         </div>
       </div>
 

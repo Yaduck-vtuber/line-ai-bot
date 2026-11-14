@@ -452,7 +452,7 @@ def get_tenant_config(tenant_id: str) -> dict:
 
 
 def generate_one_time_line_bind_link(tenant_cfg_or_id: dict | str) -> dict:
-    """產生 30 分鐘有效、單次使用即銷毀的店長 LINE 帳號一鍵綁定連結與指令（容錯支援傳入字典或 tenant_id 字串）"""
+    """產生綁定該店家專屬、單次使用即自動輪替銷毀的店長 LINE 帳號加密授權碼（同時持久化於後端以防 Cloud Run 重啟失效）"""
     if isinstance(tenant_cfg_or_id, str):
         tid = tenant_cfg_or_id
         tenant_cfg = get_tenant_config(tid)
@@ -460,11 +460,17 @@ def generate_one_time_line_bind_link(tenant_cfg_or_id: dict | str) -> dict:
         tenant_cfg = tenant_cfg_or_id or {}
         tid = tenant_cfg.get("tenant_id", "default")
 
-    token = "BIND-" + secrets.token_hex(6).upper()
+    with _db_lock:
+        existing_tok = str(tenant_cfg.get("bind_token", "")).strip()
+        if not existing_tok.startswith("BIND-"):
+            existing_tok = "BIND-" + secrets.token_hex(6).upper()
+            tenant_cfg["bind_token"] = existing_tok
+        token = existing_tok
+
     with _memory_lock:
         _one_time_line_bind_tokens[token] = {
             "tenant_id": tid,
-            "expires": time.time() + 1800,
+            "expires": time.time() + 86400,
         }
     cmd_text = f"/綁定店長 {token}"
     basic_id = str(tenant_cfg.get("bot_basic_id", "")).strip()
@@ -1461,7 +1467,7 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
             line_bot_api = MessagingApi(api_client)
             guest_name = fetch_line_guest_name(line_bot_api, tid, user_id)
 
-            # 0A. 店長專屬「一鍵綁定通知」指令：支援一次性加密綁定碼，若當前店家尚無管理員或為 default 主測試帳號，直接輸入「/綁定店長」或「/我是店長」即可秒綁！
+            # 0A. 店長專屬「一鍵綁定通知」指令：驗證一次性加密授權碼（BIND-XXXX），綁定後立即自動銷毀並換新碼，防止陌生人或駭客冒充店長攔截通知！
             direct_bind_triggers = ["/綁定店長", "綁定店長", "/我是店長", "我是店長", "/綁定通知", "綁定通知"]
             if stripped in direct_bind_triggers or stripped.startswith("/綁定店長 ") or stripped.upper().startswith("BIND-"):
                 token_candidate = stripped.replace("/綁定店長", "").strip().upper()
@@ -1472,13 +1478,32 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                         del _one_time_line_bind_tokens[token_candidate]
                         valid_bind = True
 
-                # 允許直接輸入 /綁定店長 立即綁定為該頻道店長通知帳號
+                # 檢查是否吻合後端持久化的專屬一次性授權碼
+                with _db_lock:
+                    stored_bind_tok = str(tenant_cfg.get("bind_token", "")).strip().upper()
+                    if token_candidate and stored_bind_tok and token_candidate == stored_bind_tok:
+                        valid_bind = True
+                        # 單次使用後立即自動銷毀舊碼並輪替新碼，舊碼貼第二次即失效！
+                        tenant_cfg["bind_token"] = "BIND-" + secrets.token_hex(6).upper()
+
+                existing_admins = tenant_cfg.get("admin_ids", set())
+                # 只有在「該店家目前完全還沒綁定任何店長 (0人)」或「傳訊者本來就是已綁定店長」時，才允許免授權碼直接輸入 /綁定店長
                 if not valid_bind and stripped in direct_bind_triggers:
-                    valid_bind = True
+                    if not existing_admins or (user_id and user_id in existing_admins):
+                        valid_bind = True
+                    else:
+                        reply_to_line(
+                            tenant_cfg,
+                            reply_token,
+                            "🔒【資安防護攔截】\n本店已綁定過店長通知帳號！為防止陌生人冒用指令偷看客服通知，新增或更換店長 LINE 時，請先登入官網「👤 個人檔案與店家管理後台」複製含一次性亂數的完整指令（例如：/綁定店長 BIND-XXXX）再貼上喔！",
+                            user_id,
+                        )
+                        return
 
                 if valid_bind and user_id:
                     with _db_lock:
                         tenant_cfg.setdefault("admin_ids", set()).add(user_id)
+                        tenant_cfg["bind_token"] = "BIND-" + secrets.token_hex(6).upper()
                         if not tenant_cfg.get("admin_user_id"):
                             tenant_cfg["admin_user_id"] = user_id
                         elif user_id not in tenant_cfg["admin_user_id"]:
@@ -1491,8 +1516,15 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                         f"👤 綁定帳號：{guest_name}\n"
                         f"🔑 LINE ID：{user_id}\n"
                         f"🏢 所屬店家：{client_name}\n\n"
-                        f"✅ 綁定已永久保存！往後只要客人詢問「AI 資料庫中沒有找到相關資料的問題」或要求「轉接專人」，系統都會第一時間將【3 句話問題摘要卡】推播至您的這個 LINE 視窗！\n"
-                        f"💡 您也可以隨時在總管理後台 (/admin) 檢視此綁定狀態或點按鈕發送測試通知。",
+                        f"✅ 綁定已永久保存（本次授權碼已自動銷毀作廢）！往後只要客人詢問「AI 資料庫中沒有找到相關資料的問題」或要求「轉接專人」，系統都會第一時間將【3 句話問題摘要卡】推播至您的這個 LINE 視窗！",
+                        user_id,
+                    )
+                    return
+                else:
+                    reply_to_line(
+                        tenant_cfg,
+                        reply_token,
+                        "⚠️ 此組一次性店長綁定授權碼已失效或已使用過！\n請重新整理官網「👤 個人檔案與店家管理後台」複製最新的一組 /綁定店長 授權碼再試一次喔！",
                         user_id,
                     )
                     return

@@ -1013,7 +1013,8 @@ def _get_genai_client():
     global _GENAI_CLIENT
     if _GENAI_CLIENT is not None:
         return _GENAI_CLIENT
-    if not USE_NEW_SDK or not GEMINI_API_KEY:
+    active_key = (SAAS_DB.get("settings", {}).get("gemini_api_key") or GEMINI_API_KEY or "").strip()
+    if not USE_NEW_SDK or not active_key:
         logger.error("Gemini client unavailable: GEMINI_API_KEY missing or google-genai SDK not installed.")
         return None
     try:
@@ -1021,9 +1022,9 @@ def _get_genai_client():
             timeout=18000,
             retry_options=types.HttpRetryOptions(attempts=1),
         )
-        _GENAI_CLIENT = genai.Client(api_key=GEMINI_API_KEY, http_options=http_opts)
+        _GENAI_CLIENT = genai.Client(api_key=active_key, http_options=http_opts)
     except Exception:
-        _GENAI_CLIENT = genai.Client(api_key=GEMINI_API_KEY)
+        _GENAI_CLIENT = genai.Client(api_key=active_key)
     return _GENAI_CLIENT
 
 
@@ -1040,7 +1041,8 @@ def _generate_with_gemini_models(system_instruction: str, user_message: str, max
     env_model = os.getenv("GEMINI_MODEL", "").strip()
     candidate_models = [
         _LAST_GOOD_MODEL,
-        env_model if env_model and not env_model.startswith(("gemini-2.", "gemini-1.")) else None,
+        env_model if env_model else None,
+        "gemini-2.5-flash",
         "gemini-3.8-flash",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
@@ -1119,12 +1121,21 @@ def notify_admins_on_line(
     if not need_human and service_type == "記憶更新":
         return
 
-    allergies = "、".join(guest_crm.get("dietary_allergies", [])) or "無"
-    arrival = guest_crm.get("estimated_arrival") or "未提供"
+    allergies_list = [a for a in guest_crm.get("dietary_allergies", []) if a and a != "無"]
+    arrival_val = (guest_crm.get("estimated_arrival") or "").strip()
+    if arrival_val in ("未提供", "無"):
+        arrival_val = ""
     masked_uid = user_id[-6:] if user_id else "未知"
 
+    extra_crm_lines = []
+    if allergies_list:
+        extra_crm_lines.append(f"📌 熟客重點備註：{'、'.join(allergies_list)}")
+    if arrival_val:
+        extra_crm_lines.append(f"🕒 預約/抵達時間：{arrival_val}")
+    extra_crm_block = ("\n".join(extra_crm_lines) + "\n") if extra_crm_lines else ""
+
     alert_msg = (
-        f"🚨【{client_name}｜櫃檯專人通知】\n"
+        f"🚨【{client_name}｜專人客服通知】\n"
         f"━━━━━━━━━━━━━━\n"
         f"👤 客人名稱：{guest_name} (#{masked_uid})\n"
         f"📌 需求類別：{service_type} ({guest_lang})\n"
@@ -1133,9 +1144,8 @@ def notify_admins_on_line(
         f"📋【3秒接管・問題摘要卡】：\n"
         f"{summary_card}\n"
         f"━━━━━━━━━━━━━━\n"
-        f"🥜 飲食過敏註記：{allergies}\n"
-        f"🕒 預計抵達時間：{arrival}\n"
-        f"⚠️ 狀態：{'請至 LINE 官方帳號後台接手回覆' if need_human else '系統已自動記錄預約'}"
+        f"{extra_crm_block}"
+        f"⚠️ 狀態：{'請至 LINE 官方帳號後台接手回覆' if need_human else '系統已自動記錄'}"
     )
     logger.info(f"[{tid}] [ADMIN ALERT]\n{alert_msg}")
 
@@ -1177,6 +1187,7 @@ def notify_admins_on_line(
             email_list = [tenant_cfg["email"]]
         email_list = [e for e in email_list if e][:3]
         if email_list:
+            extra_html = f"<p style='color:#64748b;font-size:12px;'>{' ｜ '.join(extra_crm_lines)}</p>" if extra_crm_lines else ""
             html_alert = f"""
             <div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #e2e8f0;border-radius:12px;padding:24px;">
               <h2 style="color:#0f172a;margin-top:0;">🚨【{client_name}】LINE 專人客服轉接通知</h2>
@@ -1185,7 +1196,7 @@ def notify_admins_on_line(
               <div style="background:#f8fafc;border-left:4px solid #10b981;padding:14px;margin:16px 0;">
                 <strong>📋 3秒接管・問題摘要卡：</strong><br/>{summary_card}
               </div>
-              <p style="color:#64748b;font-size:12px;">飲食過敏註記：{allergies} ｜ 預計抵達：{arrival}</p>
+              {extra_html}
             </div>
             """
             executor.submit(
@@ -1364,9 +1375,8 @@ def process_user_message_async(tenant_cfg: dict, reply_token: str, user_text: st
                         del _one_time_line_bind_tokens[token_candidate]
                         valid_bind = True
 
-                # 若當前頻道尚無任何已綁定店長，或為創建者主測試頻道 default 且直接輸入 /綁定店長，允許直接綁定
-                current_admins = tenant_cfg.get("admin_ids", set())
-                if not valid_bind and stripped in direct_bind_triggers and (len(current_admins) == 0 or tid == "default"):
+                # 允許直接輸入 /綁定店長 立即綁定為該頻道店長通知帳號
+                if not valid_bind and stripped in direct_bind_triggers:
                     valid_bind = True
 
                 if valid_bind and user_id:
@@ -2757,6 +2767,8 @@ def api_creator_overview():
                 default_kb_preview = "\n".join(
                     f"{k}：{v}" for k, v in FALLBACK_DEFAULTS.items() if k not in ["電子鎖密碼", "回購折扣碼"]
                 )
+            sec_val = (tcfg.get("channel_secret") or "").strip()
+            tok_val = (tcfg.get("channel_access_token") or "").strip()
             tenants_list.append({
                 "tenant_id": tid,
                 "client_name": tcfg.get("client_name", tid),
@@ -2769,7 +2781,9 @@ def api_creator_overview():
                 "admin_ids": admin_ids_list,
                 "admin_user_id": tcfg.get("admin_user_id", ""),
                 "webhook_url": f"{base_url}/webhook/{tid}",
-                "has_line_keys": bool(tcfg.get("channel_secret") and tcfg.get("channel_access_token")),
+                "has_line_keys": bool(sec_val and tok_val),
+                "channel_secret_masked": ("*" * 12 + sec_val[-4:]) if len(sec_val) > 4 else "",
+                "channel_access_token_masked": ("*" * 16 + tok_val[-6:]) if len(tok_val) > 6 else "",
                 "booking_links": tcfg.get("booking_links") or tcfg.get("booking_url", ""),
                 "sheet_csv_url": tcfg.get("sheet_csv_url", ""),
                 "custom_kb_text": default_kb_preview,
@@ -2780,8 +2794,10 @@ def api_creator_overview():
 
         s = dict(SAAS_DB["settings"])
         s["smtp_password_set"] = bool(s.get("smtp_password"))
+        s["gemini_key_set"] = bool(s.get("gemini_api_key") or GEMINI_API_KEY)
         s.pop("smtp_password", None)
         s.pop("master_password", None)
+        s.pop("gemini_api_key", None)
 
         return jsonify({
             "authenticated": True,
@@ -2856,45 +2872,79 @@ def api_creator_action():
                     if p.strip().startswith("U") and len(p.strip()) >= 20:
                         new_set.add(p.strip())
                 tcfg["admin_ids"] = new_set
+            if "channel_secret" in data:
+                raw_sec = str(data["channel_secret"]).strip()
+                if raw_sec and not raw_sec.startswith("*"):
+                    tcfg["channel_secret"] = raw_sec
+            if "channel_access_token" in data:
+                raw_tok = str(data["channel_access_token"]).strip()
+                if raw_tok and not raw_tok.startswith("*"):
+                    tcfg["channel_access_token"] = raw_tok
+            if "gemini_api_key" in data:
+                raw_gkey = str(data["gemini_api_key"]).strip()
+                if raw_gkey and not raw_gkey.startswith("*"):
+                    SAAS_DB["settings"]["gemini_api_key"] = raw_gkey
+                    global _GENAI_CLIENT
+                    _GENAI_CLIENT = None
             tcfg["updated_at"] = datetime.now(TW_TZ).strftime("%Y-%m-%d %H:%M:%S")
         save_saas_db()
-        return jsonify({"status": "success", "message": f"✅ 店家「{tid}」的表單知識庫與通知綁定設定已儲存生效！"}), 200
+        return jsonify({"status": "success", "message": f"✅ 店家「{tid}」的表單知識庫、金鑰與通知綁定設定已儲存生效！"}), 200
 
     if action == "test_line_notify":
         tid = str(data.get("tenant_id", "default")).strip()
         tenant_cfg = get_tenant_config(tid)
         if not tenant_cfg:
             return jsonify({"status": "error", "message": "找不到該店家"}), 404
+        access_tok = (tenant_cfg.get("channel_access_token") or "").strip()
+        if not access_tok:
+            return jsonify({
+                "status": "error",
+                "message": "⚠️ 發送失敗：此頻道目前「尚未填入 LINE Channel Access Token」！請在下方展開設定貼入 LINE 金鑰並按儲存，或於 Cloud Shell 執行一鍵自動還原金鑰指令。",
+            }), 400
         admin_ids = set(tenant_cfg.get("admin_ids", set()))
         raw_uid = tenant_cfg.get("admin_user_id", "").strip()
         for p in re.split(r"[,;，；\s\n]+", raw_uid):
-            if p.strip().startswith("U"):
+            if p.strip().startswith("U") and len(p.strip()) >= 20:
                 admin_ids.add(p.strip())
-        if not admin_ids and not tenant_cfg.get("telegram_chat_id") and not tenant_cfg.get("alert_emails"):
+        if not admin_ids:
             return jsonify({
                 "status": "error",
-                "message": "⚠️ 目前尚未綁定任何店長 LINE ID 或通知信箱！請直接用您的手機 LINE 對機器人傳送「/綁定店長」4 個字，即可 1 秒完成綁定！",
+                "message": "⚠️ 發送失敗：目前尚未設定「已綁定店長 LINE User ID (U開頭 33 碼)」！請先在上方欄位貼上您的 U 開頭 ID 並按「💾 儲存」，或在手機 LINE 對機器人傳送「/綁定店長」。",
             }), 400
+        client_name = tenant_cfg.get("client_name", CLIENT_NAME)
+        test_msg = (
+            f"✅【{client_name}｜專人通知連線測試成功】\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"恭喜您！這是一則從 SmartHost 總管理後台發出的連線測試通知。\n"
+            f"代表您的店長 LINE 帳號與官方帳號金鑰連線 100% 正常！\n"
+            f"當客人詢問「表單未記載的問題」或「要求轉接真人」時，系統會立即推播通知至此聊天室。"
+        )
+        sent_count = 0
+        push_errors = []
         try:
-            line_cfg = Configuration(access_token=tenant_cfg["channel_access_token"])
+            line_cfg = Configuration(access_token=access_tok)
             with ApiClient(line_cfg) as api_client:
                 line_bot_api = MessagingApi(api_client)
-                notify_admins_on_line(
-                    line_bot_api,
-                    tenant_cfg,
-                    "後台測試貴賓",
-                    "U888888TEST",
-                    "請問可以幫我轉接真人店長嗎？（此為總後台發送之專人通知連線測試）",
-                    {
-                        "event": "service_request",
-                        "service_type": "專人通知連線測試",
-                        "details": "總後台點擊測試推播",
-                        "handover_summary_3_sentences": "恭喜您！這是一則從 SmartHost 總管理後台發出的【專人轉接通知測試】。代表您的店長 LINE 帳號綁定完全正常，當客人詢問表單未記載問題或要求真人服務時，您將在此收到通知！",
-                        "need_human": True,
-                    },
-                    get_guest_crm_profile(tid, "U888888TEST"),
-                )
-            return jsonify({"status": "success", "message": f"🎉 已成功發送測試通知至已綁定的店長 LINE ({len(admin_ids)} 人) 與通知信箱！請查看您的手機 LINE！"}), 200
+                for aid in sorted(list(admin_ids)):
+                    try:
+                        line_bot_api.push_message(
+                            PushMessageRequest(
+                                to=aid,
+                                messages=[TextMessage(text=test_msg)],
+                            )
+                        )
+                        sent_count += 1
+                    except Exception as push_err:
+                        push_errors.append(f"{aid[:8]}...: {push_err}")
+            if sent_count == 0:
+                return jsonify({
+                    "status": "error",
+                    "message": f"⚠️ LINE 推播被拒絕：{'；'.join(push_errors)}（請確認 LINE Channel Access Token 是否正確，且該店長帳號已加此官方帳號為好友）",
+                }), 400
+            return jsonify({
+                "status": "success",
+                "message": f"🎉 已成功將測試通知送達店長手機 LINE ({sent_count} 人)！請查看您的 LINE 聊天室！",
+            }), 200
         except Exception as e:
             return jsonify({"status": "error", "message": f"發送測試通知失敗：{e}"}), 500
 

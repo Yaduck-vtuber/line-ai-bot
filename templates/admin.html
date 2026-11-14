@@ -426,6 +426,24 @@
                 </div>
               </div>
 
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                <div>
+                  <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Secret ${t.channel_secret_masked ? `<span class="text-emerald-400">(${t.channel_secret_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
+                  <input type="password" id="adm-sec-${t.tenant_id}" value="" placeholder="${t.channel_secret_masked ? '已連線（若不修改請留白）' : '請貼上 LINE Channel Secret'}"
+                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+                </div>
+                <div>
+                  <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Access Token ${t.channel_access_token_masked ? `<span class="text-emerald-400">(${t.channel_access_token_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
+                  <input type="password" id="adm-tok-${t.tenant_id}" value="" placeholder="${t.channel_access_token_masked ? '已連線（若不修改請留白）' : '請貼上 LINE Channel Access Token'}"
+                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+                </div>
+                <div>
+                  <label class="block text-cyan-300 font-semibold mb-1">🤖 Gemini AI 金鑰 ${s.gemini_key_set ? '<span class="text-emerald-400">(已設定)</span>' : '<span class="text-rose-400">(尚未設定)</span>'}</label>
+                  <input type="password" id="adm-gkey-${t.tenant_id}" value="" placeholder="${s.gemini_key_set ? '已設定（若不修改請留白）' : '貼上 GEMINI_API_KEY (AIza...)'}"
+                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
+                </div>
+              </div>
+
               <div>
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
                   <label class="text-emerald-300 font-extrabold">📋 店家問答表單知識庫（AI 僅回答此處與 Google 試算表有寫的內容；未寫的問題一律轉接專人！）</label>
@@ -573,7 +591,10 @@
         custom_kb_text: document.getElementById(`adm-kb-${tid}`).value.trim(),
         booking_links: document.getElementById(`adm-links-${tid}`).value.trim(),
         sheet_csv_url: document.getElementById(`adm-sheet-${tid}`).value.trim(),
-        ignore_keywords: (document.getElementById(`adm-ignore-${tid}`)?.value || "").trim()
+        ignore_keywords: (document.getElementById(`adm-ignore-${tid}`)?.value || "").trim(),
+        channel_secret: (document.getElementById(`adm-sec-${tid}`)?.value || "").trim(),
+        channel_access_token: (document.getElementById(`adm-tok-${tid}`)?.value || "").trim(),
+        gemini_api_key: (document.getElementById(`adm-gkey-${tid}`)?.value || "").trim()
       };
       const res = await creatorFetch("/api/creator/action", {
         method: "POST",

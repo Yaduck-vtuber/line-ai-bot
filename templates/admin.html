@@ -467,9 +467,24 @@
               </div>
 
               <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 space-y-2">
-                <div class="text-[11px] text-emerald-400 font-bold">
-                  🔒 資安保護說明：完整金鑰僅保存在雲端伺服器後端，前端網頁只顯示末碼遮罩，絕不載入或留存明文金鑰！（若不修改請留白）
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="text-[11px] text-emerald-400 font-bold">
+                    🔒 資安保護說明：完整金鑰僅保存在雲端伺服器後端，前端網頁只顯示末碼遮罩，絕不載入或留存明文金鑰！（若不修改請留白）
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <a href="https://manager.line.biz/" target="_blank" rel="noopener noreferrer" class="text-[11px] px-2.5 py-1 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold">1. LINE Official Account Manager 後台 ↗</a>
+                    <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" class="text-[11px] px-2.5 py-1 rounded bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 font-bold">2. LINE Developers Console ↗</a>
+                  </div>
                 </div>
+                <details class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+                  <summary class="cursor-pointer font-bold text-amber-300 select-none">❓ 點此展開：台灣建立官方帳號、點選 ISSUE 複製 Token 與 EDIT 貼上 Webhook 步驟 ▾</summary>
+                  <div class="mt-2 space-y-1 leading-relaxed border-t border-slate-800 pt-2">
+                    <div>1. <strong>開通 API</strong>：前往 <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline">manager.line.biz</a> ➔ 設定 ➔ Messaging API（如 <code>manager.line.biz/account/@ID/setting/messaging-api</code>）➔ 點擊「啟用 Messaging API」。</div>
+                    <div>2. <strong>Channel Secret</strong>：前往 <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline">developers.line.biz/console</a> ➔ Basic settings 底部複製 32 碼 Channel secret。</div>
+                    <div>3. <strong>Access Token (必點 Issue)</strong>：切換至 Messaging API 分頁（如 <code>developers.line.biz/console/channel/ID/messaging-api</code>）➔ 底部 Channel access token 點擊 <strong>Issue</strong> 按鈕才能複製！</div>
+                    <div>4. <strong>Webhook settings (必點 Edit + 開啟 Use webhook)</strong>：在同一個 Messaging API 分頁中間找到 Webhook settings ➔ 點擊 <strong>Edit</strong> 貼上專屬 Webhook 網址並按 Update ➔ 開啟下方 <strong>Use webhook</strong> 綠色開關！</div>
+                  </div>
+                </details>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Secret ${t.channel_secret_masked ? `<span class="text-emerald-400">(${t.channel_secret_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
@@ -478,7 +493,7 @@
                   </div>
                   <div>
                     <label class="block text-amber-300 font-semibold mb-1">🔑 LINE Channel Access Token ${t.channel_access_token_masked ? `<span class="text-emerald-400">(${t.channel_access_token_masked})</span>` : '<span class="text-rose-400">(尚未設定)</span>'}</label>
-                    <input type="password" autocomplete="new-password" id="adm-tok-${t.tenant_id}" value="" placeholder="${t.channel_access_token_masked ? '已連線（不改請留白）' : '請貼上 LINE Channel Access Token'}"
+                    <input type="password" autocomplete="new-password" id="adm-tok-${t.tenant_id}" value="" placeholder="${t.channel_access_token_masked ? '已連線（不改請留白）' : '請貼上點 Issue 複製之 Access Token'}"
                       class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono" />
                   </div>
                   <div>
@@ -491,20 +506,20 @@
 
               <div>
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                  <label class="text-emerald-300 font-extrabold">📋 店家問答表單知識庫（AI 僅回答此處與 Google 試算表有寫的內容；未寫的問題一律轉接專人！）</label>
+                  <label class="text-emerald-300 font-extrabold">📋 店家 AI 資料庫問答表單（右下角可拉大；AI 僅回答此處與 Google 試算表有寫的內容，未寫的問題一律轉接專人！）</label>
                   <button type="button" onclick="fillSampleTemplate('${t.tenant_id}')" class="text-[11px] px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold">
                     ✨ 載入防出錯標準填寫範本
                   </button>
                 </div>
                 <textarea id="adm-kb-${t.tenant_id}" rows="8"
-                  class="w-full bg-slate-900 border border-emerald-500/40 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono leading-relaxed focus:outline-none focus:border-emerald-400">${safeKb}</textarea>
+                  class="w-full bg-slate-900 border border-emerald-500/40 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono leading-relaxed focus:outline-none focus:border-emerald-400 resize-y min-h-[140px]">${safeKb}</textarea>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-slate-400 font-semibold mb-1">多組預約 / 訂房 / 菜單連結（一行一組）</label>
+                  <label class="block text-slate-400 font-semibold mb-1">多組預約 / 訂房 / 菜單連結（一行一組，右下角可拉大）</label>
                   <textarea id="adm-links-${t.tenant_id}" rows="2" placeholder="線上預約：https://..."
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">${safeLinks}</textarea>
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white resize-y min-h-[68px]">${safeLinks}</textarea>
                 </div>
                 <div>
                   <div class="flex items-center justify-between mb-1">
@@ -524,9 +539,9 @@
               </div>
 
               <div>
-                <label class="block text-cyan-300 font-semibold mb-1">🤖 原 LINE 機器人關鍵字禮讓設定（選填・當客人輸入這些關鍵字時 AI 自動靜音不搶話、不扣額度）</label>
-                <input type="text" id="adm-ignore-${t.tenant_id}" value="${safeIgnore}" placeholder="例如：最新優惠, 集點卡, 抽獎活動（亦可於 Google 試算表新增一列『原LINE機器人關鍵字』設定）"
-                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+                <label class="block text-cyan-300 font-semibold mb-1">🤖 原 LINE 機器人關鍵字禮讓設定（選填・右下角可拉大，當客人輸入這些關鍵字時 AI 自動靜音不搶話、不扣額度）</label>
+                <textarea id="adm-ignore-${t.tenant_id}" rows="2" placeholder="例如：最新優惠, 集點卡, 抽獎活動（以逗號或換行分隔，亦可於 Google 試算表新增一列『原LINE機器人關鍵字』設定）"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white resize-y min-h-[68px]">${safeIgnore}</textarea>
               </div>
 
               <div class="flex flex-wrap gap-2">

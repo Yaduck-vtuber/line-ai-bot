@@ -159,6 +159,17 @@
               複製網址
             </button>
           </div>
+          <details class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+            <summary class="cursor-pointer font-bold text-cyan-300 select-none" data-i18n="help_webhook_summary">
+              ❓ 點此展開：如何點選 EDIT 貼上 Webhook 並開啟 Use webhook？（含直達網址）▾
+            </summary>
+            <div class="mt-2 pt-2 border-t border-slate-800 space-y-1.5 leading-relaxed" data-i18n="help_webhook_body">
+              <p>1. 點擊前往 <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> ➔ 點選您的官方帳號 Channel ➔ 切換到上方 <strong>「Messaging API」</strong> 分頁（網址結尾為 <code>/messaging-api</code>）。</p>
+              <p>2. 找到 <strong>「Webhook settings」</strong> 區塊，點擊 <strong>「Edit（編輯）」</strong> 按鈕才能輸入網址，貼上後按 <strong>「Update（更新）」</strong>。</p>
+              <p>3. <strong>⚠️ 必開設定</strong>：將下方的 <strong>「Use webhook（使用 Webhook）」開關切換為開啟（綠色）</strong>，並可點 <strong>「Verify」</strong> 測試！</p>
+              <p>4. 同步至 <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager ↗</a> 的「設定 ➔ 回應設定」確認 <strong>Webhook 已開啟</strong>、並關閉預設罐頭「自動回應訊息」。</p>
+            </div>
+          </details>
         </div>
 
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
@@ -173,10 +184,19 @@
             </a>
             <code id="prof_bind_cmd" class="text-[11px] font-mono text-emerald-300 bg-slate-900 px-2.5 py-1.5 rounded border border-slate-800 select-all"></code>
           </div>
+          <details class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+            <summary class="cursor-pointer font-bold text-emerald-300 select-none" data-i18n="help_bind_summary">
+              ❓ 點此展開：如何綁定店長個人 LINE 接收客服轉接通知？▾
+            </summary>
+            <div class="mt-2 pt-2 border-t border-slate-800 space-y-1 leading-relaxed" data-i18n="help_bind_body">
+              <p>• <strong>方法 1（最推薦）</strong>：直接用手機點擊上方綠色按鈕，或用您自己的個人 LINE 對著店家的官方帳號傳送 <code>/綁定店長</code> 四個字，系統就會在 1 秒內自動把您的 LINE 設為通知接收人！</p>
+              <p>• <strong>方法 2</strong>：若您已知道自己的 U 開頭 33 碼 LINE User ID，也可直接填寫於下方欄位並按儲存。</p>
+            </div>
+          </details>
         </div>
       </div>
 
-      <!-- 2. 店家名稱與 AI 資料庫設定 -->
+      <!-- 2. 店家名稱與店長 LINE ID -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1" data-i18n="lbl_client_name">商家 / 品牌名稱（將顯示於 AI 管家接待問候語）</label>
@@ -188,7 +208,7 @@
         </div>
       </div>
 
-      <!-- 3. 外部 Google 試算表網址（含直達連結 ＋ 一鍵測試讀取按鈕） -->
+      <!-- 3. 外部 Google 試算表網址（含直達連結 ＋ 一鍵測試讀取按鈕 ＋ 可收合步驟） -->
       <div class="bg-slate-950/90 border border-cyan-500/30 rounded-xl p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <label class="text-xs font-extrabold text-cyan-400" data-i18n="prof_lbl_sheet">
@@ -206,13 +226,20 @@
             🔍 測試讀取試算表內容
           </button>
         </div>
-        <p class="text-[11px] text-slate-400" data-i18n="sheet_share_hint">
-          💡 提醒：請在您的 Google 試算表右上角點擊「共用 (Share)」➔ 將一般存取權設為「知道連結的任何人皆可檢視」，再點上方「🔍 測試讀取試算表內容」確認 AI 已抓到資料！
-        </p>
+        <details class="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+          <summary class="cursor-pointer font-bold text-cyan-300 select-none" data-i18n="help_sheet_summary">
+            ❓ 點此展開：如何設定 Google 試算表共用權限讓 AI 成功抓取資料？（含直達網址）▾
+          </summary>
+          <div class="mt-2 pt-2 border-t border-slate-800 space-y-1 leading-relaxed" data-i18n="help_sheet_body">
+            <p>1. 點擊 <a href="https://docs.google.com/spreadsheets/" target="_blank" class="text-cyan-400 underline font-bold">開啟 Google 試算表 ↗</a>，在 A 欄填寫「項目名稱（如：旅宿名稱、房型價格、入住時間）」、B 欄填寫「詳細內容」。</p>
+            <p>2. 點擊試算表右上角的 <strong>「共用 (Share)」</strong> 按鈕 ➔ 將一般存取權改為 <strong>「知道連結的任何人皆可檢視 (Anyone with the link can view)」</strong>。</p>
+            <p>3. 複製瀏覽器網址貼入上方欄位，點擊 <strong>「🔍 測試讀取試算表內容」</strong> 看到綠色成功訊息後，按最下方「💾 儲存並更新」即立即生效！</p>
+          </div>
+        </details>
         <div id="prof-sheet-test-box" class="hidden rounded-xl p-3 text-xs leading-relaxed"></div>
       </div>
 
-      <!-- 4. 網頁直接輸入 AI 資料庫（永久保存於雲端後端） -->
+      <!-- 4. 網頁直接輸入 AI 資料庫（永久保存於雲端後端，含可拉大框框與可收合教學） -->
       <div class="bg-slate-950/95 border border-emerald-500/30 rounded-xl p-4 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <label class="text-xs font-extrabold text-emerald-400" data-i18n="lbl_custom_kb">
@@ -225,38 +252,59 @@
         </div>
         <textarea id="prof_custom_kb_text" rows="6" data-i18n-placeholder="ph_custom_kb"
           placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。"
-          class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+          class="w-full resize-y min-h-[120px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+        <details class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+          <summary class="cursor-pointer font-bold text-amber-300 select-none" data-i18n="help_kb_summary">
+            ❓ 點此展開：AI 資料庫 6 大黃金欄位填寫教學與 [停用] 語法說明 ▾
+          </summary>
+          <div data-i18n="kb_guide_html" class="mt-2 pt-2 border-t border-slate-800 leading-relaxed space-y-1">
+            <div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div>
+            <div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額。</div>
+            <div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床」。</div>
+            <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
+            <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式、取消或改期規則。</div>
+            <div>6. <strong>【隨時停用特定回覆】</strong>：在任一列開頭加上 <code>[停用]</code>，AI 就會暫時跳過不回答該條內容！</div>
+          </div>
+        </details>
       </div>
 
-      <!-- 5. 預約多組連結 ＋ 原 LINE 機器人關鍵字禮讓 ＋ 緊急通知信箱/Telegram -->
+      <!-- 5. 預約多組連結 ＋ 原 LINE 機器人關鍵字禮讓（可拉大可動式框框） ＋ 緊急通知信箱 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1" data-i18n="lbl_booking">
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-300" data-i18n="lbl_booking">
             線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組）
           </label>
           <textarea id="prof_booking_links" rows="3" data-i18n-placeholder="ph_booking"
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
+            class="w-full resize-y min-h-[82px] bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
+          <details class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+            <summary class="cursor-pointer font-bold text-emerald-300 select-none" data-i18n="help_booking_summary">
+              ❓ 點此展開：多組預約／菜單連結如何填寫？▾
+            </summary>
+            <div class="mt-1.5 pt-1.5 border-t border-slate-800 leading-relaxed" data-i18n="help_booking_body">
+              一行填寫一組「名稱：網址」（例如：<code>線上訂房：https://...</code>、<code>餐廳菜單：https://...</code>），當客人詢問訂房或菜單時，AI 會自動挑選對應的網址貼給客人！框框右下角可自由拖曳拉大。
+            </div>
+          </details>
         </div>
         <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-bold text-cyan-300 mb-1" data-i18n="lbl_ignore_kw">
-              🤖 原 LINE 機器人禮讓關鍵字（以逗號分隔，AI 自動靜音不搶話）
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-cyan-300" data-i18n="lbl_ignore_kw">
+              🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）
             </label>
-            <input type="text" id="prof_ignore_keywords" data-i18n-placeholder="ph_ignore_kw"
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-300 mb-1" data-i18n="prof_lbl_emails">緊急通知信箱（最多 3 組，逗號分隔）</label>
-              <input type="text" id="prof_alert_emails" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
-            </div>
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="text-[11px] font-bold text-slate-300">Telegram Chat ID</label>
-                <a href="https://t.me/userinfobot" target="_blank" class="text-[11px] font-bold text-cyan-400 hover:underline">@userinfobot ↗</a>
+            <textarea id="prof_ignore_keywords" rows="3" data-i18n-placeholder="ph_ignore_kw"
+              placeholder="填入您已在 LINE 後台設定過的關鍵字（以逗號或換行分隔，右下角可自由拉大框框）"
+              class="w-full resize-y min-h-[82px] bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 leading-relaxed"></textarea>
+            <details class="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+              <summary class="cursor-pointer font-bold text-cyan-300 select-none" data-i18n="help_ignore_summary">
+                ❓ 點此展開：關鍵字自動靜音禮讓說明與 LINE 後台網址 ▾
+              </summary>
+              <div class="mt-1.5 pt-1.5 border-t border-slate-800 leading-relaxed" data-i18n="help_ignore_kw">
+                💡 當客人輸入上方列出的關鍵字（或點選圖文選單觸發之文字）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本在 <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager ↗</a> 設定的關鍵字自動回應單獨回覆，兩邊完美共存絕不打架！
               </div>
-              <input type="text" id="prof_telegram_chat_id" class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
-            </div>
+            </details>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1" data-i18n="prof_lbl_emails">📧 緊急通知信箱（最多 3 組，以逗號分隔，與店長 LINE 雙重通知）</label>
+            <input type="text" id="prof_alert_emails" placeholder="owner@gmail.com, staff@gmail.com" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white" />
           </div>
         </div>
       </div>
@@ -274,22 +322,22 @@
       </div>
       <div id="prof-save-msg" class="hidden rounded-xl p-3 text-xs font-bold text-center"></div>
 
-      <!-- 選用：安全重設 LINE 金鑰（需收信 6 位數驗證碼）與申請新分店切換 -->
+      <!-- 選用：安全重設 LINE 金鑰（需收信或店長 LINE 6 位數驗證碼）與申請新分店切換 -->
       <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80 text-xs">
         <details class="w-full sm:w-auto">
           <summary class="cursor-pointer text-amber-300 font-bold hover:underline" data-i18n="prof_reset_key_toggle">
-            🔐 需要更換 LINE Channel Secret / Access Token？（點此發送 6 位數信箱驗證碼安全重設）
+            🔐 需要更換 LINE Channel Secret / Access Token？（點此發送 6 位數驗證碼至信箱與店長 LINE 安全重設）
           </summary>
           <div class="mt-3 p-4 bg-slate-950 border border-amber-500/40 rounded-xl space-y-2.5">
             <div class="flex flex-wrap items-center gap-2">
               <button type="button" onclick="sendProfileKeyOtp()" data-i18n="btn_send_key_otp" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-xs">
-                📧 寄送 6 位數安全驗證碼至信箱与 LINE
+                📧 寄送 6 位數安全驗證碼至信箱與店長 LINE
               </button>
-              <input type="text" id="prof_key_otp" maxlength="6" placeholder="輸入 6 位數驗證碼" class="w-36 font-mono text-center bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+              <input type="text" id="prof_key_otp" maxlength="6" placeholder="輸入收到的 6 位數驗證碼" class="w-44 font-mono text-center bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
             </div>
             <input type="text" id="prof_new_secret" placeholder="新的 32 碼 LINE Channel Secret" class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white" />
-            <textarea id="prof_new_token" rows="2" placeholder="新的 170+ 碼 LINE Channel Access Token" class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
-            <p class="text-[11px] text-slate-400">填入驗證碼與新金鑰後，直接點擊上方「💾 儲存並更新」即可完成重設。</p>
+            <textarea id="prof_new_token" rows="2" placeholder="新的 170+ 碼 LINE Channel Access Token (於 Messaging API 分頁點選 Issue 複製)" class="w-full resize-y font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
+            <p class="text-[11px] text-slate-400">填入信箱或店長 LINE 收到的 6 位數驗證碼與新金鑰後，直接點擊上方「💾 儲存並更新」即可完成重設。</p>
           </div>
         </details>
 
@@ -305,23 +353,23 @@
     <section class="mb-10">
       <h2 class="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-2">
         <span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 text-xs font-black flex items-center justify-center">i</span>
-        <span data-i18n="guide_title">LINE 官方後台 4 步按鈕名稱對照教學（附官方後台直達連結）</span>
+        <span data-i18n="guide_title">台灣／全球最新 LINE 官方帳號建立與 Messaging API 開通 4 步驟（附直達連結）</span>
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
           <div>
             <div class="text-xs font-bold text-emerald-400 mb-1">STEP 1</div>
-            <h3 data-i18n="s1_title" class="font-bold text-white text-sm mb-2">啟用 Messaging API</h3>
+            <h3 data-i18n="s1_title" class="font-bold text-white text-sm mb-2">至官方管理後台建立帳號並啟用 API</h3>
             <p data-i18n="s1_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
-              進入 LINE 官方帳號後台，點右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong> ➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。
+              現在台灣建立 LINE 官方帳號並開通 API，請先進入 <strong>LINE Official Account Manager（管理介面）</strong> ➔ 點選右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong>（網址結尾為 <code>/setting/messaging-api</code>）➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。
             </p>
           </div>
           <div class="flex flex-col gap-1.5 pt-2 border-t border-slate-800/80">
             <a href="https://manager.line.biz/" target="_blank" class="text-xs font-bold text-cyan-400 hover:underline">
-              🔗 1. 點此開啟 LINE Official Account Manager ↗
+              🔗 1. 點此開啟 LINE Official Account Manager (管理介面) ↗
             </a>
             <a href="https://developers.line.biz/console/" target="_blank" class="text-xs font-bold text-emerald-400 hover:underline">
-              🔗 2. 點此開啟 LINE Developers Console ↗
+              🔗 2. 點此開啟 LINE Developers Console (開發者後台) ↗
             </a>
           </div>
         </div>
@@ -331,12 +379,15 @@
             <div class="text-xs font-bold text-emerald-400 mb-1">STEP 2</div>
             <h3 data-i18n="s2_title" class="font-bold text-white text-sm mb-2">複製 Channel Secret</h3>
             <p data-i18n="s2_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
-              打開 LINE Developers Console 點選您的頻道 ➔ 點上方分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊 <strong>「Copy」</strong>。
+              啟用後，可直接在管理介面「Messaging API」頁面複製 <strong>「Channel secret」</strong>；或進入 <strong>LINE Developers Console</strong> 點選您的頻道 ➔ <strong>「Basic settings」</strong> 分頁滑到最底下找到 <strong>「Channel secret」</strong> 點擊 <strong>「Copy」</strong>。
             </p>
           </div>
-          <div class="pt-2 border-t border-slate-800/80">
+          <div class="flex flex-col gap-1 pt-2 border-t border-slate-800/80">
+            <a href="https://manager.line.biz/" target="_blank" class="text-xs font-bold text-cyan-400 hover:underline">
+              🔗 從 LINE 官方帳號管理介面查看 ↗
+            </a>
             <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-emerald-400 hover:underline">
-              🔗 前往 LINE Developers Console 複製 ↗
+              🔗 從 LINE Developers Console 複製 ↗
             </a>
           </div>
         </div>
@@ -344,14 +395,14 @@
         <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
           <div>
             <div class="text-xs font-bold text-emerald-400 mb-1">STEP 3</div>
-            <h3 data-i18n="s3_title" class="font-bold text-white text-sm mb-2">發行 Channel Access Token</h3>
+            <h3 data-i18n="s3_title" class="font-bold text-white text-sm mb-2">點選 ISSUE 發行並複製 Access Token</h3>
             <p data-i18n="s3_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
-              切換至上方分頁 <strong>「Messaging API」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue」</strong> ➔ 點擊 <strong>「Copy」</strong>。
+              進入 <strong>LINE Developers Console</strong> 點選您的頻道 ➔ 切換至上方 <strong>「Messaging API」</strong> 分頁（<code>.../channel/頻道ID/messaging-api</code>）➔ 滑到最底部 <strong>「Channel access token (long-lived)」</strong> ➔ <strong>必須點擊「Issue（發行）」按鈕</strong>才能產生並點擊 <strong>「Copy」</strong> 複製！
             </p>
           </div>
           <div class="pt-2 border-t border-slate-800/80">
             <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-emerald-400 hover:underline">
-              🔗 前往 LINE Developers Console 發行 ↗
+              🔗 前往 LINE Developers Console 點選 Issue ↗
             </a>
           </div>
         </div>
@@ -359,14 +410,14 @@
         <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
           <div>
             <div class="text-xs font-bold text-emerald-400 mb-1">STEP 4</div>
-            <h3 data-i18n="s4_title" class="font-bold text-white text-sm mb-2">貼上 Webhook 並開啟開關</h3>
+            <h3 data-i18n="s4_title" class="font-bold text-white text-sm mb-2">點選 EDIT 貼上 Webhook 並開啟 Use webhook</h3>
             <p data-i18n="s4_desc" class="text-xs text-slate-300 leading-relaxed mb-3">
-              送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 貼上並按 <strong>「Update」</strong> ➔ 開啟 <strong>「Use webhook」</strong> 綠色開關！
+              送出下方表單取得專屬網址後，回到 <strong>LINE Developers Console</strong> 的 <strong>「Messaging API」</strong> 分頁 ➔ 找到 <strong>「Webhook settings」</strong> ➔ 點擊 <strong>「Edit」</strong> 按鈕才能輸入網址並按 <strong>「Update」</strong> ➔ <strong>務必將下方「Use webhook」開關切換為開啟（綠色）！</strong>
             </p>
           </div>
           <div class="pt-2 border-t border-slate-800/80">
             <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-cyan-400 hover:underline">
-              🔗 前往 LINE Developers Console 貼上 ↗
+              🔗 前往 LINE Developers Console 設定 Webhook ↗
             </a>
           </div>
         </div>
@@ -400,7 +451,7 @@
     <!-- 表單與結果雙欄區塊 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-      <!-- 左欄：極簡 3 必填快速取得 Webhook 表單（其他資料庫與通知設定皆列為選填摺疊，開通後隨時可在個人檔案後台設定！） -->
+      <!-- 左欄：極簡 3 必填快速取得 Webhook 表單（每個輸入框旁皆附「可收起打開的步驟與網址視窗框」！） -->
       <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-6">
           <h2 data-i18n="form_title" class="text-lg sm:text-xl font-bold text-white">線上安全開通設定表單</h2>
@@ -420,16 +471,30 @@
             <p id="err-name" data-i18n="err_name" class="hidden text-xs text-rose-400 mt-1">⚠️ 請輸入貴店的商家或品牌名稱。</p>
           </div>
 
-          <!-- 必填 2：Channel Secret（附直達連結） -->
-          <div>
-            <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+          <!-- 必填 2：Channel Secret（附直達連結 ＋ 可收合步驟視窗框） -->
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center justify-between gap-1">
               <label class="text-xs font-semibold text-slate-300">
-                <span data-i18n="lbl_secret">LINE Channel Secret（Basic settings 分頁底部 32 碼英數）</span> <span class="text-rose-400">*</span>
+                <span data-i18n="lbl_secret">LINE Channel Secret（32 碼英數字串）</span> <span class="text-rose-400">*</span>
               </label>
-              <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-cyan-400 hover:underline">
-                🔗 點此開啟 LINE Developers Console 複製 ↗
-              </a>
+              <div class="flex flex-wrap items-center gap-2">
+                <a href="https://manager.line.biz/" target="_blank" class="text-[11px] font-bold text-emerald-400 hover:underline">
+                  🔗 1. 官方帳號管理介面 (啟用 API) ↗
+                </a>
+                <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-[11px] font-bold text-cyan-400 hover:underline">
+                  🔗 2. LINE Developers Console ↗
+                </a>
+              </div>
             </div>
+            <details class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 text-xs text-slate-300">
+              <summary class="cursor-pointer font-bold text-cyan-300 select-none" data-i18n="help_secret_summary">
+                ❓ 不知道在哪裡複製 Channel Secret？點此展開簡單步驟與直達網址 ▾
+              </summary>
+              <div class="mt-2 pt-2 border-t border-slate-800 space-y-1.5 text-[11px] leading-relaxed" data-i18n="help_secret_body">
+                <p><strong>步驟 A（台灣建立官方帳號與開通 API）：</strong>先前往 <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager（官方帳號管理介面）↗</a> 建立帳號 ➔ 點右上角齒輪 <strong>「設定 (Settings)」➔ 左側「Messaging API」</strong>（網址如 <code>https://manager.line.biz/account/@您的ID/setting/messaging-api</code>）➔ 點擊 <strong>「啟用 Messaging API」</strong>。</p>
+                <p><strong>步驟 B（複製 Channel Secret）：</strong>啟用後，您可直接在該管理介面頁面複製 <strong>「Channel secret」</strong>；或點此前往 <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> 點選您的頻道 ➔ 在 <strong>「Basic settings」</strong> 分頁最底下找到 <strong>「Channel secret」</strong> 點擊 <strong>Copy</strong> 貼入下方！</p>
+              </div>
+            </details>
             <input type="text" id="channel_secret" required placeholder="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
               class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition" />
             <p id="err-secret" data-i18n="err_secret" class="hidden text-xs text-rose-400 mt-1">
@@ -437,18 +502,28 @@
             </p>
           </div>
 
-          <!-- 必填 3：Channel Access Token（附直達連結） -->
-          <div>
-            <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+          <!-- 必填 3：Channel Access Token（附直達連結 ＋ 可收合步驟視窗框，強調點擊 ISSUE 按鈕） -->
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center justify-between gap-1">
               <label class="text-xs font-semibold text-slate-300">
-                <span data-i18n="lbl_token">LINE Channel Access Token（Messaging API 分頁底部約 170+ 碼）</span> <span class="text-rose-400">*</span>
+                <span data-i18n="lbl_token">LINE Channel Access Token（Messaging API 分頁底部點選 ISSUE 複製）</span> <span class="text-rose-400">*</span>
               </label>
               <a href="https://developers.line.biz/console/" target="_blank" data-i18n="link_go_line_dev" class="text-xs font-bold text-emerald-400 hover:underline">
-                🔗 點此開啟 LINE Developers Console 發行 ↗
+                🔗 點此開啟 LINE Developers Console 點選 Issue ↗
               </a>
             </div>
-            <textarea id="channel_access_token" rows="3" required data-i18n-placeholder="ph_token" placeholder="貼上點擊 Issue 後複製之長效 Channel access token..."
-              class="w-full font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 transition"></textarea>
+            <details class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 text-xs text-slate-300">
+              <summary class="cursor-pointer font-bold text-emerald-300 select-none" data-i18n="help_token_summary">
+                ❓ 不知道在哪裡點選 ISSUE 複製 Access Token？點此展開簡單步驟與直達網址 ▾
+              </summary>
+              <div class="mt-2 pt-2 border-t border-slate-800 space-y-1.5 text-[11px] leading-relaxed" data-i18n="help_token_body">
+                <p>1. 點擊前往 <a href="https://developers.line.biz/console/" target="_blank" class="text-emerald-400 underline font-bold">LINE Developers Console ↗</a>，點選您的 Provider 與官方帳號 Channel。</p>
+                <p>2. 點擊上方第二個分頁 <strong>「Messaging API」</strong>（網址格式為 <code>https://developers.line.biz/console/channel/您的頻道ID/messaging-api</code>）。</p>
+                <p>3. 滑到該頁面<strong>最底部</strong>找到 <strong>「Channel access token (long-lived)」</strong>，<strong>必須先點擊黑色的「Issue（發行）」按鈕</strong>，才會產生一長串約 170+ 碼的金鑰，再點 <strong>「Copy（複製）」</strong> 貼入下方！</p>
+              </div>
+            </details>
+            <textarea id="channel_access_token" rows="3" required data-i18n-placeholder="ph_token" placeholder="貼上於 Messaging API 分頁底部點擊 Issue 按鈕後複製之長效 Channel access token..."
+              class="w-full resize-y font-mono bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 transition"></textarea>
             <p id="err-token" data-i18n="err_token" class="hidden text-xs text-rose-400 mt-1">
               ❌ Channel Access Token 長度應超過 100 字元，且不可與 Channel Secret 相同。
             </p>
@@ -466,10 +541,10 @@
             </summary>
 
             <div class="mt-5 space-y-5 pt-4 border-t border-slate-800">
-              <!-- 複合轉接通知設定區塊 -->
+              <!-- 專人客服轉接通知設定區塊（僅保留店長 LINE 與 Email 信箱，移除 Telegram） -->
               <div class="space-y-4">
                 <h3 data-i18n="notify_title" class="text-sm font-extrabold text-emerald-400">
-                  🔔 真人客服轉接通知設定（A + B + C 多重管道）
+                  🔔 真人客服轉接通知設定（店長 LINE ＋ 緊急通知信箱）
                 </h3>
 
                 <!-- 管道 A：店長 LINE 帳號綁定 -->
@@ -489,36 +564,12 @@
                   </div>
                 </div>
 
-                <!-- 管道 B：Telegram Chat ID (附 @userinfobot 直達連結) -->
-                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
-                  <div class="flex flex-wrap items-center justify-between gap-2">
-                    <label class="flex items-start gap-2.5 cursor-pointer">
-                      <input type="checkbox" id="chk_notify_tg" checked class="mt-0.5 w-4 h-4 rounded accent-cyan-500 shrink-0" />
-                      <span data-i18n="chk_b_label" class="text-xs sm:text-sm font-bold text-white">
-                        管道 B：Telegram 即時推播備援（選填・免費無則數上限，後續可隨時修改）
-                      </span>
-                    </label>
-                    <a href="https://t.me/userinfobot" target="_blank" class="text-xs font-bold text-cyan-400 hover:underline">
-                      🔗 點此開啟 Telegram @userinfobot 查詢 ↗
-                    </a>
-                  </div>
-                  <div class="pl-6 space-y-2">
-                    <input type="text" id="telegram_chat_id" data-i18n-placeholder="ph_tg_id" placeholder="選填，例如：123456789（開通後亦可隨時補填）"
-                      class="w-full font-mono bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
-                    <div data-i18n="chk_b_tutorial" class="bg-slate-900/80 border border-slate-800/90 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed">
-                      📖 <strong>30 秒取得 Telegram Chat ID 教學：</strong><br/>
-                      1. 點擊上方 <a href="https://t.me/userinfobot" target="_blank" class="text-cyan-400 underline font-bold">@userinfobot ↗</a> 並點擊 <strong>Start</strong>。<br/>
-                      2. 機器人會立即回覆一串純數字 <strong>Id</strong>（例如 <code>123456789</code>），複製填入上方欄位即可！
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 管道 C：最多 3 組緊急通知 Email -->
+                <!-- 管道 B：最多 3 組緊急通知 Email -->
                 <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
                   <label class="flex items-start gap-2.5 cursor-pointer">
                     <input type="checkbox" id="chk_notify_email" checked class="mt-0.5 w-4 h-4 rounded accent-indigo-500 shrink-0" />
                     <span data-i18n="chk_c_label" class="text-xs sm:text-sm font-bold text-white">
-                      管道 C：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）
+                      管道 B：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）
                     </span>
                   </label>
                   <div class="pl-6 grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -536,17 +587,17 @@
               <div class="pt-4 border-t border-slate-800 space-y-4">
                 <p data-i18n="opt_title" class="text-xs sm:text-sm font-extrabold text-cyan-400">✨ 多組預約/菜單連結 ＆ Google 試算表 / AI 資料庫</p>
 
-                <div>
-                  <label data-i18n="lbl_booking" class="block text-xs font-semibold text-slate-300 mb-1">
+                <div class="space-y-1.5">
+                  <label data-i18n="lbl_booking" class="block text-xs font-semibold text-slate-300">
                     線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組，AI 會依客人問題自動提供對應網址）
                   </label>
                   <textarea id="booking_links" rows="3" data-i18n-placeholder="ph_booking"
                     placeholder="例如：&#10;線上訂房預約：https://inline.app/booking/...&#10;餐廳菜單介紹：https://example.com/menu"
-                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
+                    class="w-full resize-y min-h-[80px] bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"></textarea>
                 </div>
 
-                <div>
-                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <div class="space-y-1.5">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
                     <label data-i18n="lbl_sheet" class="text-xs font-semibold text-slate-300">
                       Google 試算表知識庫網址（直接貼上一般試算表網址即可，系統自動轉為 CSV）
                     </label>
@@ -554,6 +605,15 @@
                       🔗 點此打開 Google 試算表 (Google Sheets) ↗
                     </a>
                   </div>
+                  <details class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 text-[11px] text-slate-300">
+                    <summary class="cursor-pointer font-bold text-cyan-300 select-none" data-i18n="help_sheet_summary">
+                      ❓ 點此展開：如何設定 Google 試算表共用權限讓 AI 成功抓取資料？（含直達網址）▾
+                    </summary>
+                    <div class="mt-2 pt-2 border-t border-slate-800 space-y-1 leading-relaxed" data-i18n="help_sheet_body">
+                      <p>1. 點擊 <a href="https://docs.google.com/spreadsheets/" target="_blank" class="text-cyan-400 underline font-bold">開啟 Google 試算表 ↗</a>，在 A 欄填寫「項目名稱」、B 欄填寫「詳細內容」。</p>
+                      <p>2. 點擊試算表右上角的 <strong>「共用 (Share)」</strong> ➔ 設為 <strong>「知道連結的任何人皆可檢視」</strong>，再貼上網址點右側「🔍 測試讀取試算表內容」。</p>
+                    </div>
+                  </details>
                   <div class="flex flex-col sm:flex-row gap-2">
                     <input type="url" id="sheet_csv_url" placeholder="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing"
                       class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
@@ -578,29 +638,37 @@
                   </div>
                   <textarea id="custom_kb_text" rows="5" data-i18n-placeholder="ph_custom_kb"
                     placeholder="建議依「分類：內容」填寫（例如：營業時間、價目表、停車指引、不可接受事項）。&#10;⚠️ 嚴格防答錯保護：只要 AI 資料庫中沒有找到相關資料的問題，AI 一律回答『目前 AI 資料庫中沒有找到相關資料，已為您通知專人客服』並立即通知您！"
-                    class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
-                  <div data-i18n="kb_guide_html" class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed space-y-1">
-                    <div class="font-bold text-amber-300">💡 怎麼填寫最不會出錯？推薦填寫以下 6 大黃金欄位（Google 試算表亦同）：</div>
-                    <div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div>
-                    <div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額（勿只寫「依現場為主」）。</div>
-                    <div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div>
-                    <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
-                    <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div>
-                    <div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：若您將原本 LINE 機器人的回覆內容貼進試算表，日後哪一條暫時不用，只要在該列開頭加上 <code>[停用]</code>（或在試算表第 3 欄填 <code>停用</code>），AI 就會自動排除不回答！</div>
-                    <div class="text-emerald-300 font-semibold pt-1">🛡️ 安心保證：支援全球 100+ 國語言自動翻譯回覆！只要 AI 資料庫中沒有找到相關資料的問題，AI 都會百分之百轉交給您！</div>
-                  </div>
+                    class="w-full resize-y min-h-[110px] bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+                  <details class="bg-slate-900/90 border border-slate-800 rounded-lg p-3 text-[11px] text-slate-300">
+                    <summary class="cursor-pointer font-bold text-amber-300 select-none" data-i18n="help_kb_summary">
+                      ❓ 點此展開：AI 資料庫 6 大黃金欄位填寫教學與 [停用] 語法說明 ▾
+                    </summary>
+                    <div data-i18n="kb_guide_html" class="mt-2 pt-2 border-t border-slate-800 leading-relaxed space-y-1">
+                      <div>1. <strong>【營業時間與入住/服務時間】</strong>：寫明幾點到幾點、公休日、最晚入場或入住時間。</div>
+                      <div>2. <strong>【商品 / 房型 / 服務價目表】</strong>：寫明完整項目名稱與對應金額。</div>
+                      <div>3. <strong>【店家不接受之事項與禁忌】</strong>：例如「全館禁菸、不接待寵物、不提供加床、禁止訪客」。</div>
+                      <div>4. <strong>【交通地址與停車規定】</strong>：地址、大眾運輸出口、有無特約停車場及收費標準。</div>
+                      <div>5. <strong>【付款方式與退改規定】</strong>：可接受的付款方式（現金/刷卡/轉帳）、取消或改期規則。</div>
+                      <div>6. <strong>【在 Google 試算表隨時停用／調整原機器人回覆】</strong>：只要在該列開頭加上 <code>[停用]</code>，AI 就會自動排除不回答！</div>
+                    </div>
+                  </details>
 
-                  <!-- 保留原 LINE 關鍵字機器人「不打架禮讓設定」 -->
+                  <!-- 保留原 LINE 關鍵字機器人「不打架禮讓設定」（可拉大可動式框框 ＋ 可收合教學） -->
                   <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
                     <label data-i18n="lbl_ignore_kw" class="block text-xs font-bold text-cyan-300">
                       🤖 想繼續沿用原本的 LINE 內建「關鍵字自動回應／圖文選單」？（選填・AI 自動靜音禮讓不打架）
                     </label>
-                    <input type="text" id="ignore_keywords" data-i18n-placeholder="ph_ignore_kw"
-                      placeholder="填入您已在 LINE 後台設定過的關鍵字（以逗號分隔，例如：最新優惠, 集點卡, 抽獎活動）"
-                      class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" />
-                    <p data-i18n="help_ignore_kw" class="text-[11px] text-slate-400 leading-relaxed">
-                      💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本的 LINE 機器人單獨回覆，兩邊完美共存絕不打架！
-                    </p>
+                    <textarea id="ignore_keywords" rows="3" data-i18n-placeholder="ph_ignore_kw"
+                      placeholder="填入您已在 LINE 後台設定過的關鍵字（以逗號或換行分隔，右下角可自由拖曳拉大框框，例如：最新優惠, 集點卡, 抽獎活動）"
+                      class="w-full resize-y min-h-[80px] bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 leading-relaxed"></textarea>
+                    <details class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 text-[11px] text-slate-300">
+                      <summary class="cursor-pointer font-bold text-cyan-300 select-none" data-i18n="help_ignore_summary">
+                        ❓ 點此展開：關鍵字自動靜音禮讓說明與 LINE 後台網址 ▾
+                      </summary>
+                      <div data-i18n="help_ignore_kw" class="mt-1.5 pt-1.5 border-t border-slate-800 leading-relaxed">
+                        💡 當客人輸入上方列出的關鍵字（或您於 Google 試算表新增一列 <code>原LINE機器人關鍵字</code>）時，我們的 AI 管家會<strong>自動安靜禮讓（0 回覆、不扣 AI 額度）</strong>，讓您原本在 <a href="https://manager.line.biz/" target="_blank" class="text-cyan-400 underline font-bold">LINE Official Account Manager ↗</a> 設定的關鍵字機器人單獨回覆，兩邊完美共存絕不打架！
+                      </div>
+                    </details>
                   </div>
                 </div>
               </div>
@@ -873,33 +941,44 @@
         btn_login_now: "立即登入 Google 帳號",
         logged_as: "✅ 已綁定 Google 會員帳號：",
         logged_edit_hint: "開通後隨時可於「購買紀錄與設定修改」更新預約連結、通知信箱或重設金鑰",
-        guide_title: "LINE 官方後台 4 步按鈕名稱對照教學",
-        s1_title: "啟用 Messaging API",
-        s1_desc: "進入 LINE 官方帳號後台 (Official Account Manager)，點右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong> ➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。",
+        guide_title: "LINE 官方帳號管理後台 ＆ Developers 4 步按鈕對照教學（含直達網址）",
+        s1_title: "建立官方帳號並啟用 Messaging API",
+        s1_desc: "現在台灣建立官方帳號與開通 API 皆從 <a href='https://manager.line.biz/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Official Account Manager 管理後台 ↗</a> 開始！登入後點右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong>（網址如 <code>manager.line.biz/account/@您的ID/setting/messaging-api</code>）➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>。",
         s2_title: "複製 Channel Secret",
-        s2_desc: "打開 LINE Developers Console 點選您的頻道 ➔ 點上方分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊 <strong>「Copy」</strong>。",
-        s3_title: "發行 Channel Access Token",
-        s3_desc: "切換至上方分頁 <strong>「Messaging API」</strong> ➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 點擊 <strong>「Issue」</strong> ➔ 點擊 <strong>「Copy」</strong>。",
-        s4_title: "貼上 Webhook 並開啟開關",
-        s4_desc: "送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 貼上並按 <strong>「Update」</strong> ➔ 開啟 <strong>「Use webhook」</strong> 綠色開關！",
+        s2_desc: "前往 <a href='https://developers.line.biz/console/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Developers Console ↗</a> 點選您的頻道 ➔ 點上方分頁 <strong>「Basic settings」</strong> ➔ 滑到最底下找到 <strong>「Channel secret」</strong> ➔ 點擊 <strong>「Copy」</strong>。",
+        s3_title: "點選 Issue 發行並複製 Access Token",
+        s3_desc: "切換至上方分頁 <strong>「Messaging API」</strong>（網址如 <code>developers.line.biz/console/channel/您的頻道ID/messaging-api</code>）➔ 滑到最底部找到 <strong>「Channel access token (long-lived)」</strong> ➔ 務必先點黑底按鈕 <strong>「Issue」</strong> 才會出現一長串金鑰 ➔ 點擊 <strong>「Copy」</strong> 複製！",
+        s4_title: "點 Edit 貼上 Webhook 並開啟 Use webhook",
+        s4_desc: "送出下方表單取得專屬網址後，在同一個 <strong>「Messaging API」</strong> 分頁找到 <strong>「Webhook settings」</strong> ➔ 點 <strong>「Edit」</strong> 按鈕才能輸入網址，貼上後按 <strong>「Update」</strong> ➔ 務必開啟下方 <strong>「Use webhook」</strong> 綠色開關！",
         form_title: "線上安全開通設定表單",
         lock_badge: "🔒 防重複綁定 ＋ 信箱驗證修改保護",
         lbl_client_name: "商家 / 品牌名稱（將顯示於 AI 管家接待問候語）", ph_client_name: "例如：澄光行旅 Lumina Hotel",
         err_name: "⚠️ 請輸入貴店的商家或品牌名稱。",
         lbl_secret: "LINE Channel Secret（Basic settings 分頁底部 32 碼英數）",
         err_secret: "❌ Channel Secret 應為 28～40 碼英數字串（位於 Basic settings 分頁底部）。",
-        lbl_token: "LINE Channel Access Token（Messaging API 分頁底部約 170+ 碼）", ph_token: "貼上點擊 Issue 後複製之長效 Channel access token...",
+        lbl_token: "LINE Channel Access Token（Messaging API 分頁底部點選 Issue 後複製之 170+ 碼）", ph_token: "貼上點擊 Issue 按鈕後複製之長效 Channel access token...",
         err_token: "❌ Channel Access Token 長度應超過 100 字元，且不可與 Channel Secret 相同。",
-        notify_title: "🔔 真人客服轉接通知設定（A + B + C 多重管道）",
+        notify_title: "🔔 真人客服轉接通知設定（店長 LINE 推播 ＋ 信箱通知）",
         opt_later_badge: "選填・開通後隨時可於會員設定修改", opt_later_badge2: "選填・日後隨時可修改",
         chk_a_label: "管道 A：店長個人 LINE 推播通知（推薦・支援開通後「一鍵打開 LINE 自動綁定」）",
         chk_a_help: "💡 <strong>免手動查代碼！</strong>此欄現在可先留空，送出下方表單完成驗證後，畫面會出現<strong>「📲 一鍵打開 LINE 自動綁定店長通知」</strong>按鈕，點擊即可直接綁定您的 LINE 帳號！（若您已有 U 開頭 33 碼 User ID 亦可直接填入下方）：",
         ph_line_uid: "選填（可留空，送出表單後點按鈕直接一鍵綁定 LINE）",
-        chk_b_label: "管道 B：Telegram 即時推播備援（選填・免費無則數上限，後續可隨時修改）",
-        ph_tg_id: "選填，例如：123456789（開通後亦可隨時補填）",
-        chk_b_tutorial: "📖 <strong>30 秒取得 Telegram Chat ID 教學：</strong><br/>1. 打開 Telegram 搜尋官方查詢機器人 <code>@userinfobot</code> 並點擊 <strong>Start</strong>。<br/>2. 機器人會立即回覆一串純數字 <strong>Id</strong>（例如 <code>123456789</code>），複製填入上方欄位即可！",
-        chk_c_label: "管道 C：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）",
+        chk_c_label: "管道 B：緊急通知與接收 Webhook 教學信箱（最多可填寫 3 組信箱，後續可隨時修改）",
         ph_em1: "通知信箱 1 (主信箱)", ph_em2: "通知信箱 2 (選填)", ph_em3: "通知信箱 3 (選填)",
+        help_webhook_summary: "❓ 點此展開：如何點選 EDIT 貼上 Webhook 並開啟 Use webhook？（含直達網址）▾",
+        help_webhook_body: `<div><strong>Step 1：</strong>點擊上方「複製網址」，再前往 <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> 點選您的頻道 ➔ 切換到上方 <strong>「Messaging API」</strong> 分頁（網址格式如 <code>https://developers.line.biz/console/channel/您的頻道ID/messaging-api</code>）。</div><div><strong>Step 2：</strong>在頁面中間找到 <strong>「Webhook settings」</strong> 區塊，必須先點擊 <strong>「Edit」</strong> 按鈕才能輸入網址 ➔ 貼上剛剛複製的專屬 Webhook 網址 ➔ 點擊 <strong>「Update」</strong> 儲存。</div><div><strong>Step 3（極重要）：</strong>儲存後，請務必將正下方的 <strong>「Use webhook」</strong> 開關切換為 <strong>開啟（綠色）</strong>，並可點擊旁邊的 <strong>「Verify」</strong> 測試連線！</div><div><strong>Step 4：</strong>請同步確認 <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager 管理後台 ↗</a> 右上角齒輪「設定 ➔ 回應設定」中，已將「自動回應訊息」設為<strong>停用</strong>、並將「Webhook」設為<strong>啟用</strong>。</div>`,
+        help_bind_summary: "❓ 點此展開：如何綁定店長個人 LINE 接收真人轉接與驗證碼通知？▾",
+        help_bind_body: `<div>1. 先確定您已完成上方 Webhook 網址貼上並開啟 <strong>Use webhook</strong>。</div><div>2. 用手機或電腦點擊綠色按鈕「📲 一鍵打開 LINE 自動綁定」，或直接複製 <code>/綁定店長 授權碼</code> 傳送到<strong>您自己的店家 LINE 官方帳號聊天室</strong>。</div><div>3. 您的店家 AI 管家會立即回覆「✅ 店長個人 LINE 綁定成功！」，此後遇到客人需要真人客服或您重設金鑰時，都會直接推播到您的個人 LINE！</div>`,
+        help_sheet_summary: "❓ 點此展開：如何建立 Google 試算表並開啟「知道連結的任何人皆可檢視」？（含直達網址）▾",
+        help_sheet_body: `<div><strong>Step 1：</strong>前往 <a href="https://docs.google.com/spreadsheets/u/0/" target="_blank" class="text-cyan-400 underline font-bold">Google 試算表 (Google Sheets) ↗</a> 建立或打開您的問答表單（第 1 欄填問題分類或關鍵字，第 2 欄填詳細回答；若某列暫時不用，在第 3 欄填 <code>停用</code> 即可）。</div><div><strong>Step 2（必做）：</strong>點擊試算表右上角的 <strong>「共用 (Share)」</strong> 按鈕 ➔ 將「一般存取權」由限制改為 <strong>「知道連結的任何人 (Anyone with the link)」</strong>（檢視者）。</div><div><strong>Step 3：</strong>直接複製瀏覽器上方的試算表網址貼入左方輸入框，點擊 <strong>「🔍 測試讀取試算表內容」</strong> 看到綠色成功預覽後，點擊下方 <strong>「💾 儲存」</strong> 即完成雲端綁定！</div>`,
+        help_kb_summary: "❓ 點此展開：AI 資料庫怎麼寫最準確？6 大黃金欄位教學 ▾",
+        help_booking_summary: "❓ 點此展開：多組預約 / 訂房 / 菜單網址怎麼填寫？▾",
+        help_booking_body: `<div>• 請以<strong>「一行一組」</strong>格式填寫（例如：<code>線上訂房：https://...</code>、下一行 <code>最新菜單：https://...</code>），框框右下角可自由拉大。</div><div>• 當客人在 LINE 詢問訂房、預約或看菜單時，AI 管家會自動挑選對應的網址貼給客人！</div>`,
+        help_ignore_summary: "❓ 點此展開：什麼是「原 LINE 機器人關鍵字禮讓」？如何使用？▾",
+        help_secret_summary: "❓ 不知道在哪裡複製 Channel Secret？點此展開簡單步驟與直達網址 ▾",
+        help_secret_body: `<div><strong>Step 1（台灣建立官方帳號與開通 API）：</strong>現在台灣要建立官方帳號再開通 API，請先前往 <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager 管理後台 (manager.line.biz) ↗</a> 建立帳號 ➔ 點擊右上角齒輪 <strong>「設定」</strong> ➔ 左側選單 <strong>「Messaging API」</strong>（網址如 <code>https://manager.line.biz/account/@您的ID/setting/messaging-api</code>）➔ 點擊綠色按鈕 <strong>「啟用 Messaging API」</strong>（首次啟用請輸入任意服務提供者 Provider 名稱）。</div><div><strong>Step 2（前往 Developers 複製 Secret）：</strong>啟用後，打開 <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console (developers.line.biz/console) ↗</a> 並點選您的官方帳號頻道。</div><div><strong>Step 3：</strong>確認停留在最左邊的 <strong>「Basic settings」</strong> 分頁，往下滑到最底部找到 <strong>「Channel secret」</strong> 區塊，點擊右側 <strong>「Copy」</strong> 按鈕即可複製 32 碼英數金鑰貼入上方！（注意：請勿複製成上方的純數字 Channel ID）。</div>`,
+        help_token_summary: "❓ 不知道在哪裡點選 ISSUE 複製 Access Token？點此展開簡單步驟與直達網址 ▾",
+        help_token_body: `<div><strong>Step 1：</strong>在 <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> 您的頻道頁面中，點擊上方的 <strong>「Messaging API」</strong> 分頁（網址格式如 <code>https://developers.line.biz/console/channel/您的頻道ID/messaging-api</code>）。</div><div><strong>Step 2（必點 Issue）：</strong>一路往下滑到頁面最底部的 <strong>「Channel access token (long-lived)」</strong> 區塊，必須先點擊黑底按鈕 <strong>「Issue」</strong>（發行），畫面才會產生一長串 170 碼以上的金鑰！</div><div><strong>Step 3：</strong>點擊金鑰旁邊的 <strong>「Copy」</strong> 按鈕複製，貼回上方輸入框即可！</div><div><strong>Step 4（預告下一步）：</strong>送出下方按鈕取得專屬 Webhook 網址後，同樣在這個 <strong>「Messaging API」</strong> 分頁中間找到 <strong>「Webhook settings」</strong> ➔ 點擊 <strong>「Edit」</strong> 按鈕貼上網址並按 <strong>「Update」</strong> ➔ 再把 <strong>「Use webhook」</strong> 綠色開關打開就大功告成！</div>`,
         opt_title: "✨ 多組預約/菜單連結 ＆ Google 試算表知識庫",
         lbl_booking: "線上預約 / 訂房 / 菜單 / 價目表等多組連結（一行一組，AI 會依客人問題自動提供對應網址）",
         ph_booking: "例如：\n線上訂房預約：https://inline.app/booking/...\n餐廳菜單介紹：https://example.com/menu",
@@ -977,33 +1056,44 @@
         btn_login_now: "Sign in with Google",
         logged_as: "✅ Signed in with Google:",
         logged_edit_hint: "You can edit booking links, alert emails, or reset keys anytime in 'My Orders & Settings'.",
-        guide_title: "4-Step Guide with Exact LINE Console Button Names",
-        s1_title: "Enable Messaging API",
-        s1_desc: "In LINE Official Account Manager, click top-right gear <strong>\"Settings\"</strong> ➔ Left menu <strong>\"Messaging API\"</strong> ➔ Click green button <strong>\"Enable Messaging API\"</strong>.",
+        guide_title: "4-Step Guide with Direct Links & Exact LINE Console Button Names",
+        s1_title: "Create Official Account & Enable Messaging API",
+        s1_desc: "Start at <a href='https://manager.line.biz/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Official Account Manager ↗</a> to create your official account ➔ Click top-right gear <strong>\"Settings\"</strong> ➔ Left menu <strong>\"Messaging API\"</strong> (e.g. <code>manager.line.biz/account/@ID/setting/messaging-api</code>) ➔ Click green button <strong>\"Enable Messaging API\"</strong>.",
         s2_title: "Copy Channel Secret",
-        s2_desc: "Open LINE Developers Console & select your channel ➔ Click <strong>\"Basic settings\"</strong> tab ➔ Scroll to bottom <strong>\"Channel secret\"</strong> ➔ Click <strong>\"Copy\"</strong>.",
-        s3_title: "Issue Channel Access Token",
-        s3_desc: "Switch to <strong>\"Messaging API\"</strong> tab ➔ Scroll to bottom <strong>\"Channel access token (long-lived)\"</strong> ➔ Click <strong>\"Issue\"</strong> ➔ Click <strong>\"Copy\"</strong>.",
-        s4_title: "Paste Webhook & Toggle On",
-        s4_desc: "After submitting below, go to <strong>\"Messaging API\"</strong> tab ➔ <strong>\"Webhook settings\"</strong> ➔ Click <strong>\"Edit\"</strong>, paste URL & click <strong>\"Update\"</strong> ➔ Toggle ON <strong>\"Use webhook\"</strong> (green)!",
+        s2_desc: "Open <a href='https://developers.line.biz/console/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Developers Console ↗</a> & select your channel ➔ Click <strong>\"Basic settings\"</strong> tab ➔ Scroll to bottom <strong>\"Channel secret\"</strong> ➔ Click <strong>\"Copy\"</strong>.",
+        s3_title: "Click Issue & Copy Channel Access Token",
+        s3_desc: "Switch to <strong>\"Messaging API\"</strong> tab (e.g. <code>developers.line.biz/console/channel/ID/messaging-api</code>) ➔ Scroll to bottom <strong>\"Channel access token (long-lived)\"</strong> ➔ Click <strong>\"Issue\"</strong> button first ➔ Click <strong>\"Copy\"</strong>.",
+        s4_title: "Click Edit to Paste Webhook & Enable Use webhook",
+        s4_desc: "After submitting below, go to <strong>\"Messaging API\"</strong> tab ➔ <strong>\"Webhook settings\"</strong> ➔ Click <strong>\"Edit\"</strong> button to paste URL & click <strong>\"Update\"</strong> ➔ Toggle ON <strong>\"Use webhook\"</strong> (green)!",
         form_title: "Secure Store Setup Form",
         lock_badge: "🔒 Duplicate Protection + Email OTP Security",
         lbl_client_name: "Business / Brand Name (shown in AI greetings)", ph_client_name: "e.g., Lumina Boutique Hotel",
         err_name: "⚠️ Please enter your business or brand name.",
         lbl_secret: "LINE Channel Secret (32 chars at bottom of Basic settings tab)",
         err_secret: "❌ Channel Secret must be 28–40 alphanumeric characters.",
-        lbl_token: "LINE Channel Access Token (170+ chars at bottom of Messaging API tab)", ph_token: "Paste the long-lived Channel access token after clicking Issue...",
+        lbl_token: "LINE Channel Access Token (170+ chars after clicking Issue in Messaging API tab)", ph_token: "Paste the long-lived Channel access token after clicking Issue...",
         err_token: "❌ Channel Access Token must exceed 100 chars and cannot match Channel Secret.",
-        notify_title: "🔔 Human Handover Alert Channels (A + B + C Multi-Channel)",
+        notify_title: "🔔 Human Handover Alert Channels (Owner LINE Push + Email Alerts)",
         opt_later_badge: "Optional · Editable anytime in My Settings", opt_later_badge2: "Optional · Editable anytime",
         chk_a_label: "Channel A: Owner Personal LINE Push Alerts (Supports 1-Click LINE Binding after verification)",
         chk_a_help: "💡 <strong>No manual ID lookup needed!</strong> Leave this blank for now—once verified, you'll get a <strong>'📲 1-Click Open LINE to Bind Owner Alerts'</strong> button! (Or paste your 33-char U... User ID below if you already have it):",
         ph_line_uid: "Optional (Leave blank to use 1-Click LINE Binding after submitting)",
-        chk_b_label: "Channel B: Telegram Instant Backup Push (Optional · Free unlimited alerts, editable later)",
-        ph_tg_id: "Optional, e.g. 123456789 (editable anytime)",
-        chk_b_tutorial: "📖 <strong>30-Sec Guide to Find Telegram Chat ID:</strong><br/>1. Open Telegram, search <code>@userinfobot</code>, and tap <strong>Start</strong>.<br/>2. Copy the numeric <strong>Id</strong> (e.g. <code>123456789</code>) and paste it above!",
-        chk_c_label: "Channel C: Emergency Alert & Webhook Guide Emails (Up to 3 emails, editable anytime)",
+        chk_c_label: "Channel B: Emergency Alert & Webhook Guide Emails (Up to 3 emails, editable anytime)",
         ph_em1: "Alert Email 1 (Primary)", ph_em2: "Alert Email 2 (Optional)", ph_em3: "Alert Email 3 (Optional)",
+        help_webhook_summary: "❓ Click to expand: How to click EDIT to paste Webhook & enable Use webhook (with direct links) ▾",
+        help_webhook_body: `<div><strong>Step 1:</strong> Click "Copy URL" above, then open <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> ➔ select your channel ➔ switch to the <strong>"Messaging API"</strong> tab (e.g. <code>https://developers.line.biz/console/channel/YOUR_ID/messaging-api</code>).</div><div><strong>Step 2:</strong> Under <strong>"Webhook settings"</strong>, click the <strong>"Edit"</strong> button to unlock the input field ➔ paste your Webhook URL ➔ click <strong>"Update"</strong>.</div><div><strong>Step 3 (Crucial):</strong> Turn ON the <strong>"Use webhook"</strong> toggle switch right below it (turns green)!</div><div><strong>Step 4:</strong> Also check <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager ↗</a> ➔ Settings ➔ Response settings: set "Auto-response" to <strong>Disabled</strong> and "Webhook" to <strong>Enabled</strong>.</div>`,
+        help_bind_summary: "❓ Click to expand: How to bind Owner Personal LINE for handover & OTP alerts? ▾",
+        help_bind_body: `<div>1. Make sure you have pasted the Webhook URL and turned ON <strong>Use webhook</strong>.</div><div>2. Click the green button "📲 1-Click Open LINE to Bind" or send the <code>/綁定店長 CODE</code> command directly to your store's LINE Official Account chat.</div><div>3. Your AI bot will reply confirming your personal LINE is bound for instant customer alerts and security OTP codes!</div>`,
+        help_sheet_summary: "❓ Click to expand: How to set up Google Sheets & share permissions (with direct link) ▾",
+        help_sheet_body: `<div><strong>Step 1:</strong> Open <a href="https://docs.google.com/spreadsheets/u/0/" target="_blank" class="text-cyan-400 underline font-bold">Google Sheets ↗</a> and create your Q&A sheet (Column A: Category/Question, Column B: Answer; put <code>disabled</code> in Column C to mute any row).</div><div><strong>Step 2:</strong> Click top-right <strong>"Share"</strong> ➔ set General Access to <strong>"Anyone with the link can view"</strong>.</div><div><strong>Step 3:</strong> Paste the Google Sheet URL into the box above, click <strong>"🔍 Test Reading Google Sheet"</strong>, then click <strong>"💾 Save"</strong>!</div>`,
+        help_kb_summary: "❓ Click to expand: How to format your AI Database for 100% accuracy? ▾",
+        help_booking_summary: "❓ Click to expand: How to enter multiple booking / menu links? ▾",
+        help_booking_body: `<div>• Enter <strong>one link per line</strong> (e.g., <code>Room Booking: https://...</code> on line 1, <code>Menu: https://...</code> on line 2). You can drag the bottom-right corner to resize the box.</div><div>• AI automatically sends the matching URL when a customer asks to book or view menus!</div>`,
+        help_ignore_summary: "❓ Click to expand: What is 'LINE Built-in Keyword Auto-Mute Yield'? ▾",
+        help_secret_summary: "❓ Where do I find Channel Secret? Click to expand step-by-step guide & direct links ▾",
+        help_secret_body: `<div><strong>Step 1 (Create Official Account & Enable API):</strong> Go to <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager (manager.line.biz) ↗</a> to create your Official Account ➔ Click top-right gear <strong>"Settings"</strong> ➔ Left menu <strong>"Messaging API"</strong> (<code>https://manager.line.biz/account/@YOUR_ID/setting/messaging-api</code>) ➔ Click <strong>"Enable Messaging API"</strong>.</div><div><strong>Step 2 (Open LINE Developers):</strong> Open <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console (developers.line.biz/console) ↗</a> and select your channel.</div><div><strong>Step 3 (Copy Secret):</strong> Stay on the <strong>"Basic settings"</strong> tab, scroll to the very bottom to find <strong>"Channel secret"</strong>, and click <strong>"Copy"</strong> to paste the 32-character code above!</div>`,
+        help_token_summary: "❓ Where do I click ISSUE to copy Access Token? Click to expand guide & direct links ▾",
+        help_token_body: `<div><strong>Step 1:</strong> In <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a>, switch to the <strong>"Messaging API"</strong> tab (<code>https://developers.line.biz/console/channel/YOUR_ID/messaging-api</code>).</div><div><strong>Step 2 (Click Issue):</strong> Scroll to the very bottom to <strong>"Channel access token (long-lived)"</strong> and click the <strong>"Issue"</strong> button to generate the 170+ character token!</div><div><strong>Step 3:</strong> Click <strong>"Copy"</strong> and paste it into the field above.</div><div><strong>Step 4 (Next):</strong> After submitting below to get your Webhook URL, return to this same <strong>"Messaging API"</strong> tab ➔ find <strong>"Webhook settings"</strong> ➔ click <strong>"Edit"</strong> to paste the URL & click <strong>"Update"</strong> ➔ toggle ON <strong>"Use webhook"</strong>!</div>`,
         opt_title: "✨ Multiple Booking/Menu Links & Google Sheet Knowledge Base",
         lbl_booking: "Multiple Booking / Reservation / Menu URLs (One per line—AI automatically picks the right link)",
         ph_booking: "Example:\nRoom Booking: https://...\nRestaurant Menu: https://...",
@@ -1081,33 +1171,44 @@
         btn_login_now: "Googleでログイン",
         logged_as: "✅ Googleアカウント連携済み：",
         logged_edit_hint: "開通後も「購入履歴・設定変更」からいつでも予約URL・通知メール・キー変更が可能です",
-        guide_title: "日本のLINE管理画面ボタン名に完全対応した4ステップ手順",
-        s1_title: "Messaging APIを有効化",
-        s1_desc: "LINE公式アカウント管理画面の右上歯車<strong>「設定」</strong> ➔ 左メニュー<strong>「Messaging API」</strong> ➔ 緑色のボタン<strong>「Messaging APIを利用する」</strong>をクリック。",
+        guide_title: "LINE管理画面＆Developersボタン名・直通リンク付 4ステップ手順",
+        s1_title: "公式アカウント作成＆Messaging APIを有効化",
+        s1_desc: "まず <a href='https://manager.line.biz/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Official Account Manager ↗</a> で公式アカウントを作成し、右上歯車<strong>「設定」</strong> ➔ 左メニュー<strong>「Messaging API」</strong>（<code>manager.line.biz/account/@ID/setting/messaging-api</code>）➔ 緑のボタン<strong>「Messaging APIを利用する」</strong>をクリック。",
         s2_title: "チャネルシークレットをコピー",
-        s2_desc: "LINE Developersでチャネルを選択 ➔ 上部タブ<strong>「チャネル基本設定 (Basic settings)」</strong> ➔ 最下部の<strong>「チャネルシークレット (Channel secret)」</strong>横の<strong>「コピー (Copy)」</strong>をクリック。",
-        s3_title: "アクセストークン（長期）を発行",
-        s3_desc: "上部タブ<strong>「Messaging API設定 (Messaging API)」</strong> ➔ 最下部の<strong>「チャネルアクセストークン（長期）」</strong>で<strong>「発行 (Issue)」</strong>を押し<strong>「コピー (Copy)」</strong>をクリック。",
-        s4_title: "Webhook設定＆利用オン",
-        s4_desc: "下のフォーム送信後、<strong>「Messaging API設定」</strong>タブ内の<strong>「Webhook設定」</strong> ➔ <strong>「編集 (Edit)」</strong>にURLを貼り付けて<strong>「更新 (Update)」</strong>し、<strong>「Webhookの利用 (Use webhook)」</strong>をオン（緑）にします！",
+        s2_desc: "<a href='https://developers.line.biz/console/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Developers コンソール ↗</a> でチャネルを選択 ➔ 上部タブ<strong>「チャネル基本設定 (Basic settings)」</strong> ➔ 最下部の<strong>「チャネルシークレット (Channel secret)」</strong>横の<strong>「コピー (Copy)」</strong>をクリック。",
+        s3_title: "Issue（発行）を押してアクセストークンをコピー",
+        s3_desc: "上部タブ<strong>「Messaging API設定 (Messaging API)」</strong>（<code>developers.line.biz/console/channel/ID/messaging-api</code>）➔ 最下部の<strong>「チャネルアクセストークン（長期）」</strong>で必ず<strong>「発行 (Issue)」</strong>ボタンを押してから<strong>「コピー (Copy)」</strong>をクリック。",
+        s4_title: "Editを押してWebhookを貼り付け＆利用オン",
+        s4_desc: "フォーム送信後、<strong>「Messaging API設定」</strong>タブ内の<strong>「Webhook設定」</strong> ➔ <strong>「編集 (Edit)」</strong>を押してURLを貼り付け<strong>「更新 (Update)」</strong>し、<strong>「Webhookの利用 (Use webhook)」</strong>スイッチをオン（緑）にします！",
         form_title: "セキュリティ開通設定フォーム",
         lock_badge: "🔒 重複登録防止＋メール認証変更保護",
         lbl_client_name: "店舗・ブランド名（AIの挨拶に表示されます）", ph_client_name: "例：澄光ホテル Lumina Hotel",
         err_name: "⚠️ 店舗・ブランド名を入力してください。",
         lbl_secret: "LINE チャネルシークレット（チャネル基本設定タブ最下部の32文字）",
         err_secret: "❌ チャネルシークレットは28〜40文字の英数字です。",
-        lbl_token: "LINE チャネルアクセストークン（Messaging API設定タブ最下部の170文字以上）", ph_token: "「発行 (Issue)」クリック後にコピーした長期アクセストークンを貼り付け...",
+        lbl_token: "LINE チャネルアクセストークン（Messaging API設定タブ最下部でIssueを押してコピーした170文字以上）", ph_token: "「発行 (Issue)」クリック後にコピーした長期アクセストークンを貼り付け...",
         err_token: "❌ アクセストークンは100文字以上であり、シークレットと同じ値は入力できません。",
-        notify_title: "🔔 有人引き継ぎ通知設定（A + B + C マルチ通知）",
+        notify_title: "🔔 有人引き継ぎ通知設定（オーナーLINE通知 ＋ メール通知）",
         opt_later_badge: "任意・開通後もマイページからいつでも変更可能", opt_later_badge2: "任意・後からいつでも変更可能",
         chk_a_label: "通知 A：オーナー個人のLINEへプッシュ通知（開通後に「ワンクリックLINE自動連携」が可能！）",
         chk_a_help: "💡 <strong>IDの手動検索は不要です！</strong>ここは空欄のまま送信して構いません。認証完了後に表示される<strong>「📲 ワンクリックでLINEを開いてオーナー通知を連携」</strong>ボタンを押すだけで自動登録できます！",
         ph_line_uid: "任意（空欄のままでOK・送信後にワンクリック連携ボタンが表示されます）",
-        chk_b_label: "通知 B：Telegram 無料バックアップ通知（任意・無制限・後から変更可能）",
-        ph_tg_id: "任意（例：123456789・後から追加可能）",
-        chk_b_tutorial: "📖 <strong>30秒でわかる Telegram Chat ID 確認方法：</strong><br/>1. Telegramで公式ボット <code>@userinfobot</code> を検索し <strong>Start</strong> を押します。<br/>2. 表示された数字の <strong>Id</strong>（例：<code>123456789</code>）を上の欄に貼り付けるだけで完了です！",
-        chk_c_label: "通知 C：緊急通知＆Webhook案内送付メールアドレス（最大3件まで登録可能・後から変更可）",
+        chk_c_label: "通知 B：緊急通知＆Webhook案内送付メールアドレス（最大3件まで登録可能・後から変更可）",
         ph_em1: "通知メール 1 (メイン)", ph_em2: "通知メール 2 (任意)", ph_em3: "通知メール 3 (任意)",
+        help_webhook_summary: "❓ クリックで開く：Editを押してWebhookを貼り付け・Use webhookをオンにする手順（直通リンク付）▾",
+        help_webhook_body: `<div><strong>Step 1：</strong>上の「URLをコピー」を押し、<a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers コンソール ↗</a> でチャネルを選択 ➔ 上部の <strong>「Messaging API設定 (Messaging API)」</strong> タブを開きます（例：<code>https://developers.line.biz/console/channel/ID/messaging-api</code>）。</div><div><strong>Step 2：</strong><strong>「Webhook設定 (Webhook settings)」</strong> の <strong>「編集 (Edit)」</strong> ボタンを押して入力欄を開き、コピーしたWebhook URLを貼り付けて <strong>「更新 (Update)」</strong> を押します。</div><div><strong>Step 3（重要）：</strong>すぐ下の <strong>「Webhookの利用 (Use webhook)」</strong> スイッチを必ず <strong>オン（緑色）</strong> に切り替えてください！</div><div><strong>Step 4：</strong>あわせて <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE公式アカウント管理画面 ↗</a> の「設定 ➔ 応答設定」で「応答メッセージ（自動応答）」を<strong>オフ</strong>、「Webhook」を<strong>オン</strong>にしてください。</div>`,
+        help_bind_summary: "❓ クリックで開く：オーナー個人のLINEを連携して通知や認証コードを受け取る方法 ▾",
+        help_bind_body: `<div>1. 先にWebhook URLの貼り付けと <strong>Use webhook</strong> のオンを完了してください。</div><div>2. 緑のボタン「📲 ワンクリックでLINEを開いて連携」を押すか、<code>/綁定店長 コード</code> を<strong>貴店のLINE公式アカウントのトーク画面</strong>へ送信します。</div><div>3. AIが「✅ 連携完了」と返信し、スタッフ呼び出し通知やキー変更時の6桁認証コードがオーナーのLINEに届きます！</div>`,
+        help_sheet_summary: "❓ クリックで開く：Googleスプレッドシートの作成と共有権限の設定方法（直通リンク付）▾",
+        help_sheet_body: `<div><strong>Step 1：</strong><a href="https://docs.google.com/spreadsheets/u/0/" target="_blank" class="text-cyan-400 underline font-bold">Googleスプレッドシート ↗</a> を開き、1列目に質問項目、2列目に回答を入力します（一時停止したい行は3列目に <code>停用</code> と入力）。</div><div><strong>Step 2：</strong>右上の <strong>「共有 (Share)」</strong> ボタンを押し、一般的なアクセスを <strong>「リンクを知っている全員（閲覧者）」</strong> に変更します。</div><div><strong>Step 3：</strong>シートのURLを入力欄に貼り付け、<strong>「🔍 シート読込テスト」</strong> を押して確認後、下の <strong>「💾 保存」</strong> を押してください！</div>`,
+        help_kb_summary: "❓ クリックで開く：AIデータベースの書き方ガイド（推奨6項目）▾",
+        help_booking_summary: "❓ クリックで開く：複数の予約サイト・メニューURLの入力方法 ▾",
+        help_booking_body: `<div>• <strong>1行に1つずつ</strong>入力してください（例：1行目 <code>宿泊予約：https://...</code>、2行目 <code>メニュー：https://...</code>）。入力枠の右下をドラッグして広げられます。</div><div>• お客様が予約やメニューを尋ねた際、AIが最適なURLを自動で案内します！</div>`,
+        help_ignore_summary: "❓ クリックで開く：「既存LINEキーワード自動応答の優先（AIミュート）」とは？▾",
+        help_secret_summary: "❓ チャネルシークレットの場所がわからない場合：クリックで手順と直通リンクを表示 ▾",
+        help_secret_body: `<div><strong>Step 1（公式アカウント作成＆Messaging API有効化）：</strong>まず <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE公式アカウント管理画面 (manager.line.biz) ↗</a> でアカウントを作成し、右上歯車 <strong>「設定」</strong> ➔ 左メニュー <strong>「Messaging API」</strong>（<code>https://manager.line.biz/account/@ID/setting/messaging-api</code>）➔ <strong>「Messaging APIを利用する」</strong> をクリックします。</div><div><strong>Step 2（LINE Developersを開く）：</strong><a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers コンソール ↗</a> を開き、該当のチャネルを選択します。</div><div><strong>Step 3（シークレットをコピー）：</strong><strong>「チャネル基本設定 (Basic settings)」</strong> タブの一番下にある <strong>「チャネルシークレット (Channel secret)」</strong> の <strong>「Copy」</strong> を押して上の欄に貼り付けます！</div>`,
+        help_token_summary: "❓ Issueを押してアクセストークンをコピーする場所：クリックで手順と直通リンクを表示 ▾",
+        help_token_body: `<div><strong>Step 1：</strong><a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers コンソール ↗</a> で上部の <strong>「Messaging API設定 (Messaging API)」</strong> タブ（<code>https://developers.line.biz/console/channel/ID/messaging-api</code>）を開きます。</div><div><strong>Step 2（Issueをクリック）：</strong>一番下までスクロールし、<strong>「チャネルアクセストークン（長期）(Channel access token)」</strong> の <strong>「発行 (Issue)」</strong> ボタンを押すと長いトークンが表示されます！</div><div><strong>Step 3：</strong>横の <strong>「Copy」</strong> ボタンを押して上の入力欄に貼り付けます。</div><div><strong>Step 4（次のステップ）：</strong>下の送信ボタンを押して専用Webhook URLを発行したら、同じ <strong>「Messaging API設定」</strong> タブの <strong>「Webhook設定」</strong> で <strong>「Edit」</strong> を押して貼り付け、<strong>「Use webhook」</strong> をオンにしてください！</div>`,
         opt_title: "✨ 複数の予約・メニューURL ＆ Googleスプレッドシート連携",
         lbl_booking: "予約サイト・メニュー・料金表などの複数URL（1行に1つ入力・AIが質問に応じて案内します）",
         ph_booking: "例：\n宿泊予約：https://...\nレストランメニュー：https://...",
@@ -1185,33 +1286,44 @@
         btn_login_now: "Login dengan Google",
         logged_as: "✅ Terhubung dengan Akun Google:",
         logged_edit_hint: "Anda dapat mengubah link booking, email darurat, atau reset kunci kapan saja di 'Pesanan & Pengaturan'.",
-        guide_title: "Panduan 4 Langkah sesuai Nama Tombol Resmi LINE Console",
-        s1_title: "Aktifkan Messaging API",
-        s1_desc: "Di LINE Official Account Manager, klik ikon roda gigi <strong>\"Settings\"</strong> ➔ Menu kiri <strong>\"Messaging API\"</strong> ➔ Klik tombol hijau <strong>\"Enable Messaging API\"</strong>.",
+        guide_title: "Panduan 4 Langkah dengan Link Langsung & Nama Tombol Resmi LINE Console",
+        s1_title: "Buat Akun Resmi & Aktifkan Messaging API",
+        s1_desc: "Buka <a href='https://manager.line.biz/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Official Account Manager ↗</a> untuk membuat akun resmi ➔ Klik ikon roda gigi <strong>\"Settings\"</strong> ➔ Menu kiri <strong>\"Messaging API\"</strong> (<code>manager.line.biz/account/@ID/setting/messaging-api</code>) ➔ Klik tombol hijau <strong>\"Enable Messaging API\"</strong>.",
         s2_title: "Salin Channel Secret",
-        s2_desc: "Buka LINE Developers Console & pilih channel ➔ Tab <strong>\"Basic settings\"</strong> ➔ Gulir ke bawah <strong>\"Channel secret\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
-        s3_title: "Terbitkan Access Token",
-        s3_desc: "Buka tab <strong>\"Messaging API\"</strong> ➔ Gulir ke bawah <strong>\"Channel access token (long-lived)\"</strong> ➔ Klik <strong>\"Issue\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
-        s4_title: "Tempel Webhook & Aktifkan",
-        s4_desc: "Setelah kirim formulir, buka tab <strong>\"Messaging API\"</strong> ➔ <strong>\"Webhook settings\"</strong> ➔ Klik <strong>\"Edit\"</strong>, tempel URL & klik <strong>\"Update\"</strong> ➔ Nyalakan <strong>\"Use webhook\"</strong> (hijau)!",
+        s2_desc: "Buka <a href='https://developers.line.biz/console/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Developers Console ↗</a> & pilih channel ➔ Tab <strong>\"Basic settings\"</strong> ➔ Gulir ke bawah <strong>\"Channel secret\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
+        s3_title: "Klik Issue & Salin Access Token",
+        s3_desc: "Buka tab <strong>\"Messaging API\"</strong> (<code>developers.line.biz/console/channel/ID/messaging-api</code>) ➔ Gulir ke bawah <strong>\"Channel access token (long-lived)\"</strong> ➔ Klik tombol <strong>\"Issue\"</strong> ➔ Klik <strong>\"Copy\"</strong>.",
+        s4_title: "Klik Edit, Tempel Webhook & Aktifkan Use webhook",
+        s4_desc: "Setelah kirim formulir, buka tab <strong>\"Messaging API\"</strong> ➔ <strong>\"Webhook settings\"</strong> ➔ Klik tombol <strong>\"Edit\"</strong>, tempel URL & klik <strong>\"Update\"</strong> ➔ Nyalakan sakelar <strong>\"Use webhook\"</strong> (hijau)!",
         form_title: "Formulir Pengaturan Toko Aman",
         lock_badge: "🔒 Anti-Duplikat + Verifikasi OTP Email",
         lbl_client_name: "Nama Bisnis / Brand (ditampilkan pada sapaan AI)", ph_client_name: "Contoh: Lumina Boutique Hotel",
         err_name: "⚠️ Silakan masukkan nama bisnis Anda.",
         lbl_secret: "LINE Channel Secret (32 karakter di bawah tab Basic settings)",
         err_secret: "❌ Channel Secret harus 28–40 karakter huruf/angka.",
-        lbl_token: "LINE Channel Access Token (170+ karakter di bawah tab Messaging API)", ph_token: "Tempel Channel access token setelah klik Issue...",
+        lbl_token: "LINE Channel Access Token (170+ karakter setelah klik Issue di tab Messaging API)", ph_token: "Tempel Channel access token setelah klik Issue...",
         err_token: "❌ Access Token harus lebih dari 100 karakter dan tidak boleh sama dengan Secret.",
-        notify_title: "🔔 Pengaturan Notifikasi Staf (Saluran A + B + C)",
+        notify_title: "🔔 Pengaturan Notifikasi Staf (LINE Pemilik + Email)",
         opt_later_badge: "Opsional · Dapat diubah kapan saja", opt_later_badge2: "Opsional · Dapat diubah nanti",
         chk_a_label: "Saluran A: Notifikasi LINE Pribadi Pemilik (Mendukung Ikat LINE Otomatis 1-Klik setelah verifikasi)",
         chk_a_help: "💡 <strong>Tidak perlu cari ID manual!</strong> Kosongkan kolom ini sekarang—setelah verifikasi selesai, klik tombol <strong>'📲 Buka LINE 1-Klik untuk Ikat Notifikasi Pemilik'</strong>!",
         ph_line_uid: "Opsional (Kosongkan untuk ikat otomatis 1-klik setelah kirim)",
-        chk_b_label: "Saluran B: Cadangan Telegram Gratis Tanpa Batas (Opsional · Dapat diubah kapan saja)",
-        ph_tg_id: "Opsional, misal: 123456789",
-        chk_b_tutorial: "📖 <strong>Cara Cek Telegram Chat ID (30 Detik):</strong><br/>1. Buka Telegram, cari <code>@userinfobot</code> lalu tekan <strong>Start</strong>.<br/>2. Salin angka <strong>Id</strong> (misal <code>123456789</code>) dan tempel di kolom atas!",
-        chk_c_label: "Saluran C: Email Darurat & Panduan Webhook (Maksimal 3 email, dapat diubah kapan saja)",
+        chk_c_label: "Saluran B: Email Darurat & Panduan Webhook (Maksimal 3 email, dapat diubah kapan saja)",
         ph_em1: "Email Notifikasi 1 (Utama)", ph_em2: "Email Notifikasi 2 (Opsional)", ph_em3: "Email Notifikasi 3 (Opsional)",
+        help_webhook_summary: "❓ Klik untuk buka: Cara klik EDIT untuk tempel Webhook & aktifkan Use webhook (dengan link langsung) ▾",
+        help_webhook_body: `<div><strong>Langkah 1:</strong> Klik "Salin URL" di atas, lalu buka <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> ➔ pilih channel Anda ➔ buka tab <strong>"Messaging API"</strong> (<code>https://developers.line.biz/console/channel/ID/messaging-api</code>).</div><div><strong>Langkah 2:</strong> Pada bagian <strong>"Webhook settings"</strong>, klik tombol <strong>"Edit"</strong> agar kolom bisa diisi ➔ tempel URL Webhook Anda ➔ klik <strong>"Update"</strong>.</div><div><strong>Langkah 3 (Penting):</strong> Nyalakan sakelar <strong>"Use webhook"</strong> tepat di bawahnya hingga berwarna <strong>hijau</strong>!</div><div><strong>Langkah 4:</strong> Cek juga <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager ↗</a> ➔ Settings ➔ Response settings: atur "Auto-response" ke <strong>Disabled</strong> dan "Webhook" ke <strong>Enabled</strong>.</div>`,
+        help_bind_summary: "❓ Klik untuk buka: Cara mengikat LINE pribadi pemilik untuk menerima notifikasi & OTP ▾",
+        help_bind_body: `<div>1. Pastikan Anda sudah menempelkan URL Webhook dan menyalakan <strong>Use webhook</strong>.</div><div>2. Klik tombol hijau "📲 Buka LINE 1-Klik untuk Ikat" atau kirim perintah <code>/綁定店長 KODE</code> ke ruang chat akun resmi LINE toko Anda.</div><div>3. Bot AI akan membalas konfirmasi bahwa LINE pribadi Anda sudah terhubung untuk notifikasi staf dan kode OTP!</div>`,
+        help_sheet_summary: "❓ Klik untuk buka: Cara membuat Google Sheets & mengatur izin berbagi (dengan link langsung) ▾",
+        help_sheet_body: `<div><strong>Langkah 1:</strong> Buka <a href="https://docs.google.com/spreadsheets/u/0/" target="_blank" class="text-cyan-400 underline font-bold">Google Sheets ↗</a> dan isi daftar tanya-jawab (Kolom A: Kategori/Pertanyaan, Kolom B: Jawaban; tulis <code>停用</code> di Kolom C jika ingin menonaktifkan baris).</div><div><strong>Langkah 2:</strong> Klik tombol <strong>"Bagikan (Share)"</strong> di kanan atas ➔ ubah akses umum ke <strong>"Siapa saja yang memiliki link dapat melihat"</strong>.</div><div><strong>Langkah 3:</strong> Tempel link Google Sheets di kolom atas, klik <strong>"🔍 Tes Baca Google Sheet"</strong>, lalu klik <strong>"💾 Simpan"</strong>!</div>`,
+        help_kb_summary: "❓ Klik untuk buka: Panduan 6 kategori Database AI agar 100% akurat ▾",
+        help_booking_summary: "❓ Klik untuk buka: Cara mengisi banyak link booking / menu ▾",
+        help_booking_body: `<div>• Isi <strong>satu link per baris</strong> (misal: <code>Booking Kamar: https://...</code> di baris 1, <code>Menu: https://...</code> di baris 2). Kotak teks dapat diperbesar dari pojok kanan bawah.</div><div>• AI akan otomatis mengirimkan link yang sesuai saat tamu bertanya!</div>`,
+        help_ignore_summary: "❓ Klik untuk buka: Apa itu fitur 'AI Otomatis Diam untuk Kata Kunci Bawaan LINE'? ▾",
+        help_secret_summary: "❓ Di mana letak Channel Secret? Klik untuk buka langkah mudah & link langsung ▾",
+        help_secret_body: `<div><strong>Langkah 1 (Buat Akun Resmi & Aktifkan API):</strong> Buka <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager (manager.line.biz) ↗</a> untuk membuat akun resmi ➔ Klik ikon roda gigi <strong>"Settings"</strong> ➔ Menu kiri <strong>"Messaging API"</strong> (<code>https://manager.line.biz/account/@ID/setting/messaging-api</code>) ➔ Klik <strong>"Enable Messaging API"</strong>.</div><div><strong>Langkah 2 (Buka LINE Developers):</strong> Buka <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> dan pilih channel Anda.</div><div><strong>Langkah 3 (Salin Secret):</strong> Pada tab <strong>"Basic settings"</strong>, gulir ke paling bawah ke bagian <strong>"Channel secret"</strong>, klik <strong>"Copy"</strong> dan tempel di kolom atas!</div>`,
+        help_token_summary: "❓ Di mana klik ISSUE untuk menyalin Access Token? Klik untuk buka panduan & link langsung ▾",
+        help_token_body: `<div><strong>Langkah 1:</strong> Di <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a>, buka tab <strong>"Messaging API"</strong> (<code>https://developers.line.biz/console/channel/ID/messaging-api</code>).</div><div><strong>Langkah 2 (Klik Issue):</strong> Gulir ke paling bawah ke bagian <strong>"Channel access token (long-lived)"</strong>, klik tombol <strong>"Issue"</strong> untuk memunculkan kode token!</div><div><strong>Langkah 3:</strong> Klik <strong>"Copy"</strong> dan tempel di kolom atas.</div><div><strong>Langkah 4 (Langkah Berikutnya):</strong> Setelah klik tombol kirim di bawah dan mendapatkan URL Webhook, kembali ke tab <strong>"Messaging API"</strong> ini ➔ cari <strong>"Webhook settings"</strong> ➔ klik <strong>"Edit"</strong> untuk menempel URL & klik <strong>"Update"</strong> ➔ nyalakan sakelar <strong>"Use webhook"</strong>!</div>`,
         opt_title: "✨ Banyak Link Booking/Menu & Google Sheets",
         lbl_booking: "Link Booking / Reservasi / Menu (Satu per baris—AI otomatis memilih link yang sesuai)",
         ph_booking: "Contoh:\nBooking Kamar: https://...\nMenu Restoran: https://...",
@@ -1289,33 +1401,44 @@
         btn_login_now: "Accedi con Google",
         logged_as: "✅ Account Google collegato:",
         logged_edit_hint: "Puoi modificare link, email o reimpostare le chiavi in qualsiasi momento da 'Ordini e Impostazioni'.",
-        guide_title: "Guida in 4 Passaggi con i Nomi Esatti dei Pulsanti LINE",
-        s1_title: "Abilita Messaging API",
-        s1_desc: "In LINE Official Account Manager, clicca in alto a destra su <strong>\"Settings\"</strong> ➔ Menu a sinistra <strong>\"Messaging API\"</strong> ➔ Pulsante verde <strong>\"Enable Messaging API\"</strong>.",
+        guide_title: "Guida in 4 Passaggi con Link Diretti e Nomi Esatti dei Pulsanti LINE",
+        s1_title: "Crea Account Ufficiale e Abilita Messaging API",
+        s1_desc: "Vai su <a href='https://manager.line.biz/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Official Account Manager ↗</a> per creare il tuo account ufficiale ➔ Clicca in alto a destra su <strong>\"Settings\"</strong> ➔ Menu a sinistra <strong>\"Messaging API\"</strong> (<code>manager.line.biz/account/@ID/setting/messaging-api</code>) ➔ Pulsante verde <strong>\"Enable Messaging API\"</strong>.",
         s2_title: "Copia Channel Secret",
-        s2_desc: "Apri LINE Developers Console e seleziona il canale ➔ Scheda <strong>\"Basic settings\"</strong> ➔ Scorri fino a <strong>\"Channel secret\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
-        s3_title: "Genera Access Token",
-        s3_desc: "Passa alla scheda <strong>\"Messaging API\"</strong> ➔ Scorri fino a <strong>\"Channel access token (long-lived)\"</strong> ➔ Clicca <strong>\"Issue\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
-        s4_title: "Incolla Webhook e Attiva",
-        s4_desc: "Dopo l'invio del modulo, nella scheda <strong>\"Messaging API\"</strong> trova <strong>\"Webhook settings\"</strong> ➔ Clicca <strong>\"Edit\"</strong>, incolla l'URL e premi <strong>\"Update\"</strong> ➔ Attiva <strong>\"Use webhook\"</strong> (verde)!",
+        s2_desc: "Apri <a href='https://developers.line.biz/console/' target='_blank' class='text-cyan-400 underline font-bold'>LINE Developers Console ↗</a> e seleziona il canale ➔ Scheda <strong>\"Basic settings\"</strong> ➔ Scorri fino a <strong>\"Channel secret\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
+        s3_title: "Clicca Issue e Copia Access Token",
+        s3_desc: "Passa alla scheda <strong>\"Messaging API\"</strong> (<code>developers.line.biz/console/channel/ID/messaging-api</code>) ➔ Scorri fino a <strong>\"Channel access token (long-lived)\"</strong> ➔ Clicca <strong>\"Issue\"</strong> ➔ Clicca <strong>\"Copy\"</strong>.",
+        s4_title: "Clicca Edit, Incolla Webhook e Attiva Use webhook",
+        s4_desc: "Dopo l'invio del modulo, nella scheda <strong>\"Messaging API\"</strong> trova <strong>\"Webhook settings\"</strong> ➔ Clicca <strong>\"Edit\"</strong>, incolla l'URL e premi <strong>\"Update\"</strong> ➔ Attiva l'interruttore <strong>\"Use webhook\"</strong> (verde)!",
         form_title: "Modulo Sicuro di Configurazione",
         lock_badge: "🔒 Protezione Duplicati + Verifica OTP Email",
         lbl_client_name: "Nome Azienda / Hotel (mostrato nei saluti IA)", ph_client_name: "Es: Lumina Boutique Hotel",
         err_name: "⚠️ Inserisci il nome della tua attività.",
         lbl_secret: "LINE Channel Secret (32 caratteri in fondo alla scheda Basic settings)",
         err_secret: "❌ Il Channel Secret deve contenere 28–40 caratteri alfanumerici.",
-        lbl_token: "LINE Channel Access Token (170+ caratteri in fondo alla scheda Messaging API)", ph_token: "Incolla il Channel access token generato con Issue...",
+        lbl_token: "LINE Channel Access Token (170+ caratteri dopo aver cliccato Issue nella scheda Messaging API)", ph_token: "Incolla il Channel access token generato con Issue...",
         err_token: "❌ L'Access Token deve superare i 100 caratteri e non può coincidere col Secret.",
-        notify_title: "🔔 Notifiche di Passaggio Operatore (Canali A + B + C)",
+        notify_title: "🔔 Notifiche di Passaggio Operatore (LINE Titolare + Email)",
         opt_later_badge: "Opzionale · Modificabile in ogni momento", opt_later_badge2: "Opzionale · Modificabile dopo",
         chk_a_label: "Canale A: Notifiche Push sul LINE Personale del Titolare (Collegamento in 1 Clic dopo la verifica)",
         chk_a_help: "💡 <strong>Nessuna ricerca manuale dell'ID!</strong> Puoi lasciare vuoto questo campo: dopo la verifica apparirà il pulsante <strong>'📲 Apri LINE in 1 Clic per Collegare le Notifiche'</strong>!",
         ph_line_uid: "Opzionale (Lascia vuoto per usare il collegamento in 1 clic dopo l'invio)",
-        chk_b_label: "Canale B: Notifiche Backup Gratuite su Telegram (Opzionale · Illimitato, modificabile dopo)",
-        ph_tg_id: "Opzionale, es: 123456789",
-        chk_b_tutorial: "📖 <strong>Come Trovare il Telegram Chat ID in 30 Secondi:</strong><br/>1. Apri Telegram, cerca <code>@userinfobot</code> e premi <strong>Start</strong>.<br/>2. Copia il numero <strong>Id</strong> (es. <code>123456789</code>) e incollalo qui sopra!",
-        chk_c_label: "Canale C: Email di Emergenza e Invio Guida Webhook (Fino a 3 email, modificabili dopo)",
+        chk_c_label: "Canale B: Email di Emergenza e Invio Guida Webhook (Fino a 3 email, modificabili dopo)",
         ph_em1: "Email Notifica 1 (Principale)", ph_em2: "Email Notifica 2 (Opzionale)", ph_em3: "Email Notifica 3 (Opzionale)",
+        help_webhook_summary: "❓ Clicca per espandere: Come cliccare EDIT per incollare il Webhook e attivare Use webhook (con link diretti) ▾",
+        help_webhook_body: `<div><strong>Passo 1:</strong> Clicca "Copia URL" qui sopra, poi apri <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> ➔ seleziona il tuo canale ➔ vai alla scheda <strong>"Messaging API"</strong> (<code>https://developers.line.biz/console/channel/ID/messaging-api</code>).</div><div><strong>Passo 2:</strong> Nella sezione <strong>"Webhook settings"</strong>, clicca il pulsante <strong>"Edit"</strong> per inserire l'URL ➔ incolla il tuo URL Webhook ➔ clicca <strong>"Update"</strong>.</div><div><strong>Passo 3 (Fondamentale):</strong> Attiva l'interruttore <strong>"Use webhook"</strong> subito sotto (diventa <strong>verde</strong>)!</div><div><strong>Passo 4:</strong> Verifica anche su <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager ↗</a> ➔ Settings ➔ Response settings: imposta "Auto-response" su <strong>Disabled</strong> e "Webhook" su <strong>Enabled</strong>.</div>`,
+        help_bind_summary: "❓ Clicca per espandere: Come collegare il LINE personale del titolare per notifiche e codici OTP ▾",
+        help_bind_body: `<div>1. Assicurati di aver incollato l'URL Webhook e attivato <strong>Use webhook</strong>.</div><div>2. Clicca il pulsante verde "📲 Apri LINE in 1 Clic per Collegare" oppure invia il comando <code>/綁定店長 CODICE</code> nella chat dell'account ufficiale LINE del tuo negozio.</div><div>3. Il bot IA confermerà il collegamento per ricevere notifiche clienti e codici di sicurezza OTP!</div>`,
+        help_sheet_summary: "❓ Clicca per espandere: Come configurare Google Sheets e i permessi di condivisione (con link diretto) ▾",
+        help_sheet_body: `<div><strong>Passo 1:</strong> Apri <a href="https://docs.google.com/spreadsheets/u/0/" target="_blank" class="text-cyan-400 underline font-bold">Google Sheets ↗</a> e compila le domande/risposte (Colonna A: Categoria/Domanda, Colonna B: Risposta; scrivi <code>停用</code> nella Colonna C per disattivare una riga).</div><div><strong>Passo 2:</strong> Clicca in alto a destra su <strong>"Condividi (Share)"</strong> ➔ imposta l'accesso generale su <strong>"Chiunque abbia il link può visualizzare"</strong>.</div><div><strong>Passo 3:</strong> Incolla l'URL del foglio qui sopra, clicca <strong>"🔍 Testa Lettura Foglio Google"</strong> e poi clicca <strong>"💾 Salva"</strong>!</div>`,
+        help_kb_summary: "❓ Clicca per espandere: Guida alle 6 categorie consigliate per il Database IA ▾",
+        help_booking_summary: "❓ Clicca per espandere: Come inserire più link di prenotazione / menu ▾",
+        help_booking_body: `<div>• Inserisci <strong>un link per riga</strong> (es. <code>Prenotazione Camere: https://...</code> sulla riga 1, <code>Menu: https://...</code> sulla riga 2). Puoi ridimensionare il riquadro trascinando l'angolo in basso a destra.</div><div>• L'IA invierà automaticamente il link appropriato quando un cliente lo richiede!</div>`,
+        help_ignore_summary: "❓ Clicca per espandere: Cos'è il 'Silenziamento Automatico IA per Parole Chiave LINE'? ▾",
+        help_secret_summary: "❓ Dove trovo il Channel Secret? Clicca per espandere i passaggi e i link diretti ▾",
+        help_secret_body: `<div><strong>Passo 1 (Crea Account Ufficiale e Abilita API):</strong> Vai su <a href="https://manager.line.biz/" target="_blank" class="text-emerald-400 underline font-bold">LINE Official Account Manager (manager.line.biz) ↗</a> per creare il tuo account ufficiale ➔ Clicca in alto a destra su <strong>"Settings"</strong> ➔ Menu a sinistra <strong>"Messaging API"</strong> (<code>https://manager.line.biz/account/@ID/setting/messaging-api</code>) ➔ Clicca <strong>"Enable Messaging API"</strong>.</div><div><strong>Passo 2 (Apri LINE Developers):</strong> Apri <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a> e seleziona il tuo canale.</div><div><strong>Passo 3 (Copia Secret):</strong> Nella scheda <strong>"Basic settings"</strong>, scorri fino in fondo alla sezione <strong>"Channel secret"</strong>, clicca <strong>"Copy"</strong> e incollalo qui sopra!</div>`,
+        help_token_summary: "❓ Dove clicco ISSUE per copiare l'Access Token? Clicca per espandere guida e link diretti ▾",
+        help_token_body: `<div><strong>Passo 1:</strong> In <a href="https://developers.line.biz/console/" target="_blank" class="text-cyan-400 underline font-bold">LINE Developers Console ↗</a>, apri la scheda <strong>"Messaging API"</strong> (<code>https://developers.line.biz/console/channel/ID/messaging-api</code>).</div><div><strong>Passo 2 (Clicca Issue):</strong> Scorri fino in fondo a <strong>"Channel access token (long-lived)"</strong> e clicca il pulsante <strong>"Issue"</strong> per generare il token!</div><div><strong>Passo 3:</strong> Clicca <strong>"Copy"</strong> e incollalo nel campo qui sopra.</div><div><strong>Passo 4 (Passo Successivo):</strong> Dopo aver inviato il modulo qui sotto per ottenere il tuo URL Webhook, torna in questa scheda <strong>"Messaging API"</strong> ➔ trova <strong>"Webhook settings"</strong> ➔ clicca <strong>"Edit"</strong> per incollare l'URL e premi <strong>"Update"</strong> ➔ attiva l'interruttore <strong>"Use webhook"</strong>!</div>`,
         opt_title: "✨ Link Multipli Prenotazione/Menu e Foglio Google",
         lbl_booking: "Link Multipli di Prenotazione / Menu / Listino (Uno per riga: l'IA sceglie il link giusto)",
         ph_booking: "Esempio:\nPrenotazione Camere: https://...\nMenu Ristorante: https://...",
@@ -1547,7 +1670,6 @@
       document.getElementById("prof_booking_links").value = store.booking_links || "";
       document.getElementById("prof_ignore_keywords").value = store.ignore_keywords || "";
       document.getElementById("prof_alert_emails").value = (store.alert_emails || []).join(", ");
-      document.getElementById("prof_telegram_chat_id").value = store.telegram_chat_id || "";
       document.getElementById("prof_masked_keys").textContent = `Secret: ${store.masked_secret || "已加密"} / Token: ${store.masked_token || "已加密"}`;
       document.getElementById("prof_bound_count").textContent = store.admin_line_bound_count > 0
         ? `✅ 已綁定 ${store.admin_line_bound_count} 位店長 LINE`
@@ -1636,8 +1758,7 @@
       const res = await userFetch("/api/account/send_security_otp", { method: "POST" });
       const data = await res.json();
       if (res.ok && data.status === "success") {
-        if (data.creator_test_code) document.getElementById("prof_key_otp").value = data.creator_test_code;
-        alert(data.message || "✅ 6 位數驗證碼已寄出！");
+        alert(data.message || "✅ 6 位數安全驗證碼已寄送至您的信箱與已綁定的店長 LINE！");
       } else {
         alert(data.message || "寄送驗證碼失敗");
       }
@@ -1661,7 +1782,6 @@
           booking_links: document.getElementById("prof_booking_links").value.trim(),
           ignore_keywords: document.getElementById("prof_ignore_keywords").value.trim(),
           alert_emails: document.getElementById("prof_alert_emails").value.trim(),
-          telegram_chat_id: document.getElementById("prof_telegram_chat_id").value.trim(),
           otp_code: (document.getElementById("prof_key_otp")?.value || "").trim(),
           new_channel_secret: (document.getElementById("prof_new_secret")?.value || "").trim(),
           new_channel_access_token: (document.getElementById("prof_new_token")?.value || "").trim()
@@ -1796,9 +1916,8 @@
       msg.classList.remove("hidden");
       if (res.ok) {
         document.getElementById("ob-otp-row").classList.remove("hidden");
-        if (data.creator_test_code) document.getElementById("ob-otp-code").value = data.creator_test_code;
         msg.className = "text-xs text-center text-emerald-400 font-bold";
-        msg.textContent = data.creator_test_code ? `驗證碼已產生（預覽：${data.creator_test_code}）` : "✅ 6 位數驗證碼已寄出！";
+        msg.textContent = data.message || "✅ 6 位數驗證碼已寄送至您的信箱與已綁定之店長 LINE！";
       } else {
         msg.className = "text-xs text-center text-rose-400 font-bold";
         msg.textContent = data.message || "寄送失敗";
@@ -1913,7 +2032,6 @@
       const token = document.getElementById("channel_access_token").value.trim();
       const agreeTos = document.getElementById("chk_agree_tos").checked;
       const adminUserId = document.getElementById("admin_user_id").value.trim();
-      const telegramChatId = document.getElementById("telegram_chat_id").value.trim();
       const alertEmails = [
         document.getElementById("alert_email_1").value.trim(),
         document.getElementById("alert_email_2").value.trim(),
@@ -1925,9 +2043,8 @@
       const ignoreKeywords = (document.getElementById("ignore_keywords")?.value || "").trim();
 
       const notifyChannels = [];
-      if (document.getElementById("chk_notify_line").checked) notifyChannels.push("LINE");
-      if (document.getElementById("chk_notify_tg").checked) notifyChannels.push("Telegram");
-      if (document.getElementById("chk_notify_email").checked) notifyChannels.push("Email");
+      if (document.getElementById("chk_notify_line")?.checked) notifyChannels.push("LINE");
+      if (document.getElementById("chk_notify_email")?.checked) notifyChannels.push("Email");
 
       const secretRegex = /^[a-zA-Z0-9]{28,40}$/;
       const tokenRegex = /^[a-zA-Z0-9+/=_-]{80,350}$/;
@@ -1967,7 +2084,6 @@
             channel_secret: secret,
             channel_access_token: token,
             admin_user_id: adminUserId,
-            telegram_chat_id: telegramChatId,
             alert_emails: alertEmails,
             notify_channels: notifyChannels,
             booking_links: bookingLinks,

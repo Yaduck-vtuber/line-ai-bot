@@ -1878,18 +1878,36 @@ def api_auth_send_login_otp():
     """
     sent = send_system_email(email, f"【SmartHost】您的 6 位數登入驗證碼：{code}", html_body, f"您的驗證碼為：{code}")
 
-    # 若為已登入總後台的創建者本人正在測試，直接於回應中附上提示方便即時測試
-    creator_preview_code = code if is_creator_authenticated() else ""
-    if not sent and not creator_preview_code:
+    # 若尚未設定 Gmail 自動發信密碼，檢查該信箱是否有已綁定之店長 LINE（或創建者主 LINE）可接收驗證碼，絕不在前端網頁直接顯示明文驗證碼
+    pushed_line = False
+    if not sent:
+        with _db_lock:
+            for tid, tcfg in TENANTS_REGISTRY.items():
+                if str(tcfg.get("owner_email", "")).lower() == email or tid == "default":
+                    for uid in list(tcfg.get("admin_ids", set())):
+                        if send_messaging_api_push(
+                            tcfg.get("channel_access_token", ""),
+                            uid,
+                            f"🔐【SmartHost 登入安全驗證碼】\n帳號：{email}\n驗證碼：{code}\n（10 分鐘內有效）",
+                        ):
+                            pushed_line = True
+
+    if not sent and not pushed_line:
         return jsonify({
             "status": "error",
-            "message": "系統尚未完成 Google Client ID 或發信信箱設定，請先由創建者於總後台完成設定，或點擊上方 Google 按鈕登入。",
+            "message": "目前尚未設定 Gmail 自動發信信箱，請直接點擊上方「使用 Google 帳號一鍵登入」按鈕（免收信即可立即登入）！",
         }), 503
 
+    msg_str = (
+        "✅ 6 位數驗證碼已寄至您的信箱，請於 10 分鐘內輸入！"
+        if sent
+        else "✅ 6 位數驗證碼已發送至您綁定的手機 LINE 聊天室，請查看 LINE 並於 10 分鐘內輸入！"
+    )
     return jsonify({
         "status": "success",
         "sent": sent,
-        "creator_test_code": creator_preview_code,
+        "pushed_line": pushed_line,
+        "message": msg_str,
     }), 200
 
 
@@ -2076,7 +2094,7 @@ def api_orders_create():
         "plan": plan,
         "amount": amount,
         "currency": currency,
-        "base_twd_amount": "2980" if plan == "pro" else "1680",
+        "base_twd_amount": "460" if plan == "pro" else "290",
         "upgrade_from_order_id": upgrade_refund_order_id,
         "payment_method": "PayPal",
         "paypal_tx_id": "",
@@ -2540,12 +2558,28 @@ def api_account_send_security_otp():
                     ):
                         pushed_line = True
 
+    if not pushed_line and is_creator_authenticated():
+        if push_creator_master_line_alert(f"🔒【SmartHost 修改金鑰安全驗證碼】：{code}\n（10 分鐘內有效）") > 0:
+            pushed_line = True
+
+    if not sent_email and not pushed_line:
+        return jsonify({
+            "status": "error",
+            "message": "⚠️ 發送失敗：您目前尚未綁定「店長 LINE 通知」（請先在官方帳號聊天室傳送 /綁定店長），且系統尚未設定 Gmail 自動發信密碼，因此無法寄送驗證碼。",
+        }), 400
+
+    if sent_email and pushed_line:
+        msg_text = "✅ 6 位數安全驗證碼已同時發送至您的「註冊信箱」與「已綁定之店長 LINE」！"
+    elif pushed_line:
+        msg_text = "✅ 6 位數安全驗證碼已發送至您的「店長 LINE 聊天室」！（因尚未設定自動發信信箱，請直接打開手機 LINE 查看驗證碼）"
+    else:
+        msg_text = "✅ 6 位數安全驗證碼已寄送至您的「註冊信箱」！"
+
     return jsonify({
         "status": "success",
         "sent_email": sent_email,
         "pushed_line": pushed_line,
-        "creator_test_code": code if is_creator_authenticated() else "",
-        "message": "6 位數安全驗證碼已發送至您的註冊信箱（若已綁定店長 LINE 亦會同步收到通知）！",
+        "message": msg_text,
     }), 200
 
 
@@ -2832,17 +2866,18 @@ def api_site_support_chat():
 請務必使用【{target_lang_name}】親切、自然、清楚地回答訪客問題（控制在 3～5 句話內，條列清楚，不要機械式罐頭回覆）。
 
 【產品核心知識】：
-1. 三大方案與記憶差異（都會在對話中事先告知客人保留幾句記憶）：
+1. 三大方案與記憶差異（都會在對話中事先告知客人保留幾句記憶，採用如同 Netflix 般親民的月費定價）：
    - 方案 A (Free, NT$0 / $0)：每月免費 50 次 AI 多國語言自動回答＋Google 試算表即時修改知識庫＋「當下短記憶（記住剛才聊的前 3 句話）」。50次用完自動切換真人通知。
-   - 方案 B (Basic, NT$1,680 / $55 / ¥8,200 / €49)：無限次 AI 對話＋「當下聊天記憶（記住剛才前 10 句對話上下文，超過 10 句自動洗掉）」＋ A/B/C 多重轉接通知（LINE 一鍵綁定店長帳號 + Telegram + 最多 3 組緊急通知 Email）。
-   - 方案 C (Pro, NT$2,980 / $95 / ¥14,500 / €89)：包含方案 B 全部功能（記住前 10 句對話）＋「熟客重點資料卡永久建檔（注意：不會存下整串幾百句冗長對話！只會自動濃縮擷取『花生過敏、需要嬰兒床』等關鍵重點寫入雲端客戶表，隔幾個月再來問早餐依然主動貼心提醒；若店家在 Google 表單『店家不提供項目與限制』填寫不提供嬰兒床或特定要求，AI 也會優先禮貌婉拒）」＋ Google 行事曆預約＋入住前自動發密碼。
+   - 方案 B (Basic, NT$290 / $9.99 / ¥1,490 / €8.99)：無限次 AI 對話＋「當下聊天記憶（記住剛才前 10 句對話上下文，超過 10 句自動洗掉）」＋ 專人轉接通知（LINE 一鍵綁定店長帳號 + 最多 3 組緊急通知 Email）。
+   - 方案 C (Pro, NT$460 / $15.99 / ¥2,290 / €14.99)：包含方案 B 全部功能（記住前 10 句對話）＋「熟客重點資料卡永久建檔（注意：不會存下整串幾百句冗長對話！只會自動濃縮擷取『花生過敏、需要嬰兒床』等關鍵重點寫入雲端客戶表，隔幾個月再來問早餐依然主動貼心提醒；若店家在 Google 表單『店家不提供項目與限制』填寫不提供嬰兒床或特定要求，AI 也會優先禮貌婉拒）」＋ Google 行事曆預約＋入住前自動發密碼。
 2. 購買、Google 一鍵登入與各國幣別自動切換：
    - 官網提供「使用 Google 帳號一鍵登入」按鈕，不需下載任何商店 App；PayPal 只需填寫 1 個商業收款信箱，系統即會依客戶語系自動帶入 TWD / USD / JPY / EUR 對應金額，無須建立多筆付款連結。
-   - 支援填入多組預約/菜單/官網連結，開通後隨時可在右上角「我的購買紀錄與設定」修改連結、試算表與通知信箱；若要更換 LINE 金鑰則有「信箱 6 位數安全驗證碼」保護。
+   - 支援填入多組預約/菜單/官網連結，開通後隨時可在右上角「個人檔案與店家後台」修改連結、試算表與通知信箱；若要更換 LINE 金鑰則有「信箱或店長 LINE 6 位數安全驗證碼」保護。
    - 無綁約，隨時可於會員中心一鍵取消訂閱、降級回方案 A 或申請退費。
-3. LINE 金鑰尋找方式：
-   - 先到 LINE Official Account Manager「設定 (Settings) -> Messaging API」啟用。
-   - 再到 LINE Developers Console：「Basic settings」底部複製 32 碼 Channel secret；「Messaging API」底部點擊 Issue 複製長效 Channel access token。
+3. 台灣與全球最新 LINE 金鑰尋找與開通方式：
+   - 步驟 1：先到 LINE Official Account Manager (https://manager.line.biz/) 建立官方帳號，點選左側「設定 (Settings) -> Messaging API」啟用 Messaging API。
+   - 步驟 2：再到 LINE Developers Console (https://developers.line.biz/console/) 點選您的 Channel：於「Basic settings」複製 Channel secret；切換到「Messaging API」分頁滑到最底部點擊「Issue」按鈕複製 Channel access token。
+   - 步驟 3：拿到本系統產生的 Webhook 網址後，回到 LINE Developers Console「Messaging API」分頁的「Webhook settings」點擊「Edit」貼上網址並更新，且務必開啟「Use webhook」綠色開關！
 4. 嚴禁回答與本產品無關的寫程式、寫文章、算數學等問題；若無關請禮貌引導回產品諮詢或請訪客於網頁下方「聯絡我們」投信。"""
 
         ai_ans = _generate_with_gemini_models(sys_prompt, q, max_tokens=450)
@@ -3158,7 +3193,7 @@ def api_creator_action():
             "tenant_id": "default",
             "client_name": CLIENT_NAME,
             "plan": plan,
-            "amount": "2980" if plan == "pro" else "1680",
+            "amount": "460" if plan == "pro" else "290",
             "currency": "TWD",
             "payment_method": "PayPal (Sandbox 測試單)",
             "paypal_tx_id": f"SANDBOX-TX-{secrets.token_hex(3).upper()}",
